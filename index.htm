@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Война Сердец</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="lobby-screen" class="screen active">
+    <h1>Война Сердец</h1>
+    <div class="lobby-controls">
+      <button id="btn-host" class="game-btn">Создать игру</button>
+      <div id="invite-link-box" hidden>
+        <small>Отправь эту ссылку другу:</small>
+        <input type="text" id="invite-link" readonly>
+        <button id="btn-share" class="game-btn secondary">Поделиться</button>
+      </div>
+      <hr>
+      <input type="text" id="join-id" placeholder="Вставь ссылку/код друга">
+      <button id="btn-join" class="game-btn">Присоединиться</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="screen" hidden>
+    <div class="top-bar">
+      <div class="player-info" id="enemy-info">Враг: Ожидание...</div>
+    </div>
+    
+    <div class="grid-container enemy-grid" id="enemy-grid"></div>
+    
+    <div class="middle-bar">
+      <button id="btn-voice" class="voice-btn">🎤 Включить микрофон</button>
+      <div id="game-status">Расставь сердца</div>
+    </div>
+    
+    <div class="grid-container my-grid" id="my-grid"></div>
+  </div>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
