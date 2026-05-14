@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-14 21:38:02 UTC
+Сгенерировано: 2026-05-14 22:17:32 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -520,7 +520,7 @@ const state = createInitialState({
     title: 'Новичок Сердец'
   },
   myBoard: autoPlaceMockShips(createEmptyBoard()),
-  enemyBoard: createEmptyBoard()
+  enemyBoard: autoPlaceMockShips(createEmptyBoard())
 });
 
 const transcript = createTranscript();
@@ -528,6 +528,63 @@ const session = new WarHeartsSession({
   gameId: 'war_hearts',
   player: state.player
 });
+
+let computerTimer = 0;
+
+const boardShipCells = board => board.flat().filter(cell => cell.ship);
+const isBoardDefeated = board => {
+  const ships = boardShipCells(board);
+  return ships.length > 0 && ships.every(cell => cell.status === 'hit');
+};
+
+const pickRandomTarget = board => {
+  const cells = [];
+  board.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      if (!cell.status) cells.push({ x, y, cell });
+    });
+  });
+  return cells[Math.floor(Math.random() * cells.length)] || null;
+};
+
+const addSystemMessage = text => {
+  state.chat.push({
+    from: 'Система',
+    text,
+    at: Date.now()
+  });
+};
+
+const computerShoot = () => {
+  if (state.screen !== 'battle' || state.phase !== 'computer') return;
+
+  const target = pickRandomTarget(state.myBoard);
+  if (!target) return;
+
+  target.cell.status = target.cell.ship ? 'hit' : 'miss';
+
+  transcript.add({
+    type: 'COMPUTER_SHOT',
+    x: target.x,
+    y: target.y,
+    result: target.cell.status,
+    at: Date.now()
+  });
+
+  addSystemMessage(target.cell.status === 'hit'
+    ? `Компьютер попал: ${target.x + 1}:${target.y + 1}`
+    : 'Компьютер промахнулся');
+
+  if (isBoardDefeated(state.myBoard)) {
+    state.result = 'loss';
+    state.phase = 'finished';
+    setScreen('result');
+    return;
+  }
+
+  state.phase = 'player';
+  render();
+};
 
 const setStatus = (text, online = false) => {
   const el = $('net-status');
@@ -597,17 +654,45 @@ const actions = {
     state.opponent = {
       id: 'friend_preview',
       name: 'Друг рядом',
-      title: 'Гость арены'
+      title: 'Гость арены',
+      type: 'friend'
     };
+    state.phase = 'player';
     toast('Соперник выбран');
     setScreen('battle');
   },
 
+  startComputerGame() {
+    clearTimeout(computerTimer);
+    state.opponent = {
+      id: 'computer_preview',
+      name: 'Компьютер',
+      title: 'Случайный стрелок',
+      type: 'computer'
+    };
+    state.myBoard = autoPlaceMockShips(createEmptyBoard());
+    state.enemyBoard = autoPlaceMockShips(createEmptyBoard());
+    state.phase = 'player';
+    state.result = '';
+    state.chat = [
+      {
+        from: 'Система',
+        text: 'Тренировка против компьютера началась. Компьютер стреляет случайно.',
+        at: Date.now()
+      }
+    ];
+    toast('Игра с компьютером');
+    setScreen('battle');
+  },
+
   shootCell(x, y) {
+    if (state.phase === 'computer' || state.phase === 'finished') return;
+
     const cell = state.enemyBoard[y]?.[x];
     if (!cell || cell.status) return;
 
-    cell.status = Math.random() > 0.72 ? 'hit' : 'miss';
+    cell.status = cell.ship ? 'hit' : 'miss';
+
     transcript.add({
       type: 'SHOT',
       x,
@@ -617,6 +702,23 @@ const actions = {
     });
 
     toast(cell.status === 'hit' ? 'Попадание!' : 'Мимо');
+
+    if (isBoardDefeated(state.enemyBoard)) {
+      state.result = 'win';
+      state.phase = 'finished';
+      setScreen('result');
+      return;
+    }
+
+    if (state.opponent?.type === 'computer') {
+      state.phase = 'computer';
+      addSystemMessage('Компьютер думает...');
+      render();
+      clearTimeout(computerTimer);
+      computerTimer = setTimeout(computerShoot, 650);
+      return;
+    }
+
     render();
   },
 
