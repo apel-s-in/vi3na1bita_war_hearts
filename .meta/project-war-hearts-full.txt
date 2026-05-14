@@ -54,7 +54,8 @@ vi3na1bita_war_hearts/
 │   │   ├── battle.js
 │   │   ├── invite-wait.js
 │   │   ├── menu.js
-│   │   └── opponent-select.js
+│   │   ├── opponent-select.js
+│   │   └── result.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -62,7 +63,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:30:53 UTC
+Сгенерировано: 2026-05-14 20:31:32 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1426,6 +1427,24 @@ export const renderOpponentSelect = (root, state, actions) => {
   el.querySelector('[data-act="mock"]')?.addEventListener('click', actions.acceptMockOpponent);
   el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
 
+  root.append(el);
+};
+
+//=================================================
+// FILE: /src/screens/result.js
+export const renderResult = (root, state, actions) => {
+  const el = document.createElement('section');
+  el.className = 'wh-card wh-hero';
+  el.innerHTML = `
+    <div class="wh-hero-mark">${state.result === 'win' ? '🏆' : '💔'}</div>
+    <h2>${state.result === 'win' ? 'Победа!' : 'Матч завершён'}</h2>
+    <p>Позже здесь будет подтверждение результата, hash партии и отправка статистики в Game Center.</p>
+    <div class="wh-actions">
+      <button class="wh-btn" type="button" data-act="menu">В главное меню</button>
+    </div>
+  `;
+
+  el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.openMenu);
   root.append(el);
 };
 
