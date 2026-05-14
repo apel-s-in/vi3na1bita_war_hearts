@@ -68,11 +68,25 @@ const actions = {
     setScreen('battle');
   },
 
-  createInvite() {
-    state.invite = {
-      id: `invite_${Date.now().toString(36)}`,
-      expiresAt: Date.now() + 30000
-    };
+  async createInvite() {
+    try {
+      const invite = await session.createInvite();
+      state.invite = {
+        id: invite.id || invite.roomId || `invite_${Date.now().toString(36)}`,
+        roomId: invite.roomId || '',
+        roomSecret: invite.roomSecret || '',
+        url: invite.url || '',
+        expiresAt: invite.expiresAt || Date.now() + 30000
+      };
+      toast(invite.url ? 'Ссылка создана' : 'Preview-приглашение создано');
+    } catch {
+      state.invite = {
+        id: `invite_${Date.now().toString(36)}`,
+        url: '',
+        expiresAt: Date.now() + 30000
+      };
+      toast('Сеть недоступна, создан preview');
+    }
     setScreen('invite');
   },
 
