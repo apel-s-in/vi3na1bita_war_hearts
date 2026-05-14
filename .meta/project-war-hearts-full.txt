@@ -51,7 +51,8 @@ vi3na1bita_war_hearts/
 │   ├── net/
 │   │   └── war-hearts-session.js
 │   ├── screens/
-│   │   └── menu.js
+│   │   ├── menu.js
+│   │   └── opponent-select.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -59,7 +60,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:29:37 UTC
+Сгенерировано: 2026-05-14 20:29:55 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1327,5 +1328,30 @@ const controls = actions => {
   el.querySelector('[data-act="battle"]')?.addEventListener('click', actions.openBattle);
 
   return el;
+};
+
+//=================================================
+// FILE: /src/screens/opponent-select.js
+export const renderOpponentSelect = (root, state, actions) => {
+  const el = document.createElement('section');
+  el.className = 'wh-card';
+  el.innerHTML = `
+    <h2>Соперник</h2>
+    <p>Позже здесь будет список друзей из Game Center. Сейчас — preview-карточки.</p>
+
+    <div class="wh-actions">
+      <button class="wh-btn" type="button" data-act="mock">
+        Друг рядом · принять preview
+      </button>
+      <button class="wh-btn secondary" type="button" data-act="invite">
+        Создать приглашение на 30 секунд
+      </button>
+    </div>
+  `;
+
+  el.querySelector('[data-act="mock"]')?.addEventListener('click', actions.acceptMockOpponent);
+  el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
+
+  root.append(el);
 };
 
