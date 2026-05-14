@@ -28,14 +28,16 @@ const controls = actions => {
   el.className = 'wh-card';
   el.innerHTML = `
     <h3>Начать</h3>
-    <p>Пока это каркас: выбор друга, приглашение, поле боя, чат и место под голосовой PTT.</p>
+    <p>Можно сыграть тренировку против компьютера или создать сетевое приглашение другу.</p>
     <div class="wh-actions">
-      <button class="wh-btn" type="button" data-act="opponents">Выбрать соперника</button>
+      <button class="wh-btn" type="button" data-act="computer">Играть с компьютером</button>
+      <button class="wh-btn secondary" type="button" data-act="opponents">Выбрать соперника</button>
       <button class="wh-btn secondary" type="button" data-act="invite">Пригласить по ссылке</button>
       <button class="wh-btn secondary" type="button" data-act="battle">Открыть поле preview</button>
     </div>
   `;
 
+  el.querySelector('[data-act="computer"]')?.addEventListener('click', actions.startComputerGame);
   el.querySelector('[data-act="opponents"]')?.addEventListener('click', actions.openOpponents);
   el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
   el.querySelector('[data-act="battle"]')?.addEventListener('click', actions.openBattle);
