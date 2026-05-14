@@ -1,0 +1,84 @@
+body {
+  margin: 0;
+  background: #03040c;
+  color: #fff;
+  font-family: -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
+}
+
+/* Лобби */
+.lobby-controls {
+  background: #0c1018;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(77, 170, 255, 0.2);
+}
+
+.game-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff3159, #7c4dff);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.game-btn.secondary { background: #232b38; }
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+/* Игровое поле */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  aspect-ratio: 1;
+  background: rgba(77, 170, 255, 0.1);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.cell {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.enemy-grid { flex: 1; max-height: 45vh; }
+.my-grid { flex: 1; max-height: 40vh; opacity: 0.8; }
+
+.middle-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.voice-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.voice-btn.active { background: rgba(76, 175, 80, 0.3); border-color: #4caf50; }
