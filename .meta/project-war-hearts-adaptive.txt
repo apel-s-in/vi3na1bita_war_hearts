@@ -49,7 +49,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:26:21 UTC
+Сгенерировано: 2026-05-14 20:26:52 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -482,98 +482,209 @@ try {
 
 //=================================================
 // FILE: /src/app.js
-// Импорт моста из соседней папки в Yandex Cloud
-import { NetworkBridge } from '../../common/network-bridge.js';
+import { createEmptyBoard, autoPlaceMockShips } from './game/board.js';
+import { createInitialState } from './game/state.js';
+import { createTranscript } from './game/transcript.js';
+import { WarHeartsSession } from './net/war-hearts-session.js';
+import { renderMenu } from './screens/menu.js';
+import { renderOpponentSelect } from './screens/opponent-select.js';
+import { renderInviteWait } from './screens/invite-wait.js';
+import { renderBattle } from './screens/battle.js';
+import { renderResult } from './screens/result.js';
 
 const $ = id => document.getElementById(id);
 
-// Уникальный ID текущего пользователя (в реале будем получать от Башни через postMessage)
-const myUid = 'user_' + Math.random().toString(36).substring(2, 9);
-const net = new NetworkBridge(myUid);
+const state = createInitialState({
+  player: {
+    id: `wh_${Math.random().toString(36).slice(2, 10)}`,
+    name: 'Слушатель',
+    title: 'Новичок Сердец'
+  },
+  myBoard: autoPlaceMockShips(createEmptyBoard()),
+  enemyBoard: createEmptyBoard()
+});
 
-// --- Логика Сети ---
-net.onConnect = () => {
-  $('lobby-screen').hidden = true;
-  $('game-screen').hidden = false;
-  $('enemy-info').textContent = 'Враг: Подключен';
-  $('game-status').textContent = 'Связь установлена! Ваш ход.';
-  
-  // Отправим тестовое сообщение
-  net.send({ type: 'chat', text: 'Привет из Войны Сердец!' });
+const transcript = createTranscript();
+const session = new WarHeartsSession({
+  gameId: 'war_hearts',
+  player: state.player
+});
+
+const setStatus = (text, online = false) => {
+  const el = $('net-status');
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle('is-online', !!online);
 };
 
-net.onData = (msg) => {
-  if (msg.type === 'chat') console.log('Враг пишет:', msg.text);
-  if (msg.type === 'fire') {
-    // Логика получения выстрела
-    console.log(`Выстрел по координатам: X:${msg.x} Y:${msg.y}`);
-  }
+const toast = text => {
+  const el = $('toast');
+  if (!el) return;
+  el.textContent = text;
+  el.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => {
+    el.hidden = true;
+  }, 1500);
 };
 
-// --- Интерфейс Лобби ---
-$('btn-host').onclick = async () => {
-  $('btn-host').disabled = true;
-  $('game-status').textContent = 'Создаем ключи...';
-  const offer = await net.hostGame();
-  
-  // Упаковываем данные для шеринга (в реальности будем кодировать компактнее)
-  const roomData = btoa(JSON.stringify({ hostId: myUid, offer }));
-  const link = `${window.location.origin}${window.location.pathname}?room=${roomData}`;
-  
-  $('invite-link').value = link;
-  $('invite-link-box').hidden = false;
+const setScreen = screen => {
+  state.screen = screen;
+  document.body.dataset.screen = screen;
+
+  document.querySelectorAll('.wh-tab').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.action === screen || (screen === 'menu' && btn.dataset.action === 'menu'));
+  });
+
+  render();
 };
 
-$('btn-share').onclick = () => {
-  const url = $('invite-link').value;
-  if (navigator.share) {
-    navigator.share({ title: 'Война Сердец', text: 'Сразись со мной!', url });
-  } else {
-    navigator.clipboard.writeText(url);
-    alert('Ссылка скопирована!');
-  }
-};
+const actions = {
+  openMenu() {
+    setScreen('menu');
+  },
 
-$('btn-join').onclick = async () => {
-  try {
-    const input = $('join-id').value.split('?room=')[1] || $('join-id').value;
-    const { hostId, offer } = JSON.parse(atob(input));
-    await net.joinGame(hostId, offer);
-    $('game-status').textContent = 'Соединяемся...';
-  } catch (e) {
-    alert('Неверный код комнаты');
-  }
-};
+  openOpponents() {
+    setScreen('opponents');
+  },
 
-// --- Интерфейс Игры ---
-$('btn-voice').onclick = async () => {
-  const btn = $('btn-voice');
-  const isEnabled = btn.classList.toggle('active');
-  try {
-    await net.toggleVoice(isEnabled);
-    btn.textContent = isEnabled ? '🎤 Микрофон ВКЛ' : '🎤 Включить микрофон';
-  } catch (e) {
-    alert('Нужен доступ к микрофону');
-    btn.classList.remove('active');
-  }
-};
+  openBattle() {
+    setScreen('battle');
+  },
 
-// Генерация пустых полей 10x10 для примера
-const createGrid = (id) => {
-  const grid = $(id);
-  for (let i = 0; i < 100; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.onclick = () => {
-      if (id === 'enemy-grid') net.send({ type: 'fire', x: i % 10, y: Math.floor(i / 10) });
-      cell.style.background = 'rgba(255, 49, 89, 0.5)';
+  createInvite() {
+    state.invite = {
+      id: `invite_${Date.now().toString(36)}`,
+      expiresAt: Date.now() + 30000
     };
-    grid.appendChild(cell);
+    setScreen('invite');
+  },
+
+  acceptMockOpponent() {
+    state.opponent = {
+      id: 'friend_preview',
+      name: 'Друг рядом',
+      title: 'Гость арены'
+    };
+    toast('Соперник выбран');
+    setScreen('battle');
+  },
+
+  shootCell(x, y) {
+    const cell = state.enemyBoard[y]?.[x];
+    if (!cell || cell.status) return;
+
+    cell.status = Math.random() > 0.72 ? 'hit' : 'miss';
+    transcript.add({
+      type: 'SHOT',
+      x,
+      y,
+      result: cell.status,
+      at: Date.now()
+    });
+
+    toast(cell.status === 'hit' ? 'Попадание!' : 'Мимо');
+    render();
+  },
+
+  sendChat(text) {
+    const message = String(text || '').trim().slice(0, 300);
+    if (!message) return;
+
+    state.chat.push({
+      from: state.player.name,
+      text: message,
+      at: Date.now()
+    });
+
+    session.sendChat(message);
+    render();
+  },
+
+  async toggleVoice(active) {
+    try {
+      await session.toggleVoice(active);
+      toast(active ? 'Голос включён' : 'Голос выключен');
+    } catch {
+      toast('Микрофон недоступен');
+    }
+  },
+
+  finishMock(result = 'win') {
+    state.result = result;
+    setScreen('result');
   }
 };
 
-createGrid('enemy-grid');
-createGrid('my-grid');
+const render = () => {
+  const root = $('screen-root');
+  const subtitle = $('screen-subtitle');
+  if (!root || !subtitle) return;
+
+  root.innerHTML = '';
+
+  if (state.screen === 'menu') {
+    subtitle.textContent = 'Главное меню';
+    renderMenu(root, state, actions);
+    return;
+  }
+
+  if (state.screen === 'opponents') {
+    subtitle.textContent = 'Выбор соперника';
+    renderOpponentSelect(root, state, actions);
+    return;
+  }
+
+  if (state.screen === 'invite') {
+    subtitle.textContent = 'Ожидание ответа';
+    renderInviteWait(root, state, actions);
+    return;
+  }
+
+  if (state.screen === 'battle') {
+    subtitle.textContent = 'Боевая сессия';
+    renderBattle(root, state, actions);
+    return;
+  }
+
+  if (state.screen === 'result') {
+    subtitle.textContent = 'Итог матча';
+    renderResult(root, state, actions);
+  }
+};
+
+const bind = () => {
+  $('back-btn')?.addEventListener('click', () => {
+    if (state.screen === 'menu') {
+      window.location.href = '../';
+      return;
+    }
+    setScreen('menu');
+  });
+
+  document.querySelectorAll('.wh-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      if (action === 'menu') setScreen('menu');
+      if (action === 'opponents') setScreen('opponents');
+      if (action === 'battle') setScreen('battle');
+    });
+  });
+
+  session.onStatus = info => {
+    setStatus(info.label, info.online);
+  };
+
+  session.onChat = msg => {
+    state.chat.push(msg);
+    render();
+  };
+};
+
+bind();
+setStatus('preview', false);
+render();
+session.init().catch(() => setStatus('mock', false));
 
 //=================================================
 // FILE: /styles.css
