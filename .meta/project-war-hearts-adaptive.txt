@@ -49,7 +49,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:25:04 UTC
+Сгенерировано: 2026-05-14 20:25:25 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -446,39 +446,35 @@ try {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#07091a">
   <title>Война Сердец</title>
+  <meta name="description" content="P2P-дуэль Война Сердец в Game Center Витрина Разбита">
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
-  <div id="lobby-screen" class="screen active">
-    <h1>Война Сердец</h1>
-    <div class="lobby-controls">
-      <button id="btn-host" class="game-btn">Создать игру</button>
-      <div id="invite-link-box" hidden>
-        <small>Отправь эту ссылку другу:</small>
-        <input type="text" id="invite-link" readonly>
-        <button id="btn-share" class="game-btn secondary">Поделиться</button>
-      </div>
-      <hr>
-      <input type="text" id="join-id" placeholder="Вставь ссылку/код друга">
-      <button id="btn-join" class="game-btn">Присоединиться</button>
-    </div>
-  </div>
+<body data-screen="menu">
+  <main class="wh-app" id="app">
+    <section class="wh-phone" aria-label="Война Сердец">
+      <header class="wh-topbar">
+        <button class="wh-icon-btn" type="button" id="back-btn" aria-label="Назад">‹</button>
+        <div class="wh-title">
+          <h1>Война Сердец</h1>
+          <p id="screen-subtitle">Дуэль 10×10</p>
+        </div>
+        <div class="wh-status" id="net-status">offline</div>
+      </header>
 
-  <div id="game-screen" class="screen" hidden>
-    <div class="top-bar">
-      <div class="player-info" id="enemy-info">Враг: Ожидание...</div>
-    </div>
-    
-    <div class="grid-container enemy-grid" id="enemy-grid"></div>
-    
-    <div class="middle-bar">
-      <button id="btn-voice" class="voice-btn">🎤 Включить микрофон</button>
-      <div id="game-status">Расставь сердца</div>
-    </div>
-    
-    <div class="grid-container my-grid" id="my-grid"></div>
-  </div>
+      <section class="wh-content" id="screen-root"></section>
+
+      <nav class="wh-bottom">
+        <button class="wh-tab is-active" type="button" data-action="menu">Главная</button>
+        <button class="wh-tab" type="button" data-action="opponents">Соперник</button>
+        <button class="wh-tab" type="button" data-action="battle">Бой</button>
+      </nav>
+
+      <div class="wh-toast" id="toast" hidden></div>
+    </section>
+  </main>
 
   <script type="module" src="./src/app.js"></script>
 </body>
