@@ -202,7 +202,7 @@ const headerBlock = () => {
   const rulesPath = path.join(ROOT, 'ai-rules.txt');
   const rules = fs.existsSync(rulesPath) ? `${fs.readFileSync(rulesPath, 'utf8').trim()}\n\n` : '';
   const repoName = String(argv['repo-name'] || path.basename(ROOT));
-  const repoUrl = String(argv['repo-url'] || readRepoUrl() || 'https://github.com/apel-s-in/vi3na1bita-games');
+  const repoUrl = String(argv['repo-url'] || readRepoUrl() || 'https://github.com/apel-s-in/vi3na1bita_war_hearts');
 
   return `${rules}Название репозитория: ${repoName}
 Адрес репозитория: ${repoUrl}
