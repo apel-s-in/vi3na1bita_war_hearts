@@ -44,6 +44,7 @@ vi3na1bita_war_hearts/
 ├── src/
 │   ├── game/
 │   │   ├── board.js
+│   │   ├── protocol.js
 │   │   └── rules.js
 │   └── app.js
 ├── .nojekyll
@@ -52,7 +53,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:27:52 UTC
+Сгенерировано: 2026-05-14 20:28:15 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1124,6 +1125,30 @@ export const autoPlaceMockShips = board => {
 
   return next;
 };
+
+//=================================================
+// FILE: /src/game/protocol.js
+export const PROTOCOL_VERSION = 'war-hearts-v0.1';
+
+export const MessageType = Object.freeze({
+  HELLO: 'HELLO',
+  READY: 'READY',
+  BOARD_COMMIT: 'BOARD_COMMIT',
+  SHOT: 'SHOT',
+  SHOT_RESULT: 'SHOT_RESULT',
+  CHAT_MESSAGE: 'CHAT_MESSAGE',
+  VOICE_STATE: 'VOICE_STATE',
+  MATCH_FINISHED: 'MATCH_FINISHED',
+  PING: 'PING',
+  PONG: 'PONG'
+});
+
+export const createMessage = (type, payload = {}) => ({
+  v: PROTOCOL_VERSION,
+  type,
+  payload,
+  at: Date.now()
+});
 
 //=================================================
 // FILE: /src/game/rules.js
