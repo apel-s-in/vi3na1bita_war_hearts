@@ -45,7 +45,8 @@ vi3na1bita_war_hearts/
 │   ├── game/
 │   │   ├── board.js
 │   │   ├── protocol.js
-│   │   └── rules.js
+│   │   ├── rules.js
+│   │   └── state.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -53,7 +54,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:28:15 UTC
+Сгенерировано: 2026-05-14 20:28:34 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1163,4 +1164,29 @@ export const GAME_RULES = {
 
 export const isInsideBoard = (x, y) =>
   Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GAME_RULES.boardSize && y < GAME_RULES.boardSize;
+
+//=================================================
+// FILE: /src/game/state.js
+export const createInitialState = overrides => ({
+  screen: 'menu',
+  phase: 'idle',
+  player: {
+    id: 'local',
+    name: 'Слушатель',
+    title: 'Новичок'
+  },
+  opponent: null,
+  invite: null,
+  myBoard: [],
+  enemyBoard: [],
+  chat: [
+    {
+      from: 'Система',
+      text: 'Добро пожаловать на арену Войны Сердец.',
+      at: Date.now()
+    }
+  ],
+  result: '',
+  ...overrides
+});
 
