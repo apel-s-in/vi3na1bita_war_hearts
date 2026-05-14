@@ -16,8 +16,8 @@ const MAX_LINES = Number(argv['max-lines'] || 20000);
 
 if (!fs.existsSync(META_DIR)) fs.mkdirSync(META_DIR, { recursive: true });
 
-const FULL_FILE = path.join(META_DIR, 'project-games-war_hearts_full.txt');
-const ADAPTIVE_FILE = path.join(META_DIR, 'project-games-war_hearts_adaptive.txt');
+const FULL_FILE = path.join(META_DIR, 'project-games-full.txt');
+const ADAPTIVE_FILE = path.join(META_DIR, 'project-games-adaptive.txt');
 
 const toUnix = p => String(p || '').replace(/\\/g, '/');
 const SELF_FULL_REL = toUnix(path.relative(ROOT, FULL_FILE));
@@ -202,7 +202,7 @@ const headerBlock = () => {
   const rulesPath = path.join(ROOT, 'ai-rules.txt');
   const rules = fs.existsSync(rulesPath) ? `${fs.readFileSync(rulesPath, 'utf8').trim()}\n\n` : '';
   const repoName = String(argv['repo-name'] || path.basename(ROOT));
-  const repoUrl = String(argv['repo-url'] || readRepoUrl() || 'https://github.com/apel-s-in/vi3na1bita_war_hearts');
+  const repoUrl = String(argv['repo-url'] || readRepoUrl() || 'https://github.com/apel-s-in/vi3na1bita-games');
 
   return `${rules}Название репозитория: ${repoName}
 Адрес репозитория: ${repoUrl}
