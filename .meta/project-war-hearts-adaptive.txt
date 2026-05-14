@@ -46,7 +46,8 @@ vi3na1bita_war_hearts/
 │   │   ├── board.js
 │   │   ├── protocol.js
 │   │   ├── rules.js
-│   │   └── state.js
+│   │   ├── state.js
+│   │   └── transcript.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -54,7 +55,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:28:34 UTC
+Сгенерировано: 2026-05-14 20:28:51 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1189,4 +1190,27 @@ export const createInitialState = overrides => ({
   result: '',
   ...overrides
 });
+
+//=================================================
+// FILE: /src/game/transcript.js
+export const createTranscript = () => {
+  const events = [];
+
+  return {
+    add(event) {
+      events.push({
+        seq: events.length + 1,
+        ...event
+      });
+    },
+
+    list() {
+      return events.slice();
+    },
+
+    latestSeq() {
+      return events.length;
+    }
+  };
+};
 
