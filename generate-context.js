@@ -12,12 +12,12 @@ const argv = Object.fromEntries(process.argv.slice(2).map(a => {
 const ROOT = path.resolve(argv.root || __dirname);
 const META_DIR = path.resolve(argv['out-dir'] || path.join(ROOT, '.meta'));
 const MODE = String(argv.mode || 'both').toLowerCase();
-const MAX_LINES = Number(argv['max-lines'] || 20000);
+const MAX_LINES = Number(argv['max-lines'] || 22000);
 
 if (!fs.existsSync(META_DIR)) fs.mkdirSync(META_DIR, { recursive: true });
 
-const FULL_FILE = path.join(META_DIR, 'project-games-full.txt');
-const ADAPTIVE_FILE = path.join(META_DIR, 'project-games-adaptive.txt');
+const FULL_FILE = path.join(META_DIR, 'project-war-hearts-full.txt');
+const ADAPTIVE_FILE = path.join(META_DIR, 'project-war-hearts-adaptive.txt');
 
 const toUnix = p => String(p || '').replace(/\\/g, '/');
 const SELF_FULL_REL = toUnix(path.relative(ROOT, FULL_FILE));
@@ -26,6 +26,13 @@ const SELF_ADAPT_REL = toUnix(path.relative(ROOT, ADAPTIVE_FILE));
 const TEXT_EXTS = new Set([
   '.html', '.htm', '.css', '.js', '.mjs', '.cjs', '.ts', '.tsx',
   '.json', '.webmanifest', '.md', '.txt', '.yml', '.yaml', '.svg'
+]);
+
+const BINARY_EXTS = new Set([
+  '.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.ico',
+  '.mp3', '.wav', '.ogg', '.m4a', '.mp4', '.webm',
+  '.woff', '.woff2', '.ttf', '.otf',
+  '.zip', '.7z', '.rar', '.gz', '.pdf'
 ]);
 
 const EXCLUDE_RAW = [
@@ -39,7 +46,6 @@ const EXCLUDE_RAW = [
   '.cache/**',
   '.vscode/**',
   '.idea/**',
-  '.husky/**',
   '.DS_Store',
   '**/*.log',
   '**/*.tmp',
@@ -53,24 +59,9 @@ const EXCLUDE_RAW = [
   'package-lock.json',
   'yarn.lock',
   'pnpm-lock.yaml',
-  'qwen-code-*',
-  '**/qwen-code-*',
-  '.aider*',
-  '**/.aider*',
-  '.continue/**',
-  '.copilot/**',
-  'project-full*.txt',
-  'project-adaptive*.txt',
-  'project-games-full*.txt',
-  'project-games-adaptive*.txt'
+  'project-war-hearts-full*.txt',
+  'project-war-hearts-adaptive*.txt'
 ];
-
-const BINARY_EXTS = new Set([
-  '.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.ico',
-  '.mp3', '.wav', '.ogg', '.m4a', '.mp4', '.webm',
-  '.woff', '.woff2', '.ttf', '.otf',
-  '.zip', '.7z', '.rar', '.gz', '.pdf'
-]);
 
 const PRIORITY = {
   critical: [
@@ -127,7 +118,7 @@ const readText = rel => {
 
 const countLines = s => (String(s || '').match(/\n/g) || []).length + (String(s || '').length ? 1 : 0);
 
-const listAllEntries = (includeFiles = true) => {
+const listAllEntries = includeFiles => {
   const out = [];
   const stack = [ROOT];
 
@@ -202,13 +193,13 @@ const headerBlock = () => {
   const rulesPath = path.join(ROOT, 'ai-rules.txt');
   const rules = fs.existsSync(rulesPath) ? `${fs.readFileSync(rulesPath, 'utf8').trim()}\n\n` : '';
   const repoName = String(argv['repo-name'] || path.basename(ROOT));
-  const repoUrl = String(argv['repo-url'] || readRepoUrl() || 'https://github.com/apel-s-in/vi3na1bita-games');
+  const repoUrl = String(argv['repo-url'] || readRepoUrl() || 'https://github.com/apel-s-in/vi3na1bita_war_hearts');
 
   return `${rules}Название репозитория: ${repoName}
 Адрес репозитория: ${repoUrl}
-Назначение: изолированный Game Center micro-app для основного приложения vi3na1bita-music.
-Публичный путь после деплоя: https://vi3na1bita.website.yandexcloud.net/Games/
-Проект делается и обслуживается средствами https://github.com/ (GitHub Pages + GitHub Actions + Yandex Object Storage).
+Назначение: отдельная сетевая игра "Война Сердец" для Game Center vi3na1bita-games.
+Публичный путь после деплоя: https://vi3na1bita.website.yandexcloud.net/Games/war_hearts/
+Проект делается и обслуживается средствами https://github.com/ + GitHub Actions + Yandex Object Storage.
 
 ${renderTree()}
 
