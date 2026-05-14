@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-14 22:19:18 UTC
+Сгенерировано: 2026-05-14 22:19:46 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1631,8 +1631,8 @@ export const renderResult = (root, state, actions) => {
   el.className = 'wh-card wh-hero';
   el.innerHTML = `
     <div class="wh-hero-mark">${state.result === 'win' ? '🏆' : '💔'}</div>
-    <h2>${state.result === 'win' ? 'Победа!' : 'Матч завершён'}</h2>
-    <p>Позже здесь будет подтверждение результата, hash партии и отправка статистики в Game Center.</p>
+    <h2>${state.result === 'win' ? 'Победа!' : state.result === 'loss' ? 'Поражение' : 'Матч завершён'}</h2>
+    <p>${state.opponent?.type === 'computer' ? 'Тренировка завершена. Позже компьютер станет умнее и появятся уровни сложности.' : 'Позже здесь будет подтверждение результата, hash партии и отправка статистики в Game Center.'}</p>
     <div class="wh-actions">
       <button class="wh-btn" type="button" data-act="menu">В главное меню</button>
     </div>
