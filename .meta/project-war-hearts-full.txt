@@ -43,7 +43,8 @@ vi3na1bita_war_hearts/
 ├── .meta/
 ├── src/
 │   ├── game/
-│   │   └── board.js
+│   │   ├── board.js
+│   │   └── rules.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -51,7 +52,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:27:32 UTC
+Сгенерировано: 2026-05-14 20:27:52 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1123,4 +1124,18 @@ export const autoPlaceMockShips = board => {
 
   return next;
 };
+
+//=================================================
+// FILE: /src/game/rules.js
+export const GAME_RULES = {
+  id: 'war_hearts_classic_10x10',
+  boardSize: 10,
+  ships: [4, 3, 3, 2, 2, 2, 1, 1, 1, 1],
+  turnMode: 'classic',
+  chat: true,
+  voice: true
+};
+
+export const isInsideBoard = (x, y) =>
+  Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GAME_RULES.boardSize && y < GAME_RULES.boardSize;
 
