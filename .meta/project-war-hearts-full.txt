@@ -56,6 +56,9 @@ vi3na1bita_war_hearts/
 │   │   ├── menu.js
 │   │   ├── opponent-select.js
 │   │   └── result.js
+│   ├── ui/
+│   │   ├── board-view.js
+│   │   └── chat-view.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -63,7 +66,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:31:32 UTC
+Сгенерировано: 2026-05-14 20:32:00 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1447,4 +1450,90 @@ export const renderResult = (root, state, actions) => {
   el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.openMenu);
   root.append(el);
 };
+
+//=================================================
+// FILE: /src/ui/board-view.js
+import { LETTERS } from '../game/board.js';
+
+export const renderBoard = (board, { mode = 'own', onCell = null } = {}) => {
+  const el = document.createElement('div');
+  el.className = 'wh-board';
+
+  el.append(label(''));
+
+  LETTERS.forEach(letter => {
+    el.append(label(letter));
+  });
+
+  board.forEach((row, y) => {
+    el.append(label(String(y + 1)));
+
+    row.forEach((cell, x) => {
+      const btn = document.createElement('button');
+      btn.className = [
+        'wh-cell',
+        mode === 'own' && cell.ship ? 'ship' : '',
+        cell.status === 'miss' ? 'miss' : '',
+        cell.status === 'hit' ? 'hit' : ''
+      ].filter(Boolean).join(' ');
+      btn.type = 'button';
+      btn.textContent = cell.status === 'hit' ? '✹' : cell.status === 'miss' ? '•' : '';
+      btn.setAttribute('aria-label', `${LETTERS[x]}${y + 1}`);
+
+      if (mode === 'enemy' && onCell) {
+        btn.addEventListener('click', () => onCell(x, y));
+      }
+
+      el.append(btn);
+    });
+  });
+
+  return el;
+};
+
+const label = text => {
+  const el = document.createElement('div');
+  el.className = 'wh-cell label';
+  el.textContent = text;
+  return el;
+};
+
+//=================================================
+// FILE: /src/ui/chat-view.js
+export const renderChat = (messages, onSend) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'wh-chat';
+
+  const log = document.createElement('div');
+  log.className = 'wh-chat-log';
+  log.innerHTML = messages.slice(-20).map(msg =>
+    `<div><b>${escapeHtml(msg.from)}:</b> ${escapeHtml(msg.text)}</div>`
+  ).join('');
+
+  const form = document.createElement('form');
+  form.className = 'wh-chat-form';
+  form.innerHTML = `
+    <input type="text" maxlength="300" placeholder="Сообщение..." aria-label="Сообщение">
+    <button class="wh-btn" type="submit">▶</button>
+  `;
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const input = form.querySelector('input');
+    const text = input?.value || '';
+    onSend(text);
+    if (input) input.value = '';
+  });
+
+  wrap.append(log, form);
+  return wrap;
+};
+
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;'
+})[ch]);
 
