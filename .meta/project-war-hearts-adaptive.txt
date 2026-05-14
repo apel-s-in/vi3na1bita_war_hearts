@@ -58,7 +58,8 @@ vi3na1bita_war_hearts/
 │   │   └── result.js
 │   ├── ui/
 │   │   ├── board-view.js
-│   │   └── chat-view.js
+│   │   ├── chat-view.js
+│   │   └── voice-button.js
 │   └── app.js
 ├── .nojekyll
 ├── ai-rules.txt
@@ -66,7 +67,7 @@ vi3na1bita_war_hearts/
 ├── index.htm
 └── styles.css
 
-Сгенерировано: 2026-05-14 20:32:00 UTC
+Сгенерировано: 2026-05-14 20:32:28 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1536,4 +1537,38 @@ const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
   '"': '&quot;',
   "'": '&#039;'
 })[ch]);
+
+//=================================================
+// FILE: /src/ui/voice-button.js
+export const renderVoiceButton = onToggle => {
+  const btn = document.createElement('button');
+  btn.className = 'wh-voice';
+  btn.type = 'button';
+  btn.textContent = '🎙';
+  btn.setAttribute('aria-label', 'Удерживать и говорить');
+
+  let active = false;
+
+  const setActive = next => {
+    active = next;
+    btn.classList.toggle('is-active', active);
+    onToggle(active);
+  };
+
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    btn.setPointerCapture?.(e.pointerId);
+    setActive(true);
+  });
+
+  btn.addEventListener('pointerup', e => {
+    e.preventDefault();
+    setActive(false);
+  });
+
+  btn.addEventListener('pointercancel', () => setActive(false));
+  btn.addEventListener('lostpointercapture', () => setActive(false));
+
+  return btn;
+};
 
