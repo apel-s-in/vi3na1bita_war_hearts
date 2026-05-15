@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-15 14:30:03 UTC
+Сгенерировано: 2026-05-15 14:30:37 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1673,7 +1673,7 @@ export const renderOpponentSelect = (root, state, actions) => {
         Друг рядом · принять preview
       </button>
       <button class="wh-btn secondary" type="button" data-act="invite">
-        Создать приглашение на 30 секунд
+        Создать приглашение на 2 минуты
       </button>
     </div>
   `;
