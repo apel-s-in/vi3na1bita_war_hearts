@@ -13,7 +13,7 @@ export const renderOpponentSelect = (root, state, actions) => {
         Друг рядом · принять preview
       </button>
       <button class="wh-btn secondary" type="button" data-act="invite">
-        Создать приглашение на 30 секунд
+        Создать приглашение на 2 минуты
       </button>
     </div>
   `;
