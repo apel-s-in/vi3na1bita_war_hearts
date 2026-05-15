@@ -307,6 +307,33 @@ const bind = () => {
     setStatus(info.label, info.online);
   };
 
+  const ensureNetworkOpponent = name => {
+    if (state.opponent?.type !== 'network') {
+      state.opponent = {
+        id: 'network_peer',
+        name: name || 'Соперник',
+        title: 'Сетевая дуэль',
+        type: 'network'
+      };
+    }
+
+    if (state.phase === 'idle') state.phase = 'player';
+  };
+
+  session.onRoom = info => {
+    if (info?.role === 'guest') {
+      ensureNetworkOpponent('Хост комнаты');
+      toast('Подключаемся к комнате');
+      setScreen('battle');
+    }
+  };
+
+  session.onConnect = () => {
+    ensureNetworkOpponent('Соперник онлайн');
+    toast('Соперник подключён');
+    setScreen('battle');
+  };
+
   session.onChat = msg => {
     state.chat.push(msg);
     render();
