@@ -17,11 +17,13 @@ export const renderInviteWait = (root, state, actions) => {
     <div class="wh-actions">
       ${url ? `<button class="wh-btn" type="button" data-act="share">Поделиться ссылкой</button>` : ''}
       ${url ? `<button class="wh-btn secondary" type="button" data-act="copy">Скопировать</button>` : ''}
+      <button class="wh-btn secondary" type="button" data-act="extend">Продлить на 2 минуты</button>
       <button class="wh-btn secondary" type="button" data-act="accepted">Сымитировать принятие</button>
       <button class="wh-btn secondary" type="button" data-act="menu">Назад</button>
     </div>
   `;
 
+  el.querySelector('[data-act="extend"]')?.addEventListener('click', actions.extendInvite);
   el.querySelector('[data-act="accepted"]')?.addEventListener('click', actions.acceptMockOpponent);
   el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.openMenu);
   el.querySelector('[data-act="copy"]')?.addEventListener('click', () => navigator.clipboard?.writeText?.(url));
