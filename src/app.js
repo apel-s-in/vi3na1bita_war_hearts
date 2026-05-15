@@ -27,6 +27,9 @@ const session = new WarHeartsSession({
 });
 
 let computerTimer = 0;
+let inviteTimer = 0;
+
+const INVITE_TTL_MS = 120000;
 
 const boardShipCells = board => board.flat().filter(cell => cell.ship);
 const isBoardDefeated = board => {
@@ -105,6 +108,15 @@ const setScreen = screen => {
   state.screen = screen;
   document.body.dataset.screen = screen;
 
+  clearInterval(inviteTimer);
+  inviteTimer = 0;
+
+  if (screen === 'invite') {
+    inviteTimer = setInterval(() => {
+      if (state.screen === 'invite') render();
+    }, 1000);
+  }
+
   document.querySelectorAll('.wh-tab').forEach(btn => {
     btn.classList.toggle('is-active', btn.dataset.action === screen || (screen === 'menu' && btn.dataset.action === 'menu'));
   });
@@ -133,18 +145,25 @@ const actions = {
         roomId: invite.roomId || '',
         roomSecret: invite.roomSecret || '',
         url: invite.url || '',
-        expiresAt: invite.expiresAt || Date.now() + 30000
+        expiresAt: Date.now() + INVITE_TTL_MS
       };
       toast(invite.url ? 'Ссылка создана' : 'Preview-приглашение создано');
     } catch {
       state.invite = {
         id: `invite_${Date.now().toString(36)}`,
         url: '',
-        expiresAt: Date.now() + 30000
+        expiresAt: Date.now() + INVITE_TTL_MS
       };
       toast('Сеть недоступна, создан preview');
     }
     setScreen('invite');
+  },
+
+  extendInvite() {
+    if (!state.invite) return;
+    state.invite.expiresAt = Math.max(Date.now(), state.invite.expiresAt || 0) + INVITE_TTL_MS;
+    toast('Приглашение продлено');
+    render();
   },
 
   acceptMockOpponent() {
