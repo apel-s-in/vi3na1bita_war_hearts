@@ -10,6 +10,7 @@ export class WarHeartsSession {
     this.onStatus = () => {};
     this.onChat = () => {};
     this.onRoom = () => {};
+    this.onConnect = () => {};
   }
 
   async init() {
@@ -31,12 +32,16 @@ export class WarHeartsSession {
         this.room = info;
         this.onRoom(info);
       };
-      this.bridge.onConnect = () => {
+      this.bridge.onConnect = info => {
         this.ready = true;
         this.onStatus({ label: 'online', online: true });
+        this.onConnect(info || {});
       };
       this.bridge.onChat = msg => this.handleData(msg);
-      this.bridge.onData = data => this.handleData(data);
+      this.bridge.onData = data => {
+        if (data?.type === MessageType.CHAT_MESSAGE || data?.type === 'CHAT_MESSAGE') return;
+        this.handleData(data);
+      };
       this.bridge.onError = () => this.onStatus({ label: 'net err', online: false });
 
       await this.bridge.init();
