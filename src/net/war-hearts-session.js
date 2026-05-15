@@ -59,7 +59,7 @@ export class WarHeartsSession {
       const invite = {
         id: `mock_${Date.now().toString(36)}`,
         url: window.location.href,
-        expiresAt: Date.now() + 30000,
+        expiresAt: Date.now() + 120000,
         mock: true
       };
       this.room = invite;
@@ -72,7 +72,7 @@ export class WarHeartsSession {
       roomId: room.roomId,
       roomSecret: room.roomSecret,
       url: room.joinUrl,
-      expiresAt: Date.now() + 86400000
+      expiresAt: Date.now() + 120000
     };
 
     this.room = invite;
