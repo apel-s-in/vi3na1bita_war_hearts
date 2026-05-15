@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-15 14:27:05 UTC
+Сгенерировано: 2026-05-15 14:28:39 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1460,7 +1460,7 @@ export class WarHeartsSession {
       const invite = {
         id: `mock_${Date.now().toString(36)}`,
         url: window.location.href,
-        expiresAt: Date.now() + 30000,
+        expiresAt: Date.now() + 120000,
         mock: true
       };
       this.room = invite;
@@ -1473,7 +1473,7 @@ export class WarHeartsSession {
       roomId: room.roomId,
       roomSecret: room.roomSecret,
       url: room.joinUrl,
-      expiresAt: Date.now() + 86400000
+      expiresAt: Date.now() + 120000
     };
 
     this.room = invite;
