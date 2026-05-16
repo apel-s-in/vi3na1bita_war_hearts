@@ -1,4 +1,4 @@
-import { createEmptyBoard, autoPlaceMockShips } from './game/board.js';
+import { createEmptyBoard, createFleet, autoPlaceFleet, syncFleetToBoard } from './game/board.js';
 import { createInitialState } from './game/state.js';
 import { createTranscript } from './game/transcript.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
@@ -11,14 +11,16 @@ import { renderResult } from './screens/result.js';
 
 const $ = id => document.getElementById(id);
 
+const initialFleet = autoPlaceFleet(createFleet());
 const state = createInitialState({
   player: {
     id: `wh_${Math.random().toString(36).slice(2, 10)}`,
     name: 'Слушатель',
     title: 'Новичок Сердец'
   },
-  myBoard: autoPlaceMockShips(createEmptyBoard()),
-  enemyBoard: autoPlaceMockShips(createEmptyBoard())
+  fleet: initialFleet,
+  myBoard: syncFleetToBoard(initialFleet, createEmptyBoard()),
+  enemyBoard: syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard())
 });
 
 const transcript = createTranscript();
@@ -204,8 +206,9 @@ const actions = {
       title: 'Случайный стрелок',
       type: 'computer'
     };
-    state.myBoard = autoPlaceMockShips(createEmptyBoard());
-    state.enemyBoard = autoPlaceMockShips(createEmptyBoard());
+    // Синхронизируем текущий флот (расставленный юзером) с myBoard для игры
+    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
+    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
     state.phase = 'player';
     state.result = '';
     state.chat = [
