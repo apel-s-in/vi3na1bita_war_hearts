@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 15:06:31 UTC
+Сгенерировано: 2026-05-16 15:52:55 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -939,25 +939,23 @@ button{
 .wh-app{
   position:fixed;
   inset:0;
-  display:grid;
-  place-items:center;
-  background:
-    radial-gradient(circle at 50% 0%,rgba(255,49,89,.22),transparent 34%),
-    radial-gradient(circle at 100% 30%,rgba(36,232,255,.16),transparent 30%),
-    #02030a;
+  display:block;
+  background:#02030a;
 }
 
 .wh-phone{
-  position:relative;
-  width:min(100vw,calc(100dvh * 9 / 16));
-  height:min(100dvh,calc(100vw * 16 / 9));
-  aspect-ratio:9/16;
+  position:absolute;
+  inset:0;
+  width:100%;
+  max-width:420px;
+  height:100%;
+  margin:0 auto;
   overflow:hidden;
   background:
     linear-gradient(180deg,rgba(10,13,38,.96),rgba(5,7,20,.98)),
     var(--wh-bg);
-  border:1px solid rgba(132,145,255,.2);
-  box-shadow:0 30px 90px rgba(0,0,0,.55);
+  border:none;
+  box-shadow:none;
 }
 
 .wh-topbar{
