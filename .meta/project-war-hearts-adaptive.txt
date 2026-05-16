@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 20:48:23 UTC
+Сгенерировано: 2026-05-16 20:48:48 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1002,11 +1002,26 @@ button{
   width:42px;
   height:42px;
   border:1px solid rgba(255,255,255,.12);
-  border-radius:14px;
+  border-radius:50%; /* Сделали круглым по макету */
   background:rgba(255,255,255,.06);
-  font-size:34px;
+  font-size:26px; /* Чуть уменьшили крестик для аккуратности */
   line-height:1;
   cursor:pointer;
+  display:grid;
+  place-items:center;
+}
+
+.wh-topbar-icon{
+  font-size:42px;
+  line-height:1;
+  filter:drop-shadow(0 0 12px rgba(255,49,89,.45));
+}
+
+.wh-intro-text{
+  padding:0 8px 16px;
+  color:var(--wh-muted);
+  font-size:14px;
+  line-height:1.4;
 }
 
 .wh-title{
