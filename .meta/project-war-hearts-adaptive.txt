@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 23:09:10 UTC
+Сгенерировано: 2026-05-16 23:27:37 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -650,6 +650,8 @@ const setScreen = screen => {
 };
 
 const actions = {
+  toast,
+
   openMenu() {
     // Если возвращаемся из результатов боя, сбрасываем сессию и очищаем поля
     if (state.phase === 'finished') {
