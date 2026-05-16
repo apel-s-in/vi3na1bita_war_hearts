@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 14:45:16 UTC
+Сгенерировано: 2026-05-16 14:47:54 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -873,7 +873,15 @@ const bind = () => {
 bind();
 setStatus('preview', false);
 render();
-session.init().catch(() => setStatus('mock', false));
+
+session.init()
+  .then(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('room') && (params.get('key') || params.get('secret'))) {
+      setStatus('invite', false);
+    }
+  })
+  .catch(() => setStatus('mock', false));
 
 //=================================================
 // FILE: /styles.css
