@@ -89,7 +89,8 @@ const computerShoot = () => {
 const setStatus = (text, online = false) => {
   const el = $('net-status');
   if (!el) return;
-  el.textContent = text;
+  // Показываем имя вместо технического статуса
+  el.textContent = state.player.name || 'Гость';
   el.classList.toggle('is-online', !!online);
 };
 
@@ -307,8 +308,13 @@ const render = () => {
 const bind = () => {
   $('back-btn')?.addEventListener('click', () => {
     if (state.screen === 'menu') {
-      const parentUrl = new URL('../', window.location.href).toString();
-      window.location.href = parentUrl;
+      if (window.confirm('Точно ли вы хотите выйти? Прогресс может быть потерян.')) {
+        if (window.parent !== window) {
+          window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_CLOSE' }, '*');
+        } else {
+          window.location.href = new URL('../', window.location.href).toString();
+        }
+      }
       return;
     }
     setScreen('menu');
