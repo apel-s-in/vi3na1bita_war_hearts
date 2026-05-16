@@ -1,4 +1,5 @@
 import { renderBoard } from '../ui/board-view.js';
+import { cloneBoard } from '../game/board.js';
 
 export const renderField = (root, state, actions) => {
   const el = document.createElement('section');
@@ -10,8 +11,12 @@ export const renderField = (root, state, actions) => {
   `;
   
   const wrap = el.querySelector('.wh-board-wrap');
-  // Рендерим доску в режиме 'own', чтобы показать розовые сердца
-  wrap.append(renderBoard(state.myBoard, { mode: 'own' }));
+  
+  // Создаем чистую копию поля, чтобы на вкладке не отображались следы выстрелов из текущего боя
+  const cleanBoard = cloneBoard(state.myBoard);
+  cleanBoard.forEach(row => row.forEach(cell => cell.status = ''));
+  
+  wrap.append(renderBoard(cleanBoard, { mode: 'own' }));
 
   root.append(el);
 };
