@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 21:20:02 UTC
+Сгенерировано: 2026-05-16 21:21:08 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1082,7 +1082,7 @@ button{
   z-index:10;
   height:68px;
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(4,1fr);
   padding-bottom:env(safe-area-inset-bottom);
   background:rgba(8,10,31,.96);
   border-top:1px solid var(--wh-line);
@@ -1095,6 +1095,12 @@ button{
   font-size:13px;
   font-weight:900;
   cursor:pointer;
+  transition:opacity .2s ease;
+}
+
+.wh-tab:disabled{
+  opacity:0.35;
+  cursor:not-allowed;
 }
 
 .wh-tab.is-active{
