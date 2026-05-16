@@ -2,15 +2,24 @@ import { renderBoard } from '../ui/board-view.js';
 import { createEmptyBoard, syncFleetToBoard, placeShipRandomly, autoPlaceFleet, canPlaceShip } from '../game/board.js';
 
 let activeShipId = null;
+let memoryFallbackPresets = null;
 
+// Безопасная обертка для iframe sandbox
 const loadPresets = () => {
+  if (memoryFallbackPresets) return memoryFallbackPresets;
   try {
     return JSON.parse(localStorage.getItem('wh_presets') || '[]');
-  } catch { return []; }
+  } catch {
+    memoryFallbackPresets = [];
+    return memoryFallbackPresets;
+  }
 };
 
 const savePresets = (list) => {
-  localStorage.setItem('wh_presets', JSON.stringify(list));
+  memoryFallbackPresets = list;
+  try {
+    localStorage.setItem('wh_presets', JSON.stringify(list));
+  } catch {}
 };
 
 export const renderField = (root, state, actions) => {
@@ -25,9 +34,22 @@ export const renderField = (root, state, actions) => {
     boardWrap.className = 'wh-editor-board-wrap';
     const previewBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
     
-    // Подсвечиваем активный корабль
+    // Подсвечиваем возможные ходы и сам активный корабль
     if (activeShipId !== null) {
       const act = state.fleet.find(s => s.id === activeShipId);
+      
+      // 1. Ищем и подсвечиваем все клетки, куда можно поставить голову корабля
+      for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 10; x++) {
+          // Если корабль влезает сюда хотя бы в одной из ориентаций
+          if (canPlaceShip(state.fleet, act.id, act.size, x, y, act.isVert) ||
+              canPlaceShip(state.fleet, act.id, act.size, x, y, !act.isVert)) {
+             if (!previewBoard[y][x].ship) previewBoard[y][x].status = 'valid-move';
+          }
+        }
+      }
+
+      // 2. Подсвечиваем сам корабль
       if (act && act.placed) {
         for(let i=0; i<act.size; i++) {
           const cy = act.isVert ? act.y + i : act.y;
@@ -159,13 +181,13 @@ export const renderField = (root, state, actions) => {
 
     actionsWrap.querySelector('#btn-save').onclick = () => {
       if (!state.fleet.every(s => s.placed)) {
-        alert('Расставьте все корабли перед сохранением!');
+        actions.toast('Расставьте все корабли перед сохранением!');
         return;
       }
       
       const presets = loadPresets();
       if (presets.length >= 4) {
-        alert('Достигнут лимит (4). Удалите старую расстановку.');
+        actions.toast('Достигнут лимит (4). Удалите старую расстановку.');
         return;
       }
 
