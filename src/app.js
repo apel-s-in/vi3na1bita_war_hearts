@@ -307,17 +307,23 @@ const render = () => {
 
 const bind = () => {
   $('back-btn')?.addEventListener('click', () => {
-    if (state.screen === 'menu') {
-      if (window.confirm('Точно ли вы хотите выйти? Прогресс может быть потерян.')) {
-        if (window.parent !== window) {
-          window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_CLOSE' }, '*');
-        } else {
-          window.location.href = new URL('../', window.location.href).toString();
-        }
-      }
-      return;
+    let msg = '';
+    // Проверяем, идет ли активный бой
+    if (state.phase === 'player' || state.phase === 'computer') {
+      msg = 'Вы находитесь в бою! Если выйдете сейчас, прогресс за текущий бой не будет сохранен. Точно выйти?';
+    } else {
+      // Имитация будущего подсчета осколков
+      const earnedShards = state.result === 'win' ? 100 : (state.result === 'loss' ? 10 : 0);
+      msg = `Вы получили ${earnedShards} осколков за бой, они добавятся на ваш счет. Выйти из игры?`;
     }
-    setScreen('menu');
+
+    if (window.confirm(msg)) {
+      if (window.parent !== window) {
+        window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_CLOSE' }, '*');
+      } else {
+        window.location.href = new URL('../', window.location.href).toString();
+      }
+    }
   });
 
   document.querySelectorAll('.wh-tab').forEach(btn => {
