@@ -362,4 +362,12 @@ const bind = () => {
 bind();
 setStatus('preview', false);
 render();
-session.init().catch(() => setStatus('mock', false));
+
+session.init()
+  .then(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('room') && (params.get('key') || params.get('secret'))) {
+      setStatus('invite', false);
+    }
+  })
+  .catch(() => setStatus('mock', false));
