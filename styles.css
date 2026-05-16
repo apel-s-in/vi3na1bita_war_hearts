@@ -399,3 +399,12 @@ button{
     padding:12px;
   }
 }
+
+/* Custom Modal */
+.wh-modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;animation:whFadeIn .2s ease-out}
+.wh-modal-box{background:var(--wh-panel);border:1px solid var(--wh-line);border-radius:24px;padding:24px 20px;width:100%;max-width:340px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.wh-modal-title{font-size:20px;font-weight:950;color:#fff;margin:0 0 12px}
+.wh-modal-text{font-size:13px;color:var(--wh-muted);margin:0 0 24px;line-height:1.45}
+.wh-modal-actions{display:flex;gap:10px}
+.wh-modal-actions .wh-btn{flex:1;min-height:46px;font-size:14px}
+@keyframes whFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
