@@ -136,6 +136,8 @@ const setScreen = screen => {
 };
 
 const actions = {
+  toast,
+
   openMenu() {
     // Если возвращаемся из результатов боя, сбрасываем сессию и очищаем поля
     if (state.phase === 'finished') {
