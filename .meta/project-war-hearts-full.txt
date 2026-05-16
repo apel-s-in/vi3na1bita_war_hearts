@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 21:21:08 UTC
+Сгенерировано: 2026-05-16 21:24:08 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -518,6 +518,7 @@ import { createTranscript } from './game/transcript.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
 import { renderMenu } from './screens/menu.js';
 import { renderOpponentSelect } from './screens/opponent-select.js';
+import { renderField } from './screens/field.js';
 import { renderInviteWait } from './screens/invite-wait.js';
 import { renderBattle } from './screens/battle.js';
 import { renderResult } from './screens/result.js';
@@ -620,6 +621,13 @@ const toast = text => {
 };
 
 const setScreen = screen => {
+  // Запрещаем переключать табы, если идет активный бой
+  const inBattle = state.phase === 'player' || state.phase === 'computer';
+  if (inBattle && screen !== 'battle') {
+    toast('Бой активен! Нажмите белый флаг, чтобы сдаться.');
+    return;
+  }
+
   state.screen = screen;
   document.body.dataset.screen = screen;
 
@@ -787,6 +795,17 @@ const render = () => {
   const subtitle = $('screen-subtitle');
   if (!root || !subtitle) return;
 
+  const inBattle = state.phase === 'player' || state.phase === 'computer';
+  
+  // Показываем белый флаг только во время боя
+  const surrenderBtn = $('surrender-btn');
+  if (surrenderBtn) surrenderBtn.hidden = !inBattle;
+
+  // Дизейблим все табы, кроме Боя, если игра идет
+  document.querySelectorAll('.wh-tab').forEach(btn => {
+    btn.disabled = inBattle && btn.dataset.action !== 'battle';
+  });
+
   root.innerHTML = '';
 
   if (state.screen === 'menu') {
@@ -804,6 +823,12 @@ const render = () => {
   if (state.screen === 'invite') {
     subtitle.textContent = 'Ожидание ответа';
     renderInviteWait(root, state, actions);
+    return;
+  }
+
+  if (state.screen === 'field') {
+    subtitle.textContent = 'Подготовка поля';
+    renderField(root, state, actions);
     return;
   }
 
@@ -858,11 +883,38 @@ const bind = () => {
     };
   });
 
+  // Логика кнопки Сдаться
+  $('surrender-btn')?.addEventListener('click', () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'wh-modal-overlay';
+    overlay.innerHTML = `
+      <div class="wh-modal-box">
+        <h3 class="wh-modal-title">Сдаться?</h3>
+        <p class="wh-modal-text">Бой будет завершён. Соперник получит победу, а вы останетесь без награды. Точно сдаться?</p>
+        <div class="wh-modal-actions">
+          <button class="wh-btn secondary" type="button" id="wh-surrender-cancel">Отмена</button>
+          <button class="wh-btn" type="button" id="wh-surrender-confirm" style="background:var(--wh-red)">Сдаться</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#wh-surrender-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#wh-surrender-confirm').onclick = () => {
+      overlay.remove();
+      // Выставляем поражение и отправляем на экран результатов
+      state.phase = 'finished';
+      state.result = 'loss';
+      setScreen('result');
+    };
+  });
+
   document.querySelectorAll('.wh-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.action;
       if (action === 'menu') setScreen('menu');
       if (action === 'opponents') setScreen('opponents');
+      if (action === 'field') setScreen('field');
       if (action === 'battle') setScreen('battle');
     });
   });
