@@ -13,13 +13,9 @@ export const renderMenu = (root, state, actions) => {
 };
 
 const hero = () => {
-  const el = document.createElement('section');
-  el.className = 'wh-card wh-hero';
-  el.innerHTML = `
-    <div class="wh-hero-mark">💔</div>
-    <h2>Война Сердец</h2>
-    <p>Классическая дуэль 10×10. Расставь сердца, найди сердца соперника и разбей их первым.</p>
-  `;
+  const el = document.createElement('div');
+  el.className = 'wh-intro-text';
+  el.innerHTML = `Классическая дуэль 10×10. Расставь сердца, найди сердца соперника и разбей их первым.`;
   return el;
 };
 
