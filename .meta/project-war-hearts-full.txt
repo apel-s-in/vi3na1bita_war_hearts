@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 21:19:34 UTC
+Сгенерировано: 2026-05-16 21:20:02 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -489,6 +489,7 @@ try {
           <h1>Война Сердец</h1>
           <p id="screen-subtitle">Главное меню</p>
         </div>
+        <button class="wh-icon-btn" type="button" id="surrender-btn" aria-label="Сдаться" hidden>🏳️</button>
         <button class="wh-icon-btn" type="button" id="back-btn" aria-label="Закрыть">✕</button>
       </header>
 
@@ -497,6 +498,7 @@ try {
       <nav class="wh-bottom">
         <button class="wh-tab is-active" type="button" data-action="menu">Меню</button>
         <button class="wh-tab" type="button" data-action="opponents">Соперник</button>
+        <button class="wh-tab" type="button" data-action="field">Поле</button>
         <button class="wh-tab" type="button" data-action="battle">Бой</button>
       </nav>
 
