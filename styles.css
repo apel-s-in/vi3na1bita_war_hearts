@@ -329,10 +329,20 @@ button{
   background:linear-gradient(135deg,rgba(255,49,89,.85),rgba(255,107,149,.72));
 }
 
+@keyframes whPulsePink {
+  0% { box-shadow: 0 0 4px var(--wh-pink); background: var(--wh-pink); }
+  50% { box-shadow: 0 0 14px var(--wh-pink), inset 0 0 6px rgba(255,255,255,0.4); background: #ff8fb0; }
+  100% { box-shadow: 0 0 4px var(--wh-pink); background: var(--wh-pink); }
+}
+
 .wh-cell.active-ship{
-  background:var(--wh-yellow);
-  box-shadow:0 0 12px var(--wh-yellow);
+  animation: whPulsePink 1.5s infinite;
   z-index:2;
+}
+
+.wh-cell.valid-move{
+  background: rgba(255, 107, 149, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 149, 0.35);
 }
 
 .wh-cell.miss{
@@ -444,8 +454,9 @@ button{
   padding-bottom:20px;
 }
 .wh-editor-board-wrap{
-  margin:0 -14px; /* Убираем отступы карточки, растягиваем */
-  padding:0 4px;
+  display:flex;
+  justify-content:center;
+  width:100%;
 }
 .wh-editor-infobar{
   min-height:50px;
