@@ -4,7 +4,7 @@ import { createEmptyBoard, syncFleetToBoard, placeShipRandomly, autoPlaceFleet, 
 let activeShipId = null;
 let memoryFallbackPresets = null;
 
-// Безопасная обертка для iframe sandbox
+// Безопасная обертка
 const loadPresets = () => {
   if (memoryFallbackPresets) return memoryFallbackPresets;
   try {
@@ -29,27 +29,22 @@ export const renderField = (root, state, actions) => {
   const renderUI = () => {
     el.innerHTML = '';
     
-    // 1. Доска (без карточки)
+    // 1. Доска
     const boardWrap = document.createElement('div');
     boardWrap.className = 'wh-editor-board-wrap';
     const previewBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
     
-    // Подсвечиваем возможные ходы и сам активный корабль
+    // Подсветка ходов и корабля
     if (activeShipId !== null) {
       const act = state.fleet.find(s => s.id === activeShipId);
-      
-      // 1. Ищем и подсвечиваем все клетки, куда можно поставить голову корабля
       for (let y = 0; y < 10; y++) {
         for (let x = 0; x < 10; x++) {
-          // Если корабль влезает сюда хотя бы в одной из ориентаций
           if (canPlaceShip(state.fleet, act.id, act.size, x, y, act.isVert) ||
               canPlaceShip(state.fleet, act.id, act.size, x, y, !act.isVert)) {
              if (!previewBoard[y][x].ship) previewBoard[y][x].status = 'valid-move';
           }
         }
       }
-
-      // 2. Подсвечиваем сам корабль
       if (act && act.placed) {
         for(let i=0; i<act.size; i++) {
           const cy = act.isVert ? act.y + i : act.y;
@@ -59,29 +54,21 @@ export const renderField = (root, state, actions) => {
       }
     }
     
-    const renderedBoard = renderBoard(previewBoard, { mode: 'own' });
-    
-    // Обработка кликов по доске
-    const cells = renderedBoard.querySelectorAll('.wh-cell:not(.label)');
-    cells.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const x = parseInt(btn.dataset.x, 10);
-        const y = parseInt(btn.dataset.y, 10);
-        
-        // Если выбран корабль, пытаемся переместить его сюда
+    // Рендер с коллбэком (без костылей)
+    const renderedBoard = renderBoard(previewBoard, { 
+      mode: 'own',
+      onCell: (x, y) => {
         if (activeShipId !== null) {
           const act = state.fleet.find(s => s.id === activeShipId);
           if (canPlaceShip(state.fleet, act.id, act.size, x, y, act.isVert)) {
             act.x = x; act.y = y; act.placed = true;
           } else if (canPlaceShip(state.fleet, act.id, act.size, x, y, !act.isVert)) {
-             // Авто-поворот если так влезает
             act.x = x; act.y = y; act.isVert = !act.isVert; act.placed = true;
           }
           renderUI();
           return;
         }
 
-        // Если ничего не выбрано, ищем корабль под кликом
         const clickedShip = state.fleet.find(s => 
           s.placed && 
           x >= s.x && x <= (s.isVert ? s.x : s.x + s.size - 1) &&
@@ -91,12 +78,12 @@ export const renderField = (root, state, actions) => {
           activeShipId = clickedShip.id;
           renderUI();
         }
-      });
+      }
     });
 
     boardWrap.append(renderedBoard);
 
-    // 2. Инфо / Экшен бар
+    // 2. Инфо бар
     const infoBar = document.createElement('div');
     infoBar.className = 'wh-editor-infobar';
     
@@ -111,12 +98,8 @@ export const renderField = (root, state, actions) => {
       infoBar.querySelector('#btn-rotate').onclick = () => {
         const act = state.fleet.find(s => s.id === activeShipId);
         if (act && act.placed) {
-          if (canPlaceShip(state.fleet, act.id, act.size, act.x, act.y, !act.isVert)) {
-            act.isVert = !act.isVert;
-          } else {
-            // Если на месте не крутится, пытаемся найти случайное
-            placeShipRandomly(state.fleet, act.id);
-          }
+          if (canPlaceShip(state.fleet, act.id, act.size, act.x, act.y, !act.isVert)) act.isVert = !act.isVert;
+          else placeShipRandomly(state.fleet, act.id);
           renderUI();
         }
       };
@@ -133,26 +116,20 @@ export const renderField = (root, state, actions) => {
       infoBar.innerHTML = `<h3 class="wh-editor-title">${allPlaced ? 'Флот к бою готов!' : 'Выбери корабль и размести его на поле'}</h3>`;
     }
 
-    // 3. Флот под полем
+    // 3. Флот (Док)
     const fleetWrap = document.createElement('div');
     fleetWrap.className = 'wh-fleet-dock';
     
     state.fleet.forEach(ship => {
       const shipEl = document.createElement('div');
       shipEl.className = `wh-dock-ship ${ship.placed ? 'is-placed' : ''} ${activeShipId === ship.id ? 'is-active' : ''}`;
-      
-      for(let i=0; i<ship.size; i++) {
-        shipEl.innerHTML += `<div class="wh-dock-cell"></div>`;
-      }
+      for(let i=0; i<ship.size; i++) shipEl.innerHTML += `<div class="wh-dock-cell"></div>`;
 
       shipEl.onclick = () => {
-        if (!ship.placed) {
-          placeShipRandomly(state.fleet, ship.id);
-        }
+        if (!ship.placed) placeShipRandomly(state.fleet, ship.id);
         activeShipId = ship.id;
         renderUI();
       };
-      
       fleetWrap.append(shipEl);
     });
 
@@ -167,29 +144,13 @@ export const renderField = (root, state, actions) => {
       </div>
     `;
 
-    actionsWrap.querySelector('#btn-auto').onclick = () => {
-      activeShipId = null;
-      autoPlaceFleet(state.fleet);
-      renderUI();
-    };
-
-    actionsWrap.querySelector('#btn-clear').onclick = () => {
-      activeShipId = null;
-      state.fleet.forEach(s => s.placed = false);
-      renderUI();
-    };
+    actionsWrap.querySelector('#btn-auto').onclick = () => { activeShipId = null; autoPlaceFleet(state.fleet); renderUI(); };
+    actionsWrap.querySelector('#btn-clear').onclick = () => { activeShipId = null; state.fleet.forEach(s => s.placed = false); renderUI(); };
 
     actionsWrap.querySelector('#btn-save').onclick = () => {
-      if (!state.fleet.every(s => s.placed)) {
-        actions.toast('Расставьте все корабли перед сохранением!');
-        return;
-      }
-      
+      if (!state.fleet.every(s => s.placed)) return actions.toast('Расставьте все корабли!');
       const presets = loadPresets();
-      if (presets.length >= 4) {
-        actions.toast('Достигнут лимит (4). Удалите старую расстановку.');
-        return;
-      }
+      if (presets.length >= 4) return actions.toast('Достигнут лимит (4). Удалите старую расстановку.');
 
       const overlay = document.createElement('div');
       overlay.className = 'wh-modal-overlay';
@@ -211,6 +172,7 @@ export const renderField = (root, state, actions) => {
         presets.push({ id: Date.now().toString(), name, fleet: JSON.parse(JSON.stringify(state.fleet)) });
         savePresets(presets);
         overlay.remove();
+        actions.toast('Успешно сохранено');
         renderUI();
       };
     };
@@ -226,7 +188,6 @@ export const renderField = (root, state, actions) => {
       
       const miniBoard = document.createElement('div');
       miniBoard.className = 'wh-mini-board';
-      // Отрисовка мини-точек
       for(let y=0; y<10; y++){
         for(let x=0; x<10; x++){
           const isShip = p.fleet.some(s => s.placed && x >= s.x && x <= (s.isVert ? s.x : s.x + s.size - 1) && y >= s.y && y <= (s.isVert ? s.y + s.size - 1 : s.y));
@@ -241,15 +202,16 @@ export const renderField = (root, state, actions) => {
       miniBoard.onclick = () => {
         activeShipId = null;
         state.fleet = JSON.parse(JSON.stringify(p.fleet));
+        actions.toast('Тактика применена');
         renderUI();
       };
 
       card.querySelector('.wh-preset-del').onclick = (e) => {
         e.stopPropagation();
-        if(confirm('Удалить расстановку?')) {
-          savePresets(loadPresets().filter(item => item.id !== p.id));
-          renderUI();
-        }
+        // Без confirm(), сразу удаляем
+        savePresets(loadPresets().filter(item => item.id !== p.id));
+        actions.toast('Расстановка удалена');
+        renderUI();
       };
 
       presetsWrap.append(card);
@@ -260,26 +222,4 @@ export const renderField = (root, state, actions) => {
 
   renderUI();
   root.append(el);
-
-  // Грязный хак для board-view.js (чтобы мы могли ловить координаты ячеек)
-  // Мы вешаем координаты на DOM элементы при рендере
-  setTimeout(() => {
-    const attachCoords = () => {
-      const rows = el.querySelectorAll('.wh-board');
-      rows.forEach(board => {
-        let y = 0, x = -1;
-        board.querySelectorAll('.wh-cell').forEach(cell => {
-          if (cell.classList.contains('label')) {
-            if (cell.textContent.match(/^[0-9]+$/)) { y = parseInt(cell.textContent)-1; x = -1; }
-          } else {
-            x++;
-            cell.dataset.x = x;
-            cell.dataset.y = y;
-          }
-        });
-      });
-    };
-    attachCoords();
-    el.addEventListener('click', attachCoords); // обновляем при ререндерах
-  }, 10);
 };
