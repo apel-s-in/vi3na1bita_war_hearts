@@ -317,13 +317,31 @@ const bind = () => {
       msg = `Вы получили ${earnedShards} осколков за бой, они добавятся на ваш счет. Выйти из игры?`;
     }
 
-    if (window.confirm(msg)) {
+    // Создаем кастомную красивую модалку вместо системного window.confirm
+    const overlay = document.createElement('div');
+    overlay.className = 'wh-modal-overlay';
+    overlay.innerHTML = `
+      <div class="wh-modal-box">
+        <h3 class="wh-modal-title">Выход из игры</h3>
+        <p class="wh-modal-text">${msg}</p>
+        <div class="wh-modal-actions">
+          <button class="wh-btn secondary" type="button" id="wh-modal-cancel">Отмена</button>
+          <button class="wh-btn" type="button" id="wh-modal-confirm">Выйти</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#wh-modal-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#wh-modal-confirm').onclick = () => {
+      overlay.remove();
       if (window.parent !== window) {
         window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_CLOSE' }, '*');
       } else {
         window.location.href = new URL('../', window.location.href).toString();
       }
-    }
+    };
   });
 
   document.querySelectorAll('.wh-tab').forEach(btn => {
