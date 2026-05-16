@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 23:04:57 UTC
+Сгенерировано: 2026-05-16 23:05:33 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1583,6 +1583,7 @@ export const createInitialState = overrides => ({
   },
   opponent: null,
   invite: null,
+  fleet: [],
   myBoard: [],
   enemyBoard: [],
   chat: [
