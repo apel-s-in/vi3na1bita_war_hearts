@@ -135,6 +135,15 @@ const setScreen = screen => {
 
 const actions = {
   openMenu() {
+    // Если возвращаемся из результатов боя, сбрасываем сессию и очищаем поля
+    if (state.phase === 'finished') {
+      state.phase = 'idle';
+      state.myBoard.forEach(row => row.forEach(c => c.status = ''));
+      state.enemyBoard.forEach(row => row.forEach(c => {
+        c.status = '';
+        c.ship = false;
+      }));
+    }
     setScreen('menu');
   },
 
@@ -283,13 +292,17 @@ const render = () => {
 
   const inBattle = state.phase === 'player' || state.phase === 'computer';
   
-  // Показываем белый флаг только во время боя
+  // Показываем белый флаг только во время активного боя
   const surrenderBtn = $('surrender-btn');
   if (surrenderBtn) surrenderBtn.hidden = !inBattle;
 
-  // Дизейблим все табы, кроме Боя, если игра идет
+  // Во время боя активна только вкладка "Бой". Вне боя вкладка "Бой" заблокирована.
   document.querySelectorAll('.wh-tab').forEach(btn => {
-    btn.disabled = inBattle && btn.dataset.action !== 'battle';
+    if (inBattle) {
+      btn.disabled = btn.dataset.action !== 'battle';
+    } else {
+      btn.disabled = btn.dataset.action === 'battle';
+    }
   });
 
   root.innerHTML = '';
