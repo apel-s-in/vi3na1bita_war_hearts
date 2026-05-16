@@ -307,7 +307,8 @@ const render = () => {
 const bind = () => {
   $('back-btn')?.addEventListener('click', () => {
     if (state.screen === 'menu') {
-      window.location.href = '../';
+      const parentUrl = new URL('../', window.location.href).toString();
+      window.location.href = parentUrl;
       return;
     }
     setScreen('menu');
