@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 23:08:24 UTC
+Сгенерировано: 2026-05-16 23:09:10 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1318,6 +1318,12 @@ button{
   background:linear-gradient(135deg,rgba(255,49,89,.85),rgba(255,107,149,.72));
 }
 
+.wh-cell.active-ship{
+  background:var(--wh-yellow);
+  box-shadow:0 0 12px var(--wh-yellow);
+  z-index:2;
+}
+
 .wh-cell.miss{
   background:rgba(36,232,255,.18);
 }
@@ -1419,6 +1425,112 @@ button{
 .wh-modal-actions{display:flex;gap:10px}
 .wh-modal-actions .wh-btn{flex:1;min-height:46px;font-size:14px}
 @keyframes whFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+
+/* Field Editor Styles */
+.wh-field-editor{
+  display:flex;
+  flex-direction:column;
+  padding-bottom:20px;
+}
+.wh-editor-board-wrap{
+  margin:0 -14px; /* Убираем отступы карточки, растягиваем */
+  padding:0 4px;
+}
+.wh-editor-infobar{
+  min-height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:12px 0;
+}
+.wh-editor-title{
+  font-family:serif; /* Имитация стилистики текста со скриншота */
+  font-size:18px;
+  text-align:center;
+  margin:0;
+  color:#fff;
+  font-weight:normal;
+}
+.wh-active-tools{
+  display:flex;
+  gap:8px;
+  background:var(--wh-panel);
+  padding:6px;
+  border-radius:14px;
+  border:1px solid var(--wh-line);
+}
+.wh-active-tools .mini{
+  min-height:36px;
+  font-size:12px;
+  padding:0 12px;
+  border-radius:10px;
+}
+.wh-fleet-dock{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px 16px;
+  margin-bottom:24px;
+}
+.wh-dock-ship{
+  display:flex;
+  gap:2px;
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+.wh-dock-ship:active{ transform:scale(0.9) }
+.wh-dock-ship.is-placed .wh-dock-cell{ background:rgba(255,255,255,0.15) }
+.wh-dock-ship.is-active .wh-dock-cell{ background:var(--wh-yellow); box-shadow:0 0 8px var(--wh-yellow) }
+.wh-dock-cell{
+  width:22px;
+  height:22px;
+  border-radius:4px;
+  background:linear-gradient(135deg,rgba(255,49,89,.85),rgba(255,107,149,.72));
+}
+.wh-editor-actions{ margin-bottom:24px }
+.wh-editor-actions button{ width:100% }
+
+.wh-presets-wrap{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:8px;
+}
+.wh-preset-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.wh-preset-name{
+  font-size:11px;
+  color:#fff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  width:100%;
+  text-align:center;
+}
+.wh-mini-board{
+  width:100%;
+  aspect-ratio:1;
+  display:grid;
+  grid-template-columns:repeat(10, 1fr);
+  gap:1px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(132,145,255,.22);
+  border-radius:6px;
+  padding:2px;
+  cursor:pointer;
+}
+.wh-mini-board:active{ opacity:0.7 }
+.wh-mini-cell{ background:rgba(255,255,255,0.05); border-radius:1px }
+.wh-mini-cell.ship{ background:var(--wh-pink) }
+.wh-preset-del{
+  font-size:11px;
+  color:var(--wh-muted);
+  cursor:pointer;
+}
+.wh-preset-del:hover{ color:var(--wh-red) }
 
 //=================================================
 // FILE: /src/game/board.js
