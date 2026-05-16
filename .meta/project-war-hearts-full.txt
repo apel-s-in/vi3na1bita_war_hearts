@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-16 21:38:05 UTC
+Сгенерировано: 2026-05-16 21:45:48 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -999,6 +999,7 @@ session.init()
 }
 
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 
 html,
 body{
