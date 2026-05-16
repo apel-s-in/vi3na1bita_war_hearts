@@ -292,9 +292,9 @@ const render = () => {
 
   const inBattle = state.phase === 'player' || state.phase === 'computer';
   
-  // Показываем белый флаг только во время активного боя
+  // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активного сражения
   const surrenderBtn = $('surrender-btn');
-  if (surrenderBtn) surrenderBtn.hidden = !inBattle;
+  if (surrenderBtn) surrenderBtn.hidden = !(inBattle && state.screen === 'battle');
 
   // Во время боя активна только вкладка "Бой". Вне боя вкладка "Бой" заблокирована.
   document.querySelectorAll('.wh-tab').forEach(btn => {
