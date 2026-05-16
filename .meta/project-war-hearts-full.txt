@@ -68,7 +68,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-15 14:30:37 UTC
+Сгенерировано: 2026-05-16 14:45:16 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -494,7 +494,7 @@ try {
       <section class="wh-content" id="screen-root"></section>
 
       <nav class="wh-bottom">
-        <button class="wh-tab is-active" type="button" data-action="menu">Главная</button>
+        <button class="wh-tab is-active" type="button" data-action="menu">Меню</button>
         <button class="wh-tab" type="button" data-action="opponents">Соперник</button>
         <button class="wh-tab" type="button" data-action="battle">Бой</button>
       </nav>
