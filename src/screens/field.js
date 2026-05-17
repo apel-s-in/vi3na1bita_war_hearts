@@ -200,19 +200,25 @@ export const renderField = (root, state, actions) => {
         }
       }
 
-      card.innerHTML = `<div class="wh-preset-name">${p.name}</div>`;
-      card.append(miniBoard);
-      card.innerHTML += `<div class="wh-preset-del" data-id="${p.id}">Удалить</div>`;
+      const title = document.createElement('div');
+      title.className = 'wh-preset-name';
+      title.textContent = p.name; // Безопасный вывод имени (защита от XSS)
+
+      const delBtn = document.createElement('div');
+      delBtn.className = 'wh-preset-del';
+      delBtn.textContent = 'Удалить';
+
+      card.append(title, miniBoard, delBtn);
       
       miniBoard.onclick = () => {
         activeShipId = null;
-        // Безопасная полная замена массива флота
-        state.fleet = JSON.parse(JSON.stringify(p.fleet));
+        // Копируем свойства IN PLACE, чтобы не рвать ссылку на массив state.fleet
+        state.fleet.forEach((ship, i) => Object.assign(ship, p.fleet[i]));
         actions.toast('Тактика применена');
         renderUI();
       };
 
-      card.querySelector('.wh-preset-del').onclick = (e) => {
+      delBtn.onclick = (e) => {
         e.stopPropagation();
         savePresets(loadPresets(state).filter(item => item.id !== p.id), state);
         actions.toast('Расстановка удалена');
