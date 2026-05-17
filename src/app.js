@@ -13,6 +13,7 @@ const $ = id => document.getElementById(id);
 
 const initialFleet = autoPlaceFleet(createFleet());
 const state = createInitialState({
+  snapshot: null,
   player: {
     id: `wh_${Math.random().toString(36).slice(2, 10)}`,
     name: 'Слушатель',
@@ -22,6 +23,20 @@ const state = createInitialState({
   myBoard: syncFleetToBoard(initialFleet, createEmptyBoard()),
   enemyBoard: syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard())
 });
+
+window.addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.kind === 'vitrina:game-host' && d.type === 'GC_SNAPSHOT') {
+    state.snapshot = d.payload;
+    if (d.payload?.user?.displayName) state.player.name = d.payload.user.displayName;
+    if (d.payload?.user?.gcAccountId) state.player.id = d.payload.user.gcAccountId;
+    render();
+  }
+});
+
+if (window.parent !== window) {
+  window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_READY' }, '*');
+}
 
 const transcript = createTranscript();
 const session = new WarHeartsSession({
