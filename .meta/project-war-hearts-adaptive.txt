@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-17 20:17:55 UTC
+Сгенерировано: 2026-05-17 20:18:25 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1111,6 +1111,19 @@ button{
   cursor:pointer;
   display:grid;
   place-items:center;
+}
+
+.wh-collapse-btn{
+  background:var(--wh-red);
+  border-color:var(--wh-red);
+  color:#fff;
+  transition:transform 0.2s;
+}
+.wh-collapse-btn:active{ transform:scale(0.9) }
+.wh-collapse-btn svg{
+  width:22px;
+  height:22px;
+  fill:currentColor;
 }
 
 .wh-topbar-icon{
