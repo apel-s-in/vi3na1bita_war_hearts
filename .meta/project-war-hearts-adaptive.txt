@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-17 11:23:22 UTC
+Сгенерировано: 2026-05-17 11:30:48 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1942,22 +1942,17 @@ import { createEmptyBoard, syncFleetToBoard, placeShipRandomly, autoPlaceFleet, 
 let activeShipId = null;
 let memoryFallbackPresets = null;
 
-// Безопасная обертка
-const loadPresets = () => {
+const loadPresets = (state) => {
+  if (state.snapshot?.gameData?.war_hearts_presets) return state.snapshot.gameData.war_hearts_presets;
   if (memoryFallbackPresets) return memoryFallbackPresets;
-  try {
-    return JSON.parse(localStorage.getItem('wh_presets') || '[]');
-  } catch {
-    memoryFallbackPresets = [];
-    return memoryFallbackPresets;
-  }
+  try { return JSON.parse(localStorage.getItem('wh_presets') || '[]'); } catch { return (memoryFallbackPresets = []); }
 };
 
-const savePresets = (list) => {
+const savePresets = (list, state) => {
   memoryFallbackPresets = list;
-  try {
-    localStorage.setItem('wh_presets', JSON.stringify(list));
-  } catch {}
+  if (state.snapshot) state.snapshot.gameData = { ...state.snapshot.gameData, war_hearts_presets: list };
+  try { localStorage.setItem('wh_presets', JSON.stringify(list)); } catch {}
+  if (window.parent !== window) window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_SAVE_DATA', payload: { gameId: 'war_hearts', key: 'presets', data: list } }, '*');
 };
 
 export const renderField = (root, state, actions) => {
@@ -2086,9 +2081,16 @@ export const renderField = (root, state, actions) => {
     actionsWrap.querySelector('#btn-clear').onclick = () => { activeShipId = null; state.fleet.forEach(s => s.placed = false); renderUI(); };
 
     actionsWrap.querySelector('#btn-save').onclick = () => {
-      if (!state.fleet.every(s => s.placed)) return actions.toast('Расставьте все корабли!');
-      const presets = loadPresets();
-      if (presets.length >= 4) return actions.toast('Достигнут лимит (4). Удалите старую расстановку.');
+      if (!state.fleet.every(s => s.placed)) {
+        actions.toast('Расставьте все корабли перед сохранением!');
+        return;
+      }
+      
+      const presets = loadPresets(state);
+      if (presets.length >= 4) {
+        actions.toast('Достигнут лимит (4). Удалите старую расстановку.');
+        return;
+      }
 
       const overlay = document.createElement('div');
       overlay.className = 'wh-modal-overlay';
@@ -2108,7 +2110,7 @@ export const renderField = (root, state, actions) => {
       overlay.querySelector('#pm-save').onclick = () => {
         const name = overlay.querySelector('#preset-name').value.trim() || `Тактика ${presets.length + 1}`;
         presets.push({ id: Date.now().toString(), name, fleet: JSON.parse(JSON.stringify(state.fleet)) });
-        savePresets(presets);
+        savePresets(presets, state);
         overlay.remove();
         actions.toast('Успешно сохранено');
         renderUI();
@@ -2118,7 +2120,7 @@ export const renderField = (root, state, actions) => {
     // 5. Пресеты
     const presetsWrap = document.createElement('div');
     presetsWrap.className = 'wh-presets-wrap';
-    const presets = loadPresets();
+    const presets = loadPresets(state);
     
     presets.forEach(p => {
       const card = document.createElement('div');
@@ -2139,15 +2141,15 @@ export const renderField = (root, state, actions) => {
       
       miniBoard.onclick = () => {
         activeShipId = null;
-        state.fleet = JSON.parse(JSON.stringify(p.fleet));
+        // Копируем свойства IN PLACE, чтобы не рвать ссылку на массив state.fleet!
+        state.fleet.forEach((ship, i) => Object.assign(ship, p.fleet[i]));
         actions.toast('Тактика применена');
         renderUI();
       };
 
       card.querySelector('.wh-preset-del').onclick = (e) => {
         e.stopPropagation();
-        // Без confirm(), сразу удаляем
-        savePresets(loadPresets().filter(item => item.id !== p.id));
+        savePresets(loadPresets(state).filter(item => item.id !== p.id), state);
         actions.toast('Расстановка удалена');
         renderUI();
       };
