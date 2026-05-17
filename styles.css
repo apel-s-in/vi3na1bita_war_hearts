@@ -94,6 +94,19 @@ button{
   place-items:center;
 }
 
+.wh-collapse-btn{
+  background:var(--wh-red);
+  border-color:var(--wh-red);
+  color:#fff;
+  transition:transform 0.2s;
+}
+.wh-collapse-btn:active{ transform:scale(0.9) }
+.wh-collapse-btn svg{
+  width:22px;
+  height:22px;
+  fill:currentColor;
+}
+
 .wh-topbar-icon{
   font-size:42px;
   line-height:1;
