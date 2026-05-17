@@ -24,7 +24,10 @@ export const renderField = (root, state, actions) => {
   const renderUI = () => {
     el.innerHTML = '';
     
-    // 1. Доска
+    // 0. Строго синхронизируем боевое поле (myBoard), чтобы вкладка Бой всегда видела актуальную расстановку
+    syncFleetToBoard(state.fleet, state.myBoard);
+
+    // 1. Доска превью (визуальная копия для редактора)
     const boardWrap = document.createElement('div');
     boardWrap.className = 'wh-editor-board-wrap';
     const previewBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
@@ -203,8 +206,8 @@ export const renderField = (root, state, actions) => {
       
       miniBoard.onclick = () => {
         activeShipId = null;
-        // Копируем свойства IN PLACE, чтобы не рвать ссылку на массив state.fleet!
-        state.fleet.forEach((ship, i) => Object.assign(ship, p.fleet[i]));
+        // Безопасная полная замена массива флота
+        state.fleet = JSON.parse(JSON.stringify(p.fleet));
         actions.toast('Тактика применена');
         renderUI();
       };
