@@ -26,8 +26,22 @@ export const renderField = (root, state, actions) => {
     
     // 0. Строго синхронизируем боевое поле (myBoard), чтобы вкладка Бой всегда видела актуальную расстановку
     syncFleetToBoard(state.fleet, state.myBoard);
+    const allPlaced = state.fleet.every(s => s.placed);
 
-    // 1. Доска превью (визуальная копия для редактора)
+    // 1. Верхняя навигация со стрелками
+    const topNav = document.createElement('div');
+    topNav.className = 'wh-field-topnav';
+    topNav.innerHTML = `
+      <button class="wh-btn secondary mini" type="button" id="fn-menu">❮ Меню</button>
+      <button class="wh-btn mini" type="button" id="fn-next" style="background:${allPlaced ? 'var(--wh-green)' : 'rgba(255,255,255,0.08)'}; color:${allPlaced ? '#000' : 'var(--wh-muted)'}">Выбор соперника ❯</button>
+    `;
+    topNav.querySelector('#fn-menu').onclick = () => actions.openMenu();
+    topNav.querySelector('#fn-next').onclick = () => {
+      if (!allPlaced) actions.toast('Сначала расставьте все корабли на поле!');
+      else actions.openOpponents();
+    };
+
+    // 2. Доска превью (визуальная копия для редактора)
     const boardWrap = document.createElement('div');
     boardWrap.className = 'wh-editor-board-wrap';
     const previewBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
@@ -228,7 +242,7 @@ export const renderField = (root, state, actions) => {
       presetsWrap.append(card);
     });
 
-    el.append(boardWrap, infoBar, fleetWrap, actionsWrap, presetsWrap);
+    el.append(topNav, boardWrap, infoBar, fleetWrap, actionsWrap, presetsWrap);
   };
 
   renderUI();
