@@ -131,6 +131,14 @@ const setScreen = screen => {
     return;
   }
 
+  // Запрещаем переходить к выбору соперника, если поле не готово
+  const isFleetReady = state.fleet.every(s => s.placed);
+  if (screen === 'opponents' && !isFleetReady) {
+    toast('Сначала подготовьте поле к бою (расставьте все корабли)!');
+    if (state.screen !== 'field') setScreen('field');
+    return;
+  }
+
   state.screen = screen;
   document.body.dataset.screen = screen;
 
@@ -152,6 +160,10 @@ const setScreen = screen => {
 
 const actions = {
   toast,
+
+  openField() {
+    setScreen('field');
+  },
 
   openMenu() {
     // Если возвращаемся из результатов боя, сбрасываем сессию и очищаем поля
