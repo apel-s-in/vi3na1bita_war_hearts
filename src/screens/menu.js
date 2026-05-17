@@ -1,6 +1,15 @@
 import { renderProfileCard } from '../ui/profile-card.js';
 
 export const renderMenu = (root, state, actions) => {
+  const prepWrap = document.createElement('div');
+  prepWrap.style.margin = '0 0 12px';
+  prepWrap.innerHTML = `
+    <button class="wh-btn" type="button" style="width:100%; font-size:15px; padding:18px 12px; background:linear-gradient(135deg, var(--wh-red), var(--wh-pink)); box-shadow:0 12px 28px rgba(255,49,89,0.25); text-transform:uppercase; letter-spacing:0.5px;">
+      Начать подготовку к бою
+    </button>
+  `;
+  prepWrap.querySelector('button').onclick = () => actions.openField();
+
   root.append(
     hero(),
     renderProfileCard(state.player, {
@@ -8,6 +17,7 @@ export const renderMenu = (root, state, actions) => {
       losses: 0,
       rank: 'Без рейтинга'
     }),
+    prepWrap,
     controls(actions)
   );
 };
