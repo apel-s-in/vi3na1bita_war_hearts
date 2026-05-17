@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-17 20:18:25 UTC
+Сгенерировано: 2026-05-17 20:19:15 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -839,6 +839,20 @@ const render = () => {
 
   const inBattle = state.phase === 'player' || state.phase === 'computer';
   
+  // Кнопка сворачивания игры, если загружен трек (играет или на паузе)
+  const colBtn = $('collapse-btn');
+  if (colBtn) {
+    const player = state.snapshot?.player;
+    if (player && player.uid) {
+      colBtn.hidden = false;
+      const playIcon = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+      const pauseIcon = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+      colBtn.innerHTML = player.playing ? playIcon : pauseIcon;
+    } else {
+      colBtn.hidden = true;
+    }
+  }
+
   // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активного сражения
   const surrenderBtn = $('surrender-btn');
   if (surrenderBtn) surrenderBtn.hidden = !(inBattle && state.screen === 'battle');
@@ -891,6 +905,12 @@ const render = () => {
 };
 
 const bind = () => {
+  $('collapse-btn')?.addEventListener('click', () => {
+    if (window.parent !== window) {
+      window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_COLLAPSE_GAME' }, '*');
+    }
+  });
+
   $('back-btn')?.addEventListener('click', () => {
     let msg = '';
     // Проверяем, идет ли активный бой
