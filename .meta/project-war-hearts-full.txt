@@ -69,7 +69,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 17:19:00 UTC
+Сгенерировано: 2026-05-28 18:27:11 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1182,8 +1182,8 @@ button{
 }
 
 .wh-collapse-btn.is-player-stopped{
-  background:rgba(255,255,255,.08);
-  border-color:rgba(255,255,255,.28);
+  background:linear-gradient(135deg,var(--wh-red),var(--wh-pink));
+  border-color:var(--wh-red);
   color:#fff;
 }
 
