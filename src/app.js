@@ -1,4 +1,13 @@
-import { createEmptyBoard, createFleet, autoPlaceFleet, syncFleetToBoard } from './game/board.js';
+import {
+  createEmptyBoard,
+  createFleet,
+  autoPlaceFleet,
+  syncFleetToBoard,
+  formatCellName,
+  getShipCellsAt,
+  isShipSunk,
+  markSunkPerimeter
+} from './game/board.js';
 import { createInitialState } from './game/state.js';
 import { createTranscript } from './game/transcript.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
