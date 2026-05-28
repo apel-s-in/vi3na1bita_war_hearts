@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 18:30:40 UTC
+Сгенерировано: 2026-05-28 18:31:11 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -539,7 +539,16 @@ try {
 
 //=================================================
 // FILE: /src/app.js
-import { createEmptyBoard, createFleet, autoPlaceFleet, syncFleetToBoard } from './game/board.js';
+import {
+  createEmptyBoard,
+  createFleet,
+  autoPlaceFleet,
+  syncFleetToBoard,
+  formatCellName,
+  getShipCellsAt,
+  isShipSunk,
+  markSunkPerimeter
+} from './game/board.js';
 import { createInitialState } from './game/state.js';
 import { createTranscript } from './game/transcript.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
