@@ -61,7 +61,8 @@ window.addEventListener('message', e => {
     state.snapshot = d.payload || state.snapshot;
     if (d.payload?.user?.displayName) state.player.name = d.payload.user.displayName;
     if (d.payload?.user?.gcAccountId) state.player.id = d.payload.user.gcAccountId;
-    render();
+
+    if (!restoreMatchDraft()) render();
     return;
   }
 
@@ -90,6 +91,8 @@ const session = new WarHeartsSession({
 let computerTimer = 0;
 let playerAutoTimer = 0;
 let inviteTimer = 0;
+let saveDraftTimer = 0;
+let draftRestored = false;
 
 const INVITE_TTL_MS = 120000;
 
@@ -100,6 +103,7 @@ const isBoardDefeated = board => {
 };
 
 const createMatchStats = () => ({
+  matchId: `whm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
   startedAt: Date.now(),
   finishedAt: 0,
   playerShots: 0,
@@ -109,7 +113,11 @@ const createMatchStats = () => ({
   playerMisses: 0,
   opponentMisses: 0,
   playerSunk: 0,
-  opponentSunk: 0
+  opponentSunk: 0,
+  playerHitStreak: 0,
+  opponentHitStreak: 0,
+  playerBestHitStreak: 0,
+  opponentBestHitStreak: 0
 });
 
 const resetMatchStats = () => {
@@ -125,23 +133,39 @@ const finishMatch = (result, message) => {
   state.matchStats.finishedAt = Date.now();
   addSystemMessage(message);
   render();
+  saveMatchDraftNow();
 };
 
 const registerShotStats = (side, result) => {
   const stats = state.matchStats;
+  if (!stats.matchId) stats.matchId = `whm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   if (!stats.startedAt) stats.startedAt = Date.now();
+
+  const hit = result === 'hit' || result === 'sunk';
 
   if (side === 'player') {
     stats.playerShots++;
-    if (result === 'miss') stats.playerMisses++;
-    if (result === 'hit' || result === 'sunk') stats.playerHits++;
+    if (hit) {
+      stats.playerHits++;
+      stats.playerHitStreak++;
+      stats.playerBestHitStreak = Math.max(stats.playerBestHitStreak || 0, stats.playerHitStreak);
+    } else {
+      stats.playerMisses++;
+      stats.playerHitStreak = 0;
+    }
     if (result === 'sunk') stats.playerSunk++;
     return;
   }
 
   stats.opponentShots++;
-  if (result === 'miss') stats.opponentMisses++;
-  if (result === 'hit' || result === 'sunk') stats.opponentHits++;
+  if (hit) {
+    stats.opponentHits++;
+    stats.opponentHitStreak++;
+    stats.opponentBestHitStreak = Math.max(stats.opponentBestHitStreak || 0, stats.opponentHitStreak);
+  } else {
+    stats.opponentMisses++;
+    stats.opponentHitStreak = 0;
+  }
   if (result === 'sunk') stats.opponentSunk++;
 };
 
@@ -245,6 +269,135 @@ const addSystemMessage = text => {
     text,
     at: Date.now()
   });
+  scheduleSaveMatchDraft();
+};
+
+const packBoard = board => board.map(row => row.map(cell => ({
+  h: !!cell.ship,
+  s: cell.status || ''
+})));
+
+const unpackBoard = packed => Array.isArray(packed)
+  ? packed.map(row => Array.isArray(row)
+    ? row.map(cell => ({ ship: !!cell?.h, status: String(cell?.s || '') }))
+    : [])
+  : [];
+
+const getSavedGameData = key => {
+  const data = state.snapshot?.gameData || {};
+  return data[`${GAME_ID}_${key}`] || data[key] || null;
+};
+
+const makeMatchDraft = () => ({
+  v: 1,
+  gameId: GAME_ID,
+  savedAt: Date.now(),
+  screen: state.screen,
+  phase: state.phase,
+  result: state.result,
+  opponent: state.opponent,
+  selectedTarget: state.selectedTarget,
+  autoBattle: { player: false },
+  matchStats: state.matchStats,
+  fleet: state.fleet,
+  myBoard: packBoard(state.myBoard),
+  enemyBoard: packBoard(state.enemyBoard),
+  chat: state.chat.slice(-500)
+});
+
+const saveMatchStats = () => {
+  if (!state.matchStats?.matchId) return;
+  postToHost('GC_SAVE_DATA', {
+    key: 'matchStats',
+    data: {
+      gameId: GAME_ID,
+      savedAt: Date.now(),
+      result: state.result,
+      stats: state.matchStats
+    }
+  });
+};
+
+const saveMatchDraftNow = () => {
+  clearTimeout(saveDraftTimer);
+
+  const active = ['rps', 'player', 'computer', 'finished'].includes(state.phase);
+  if (!active || !state.matchStats?.matchId) return;
+
+  const draft = makeMatchDraft();
+
+  try {
+    localStorage.setItem('wh_matchDraft', JSON.stringify(draft));
+  } catch {}
+
+  postToHost('GC_SAVE_DATA', {
+    key: 'matchDraft',
+    data: draft
+  });
+
+  if (state.phase === 'finished') saveMatchStats();
+};
+
+const scheduleSaveMatchDraft = () => {
+  clearTimeout(saveDraftTimer);
+  saveDraftTimer = setTimeout(saveMatchDraftNow, 350);
+};
+
+const restoreMatchDraft = () => {
+  if (draftRestored) return false;
+
+  let draft = getSavedGameData('matchDraft');
+  if (!draft) {
+    try {
+      draft = JSON.parse(localStorage.getItem('wh_matchDraft') || 'null');
+    } catch {}
+  }
+
+  if (!draft || draft.gameId !== GAME_ID || !draft.matchStats?.matchId) return false;
+  if (!['rps', 'player', 'computer', 'finished'].includes(draft.phase)) return false;
+  if (Date.now() - Number(draft.savedAt || 0) > 24 * 60 * 60 * 1000) return false;
+
+  draftRestored = true;
+
+  state.screen = draft.screen || 'battle';
+  state.phase = draft.phase;
+  state.result = draft.result || '';
+  state.opponent = draft.opponent || state.opponent;
+  state.selectedTarget = draft.selectedTarget || null;
+  state.autoBattle = { player: false };
+  state.matchStats = {
+    ...createMatchStats(),
+    ...(draft.matchStats || {})
+  };
+  state.fleet = Array.isArray(draft.fleet) ? draft.fleet : state.fleet;
+  state.myBoard = unpackBoard(draft.myBoard);
+  state.enemyBoard = unpackBoard(draft.enemyBoard);
+  state.chat = Array.isArray(draft.chat) && draft.chat.length ? draft.chat : state.chat;
+
+  document.body.dataset.screen = state.screen;
+
+  if (state.phase === 'computer' && state.screen === 'battle' && !document.hidden) {
+    clearTimeout(computerTimer);
+    computerTimer = setTimeout(computerShoot, 720);
+  }
+
+  if (state.phase === 'rps' && state.screen === 'battle') {
+    setTimeout(openTurnDuel, 120);
+  }
+
+  render();
+  return true;
+};
+
+const clearMatchDraft = () => {
+  clearTimeout(saveDraftTimer);
+  try {
+    localStorage.removeItem('wh_matchDraft');
+  } catch {}
+  postToHost('GC_SAVE_DATA', {
+    key: 'matchDraft',
+    data: null
+  });
 };
 
 const showBattleFx = (lane, kind) => {
@@ -316,11 +469,13 @@ const computerShoot = () => {
   if (!hit) {
     state.phase = 'player';
     render();
+    scheduleSaveMatchDraft();
     schedulePlayerAutoShot();
     return;
   }
 
   render();
+  scheduleSaveMatchDraft();
   clearTimeout(computerTimer);
   computerTimer = setTimeout(computerShoot, 720);
 };
@@ -458,6 +613,7 @@ const openTurnDuel = () => {
         state.phase = 'player';
         addSystemMessage('Розыгрыш завершён. Первый ход твой.');
         render();
+        scheduleSaveMatchDraft();
         schedulePlayerAutoShot();
         return;
       }
@@ -465,6 +621,7 @@ const openTurnDuel = () => {
       state.phase = 'computer';
       addSystemMessage('Розыгрыш завершён. Первым ходит соперник.');
       render();
+      scheduleSaveMatchDraft();
       clearTimeout(computerTimer);
       computerTimer = setTimeout(computerShoot, 720);
     };
@@ -616,6 +773,7 @@ const performPlayerShot = (x, y, { auto = false } = {}) => {
 
   state.phase = 'player';
   render();
+  scheduleSaveMatchDraft();
   schedulePlayerAutoShot();
 };
 
@@ -668,6 +826,7 @@ const actions = {
 
     // Если возвращаемся из завершённого боя, сбрасываем визуальное состояние матча.
     if (state.phase === 'finished') {
+      clearMatchDraft();
       state.phase = 'idle';
       state.result = '';
       state.selectedTarget = null;
@@ -743,6 +902,7 @@ const actions = {
       }
     ];
 
+    scheduleSaveMatchDraft();
     toast('Соперник выбран');
     setScreen('battle');
     openTurnDuel();
@@ -773,6 +933,7 @@ const actions = {
       }
     ];
 
+    scheduleSaveMatchDraft();
     toast('Игра с компьютером');
     setScreen('battle');
     openTurnDuel();
@@ -852,6 +1013,7 @@ const actions = {
       }
     ];
 
+    scheduleSaveMatchDraft();
     setScreen('battle');
     openTurnDuel();
   }
@@ -1053,6 +1215,7 @@ document.addEventListener('visibilitychange', () => {
     return;
   }
 
+  saveMatchDraftNow();
   clearTimeout(playerAutoTimer);
   clearTimeout(computerTimer);
 });
