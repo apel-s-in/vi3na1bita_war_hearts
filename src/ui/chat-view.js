@@ -4,9 +4,20 @@ export const renderChat = (messages, onSend) => {
 
   const log = document.createElement('div');
   log.className = 'wh-chat-log';
-  log.innerHTML = messages.slice(-20).map(msg =>
-    `<div><b>${escapeHtml(msg.from)}:</b> ${escapeHtml(msg.text)}</div>`
-  ).join('');
+  log.innerHTML = messages.slice(-40).map(msg => {
+    const isSystem = String(msg.from || '').toLowerCase() === 'система';
+    return `
+      <div class="wh-chat-line ${isSystem ? 'is-system' : ''}">
+        <span class="wh-chat-time">${formatTime(msg.at)}</span>
+        <b>${escapeHtml(msg.from)}:</b>
+        <span>${escapeHtml(msg.text)}</span>
+      </div>
+    `;
+  }).join('');
+
+  requestAnimationFrame(() => {
+    log.scrollTop = log.scrollHeight;
+  });
 
   const form = document.createElement('form');
   form.className = 'wh-chat-form';
@@ -25,6 +36,13 @@ export const renderChat = (messages, onSend) => {
 
   wrap.append(log, form);
   return wrap;
+};
+
+const formatTime = value => {
+  const date = value ? new Date(value) : new Date();
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
 };
 
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
