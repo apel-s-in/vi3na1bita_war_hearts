@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 20:48:27 UTC
+Сгенерировано: 2026-05-28 20:49:10 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2265,7 +2265,7 @@ button{
   border:1px solid rgba(255,255,255,.08);
   color:var(--wh-muted);
   font-size:13px;
-  scroll-behavior:smooth;
+  scroll-behavior:auto;
 }
 
 .wh-chat-line{
