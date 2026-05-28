@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 18:29:20 UTC
+Сгенерировано: 2026-05-28 18:30:15 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1791,6 +1791,66 @@ export const syncFleetToBoard = (fleet, board) => {
     }
   });
   return board;
+};
+
+export const formatCellName = (x, y) => `${LETTERS[x] || '?'}${Number(y) + 1}`;
+
+export const getShipCellsAt = (board, x, y) => {
+  if (!board[y]?.[x]?.ship) return [];
+
+  const seen = new Set();
+  const out = [];
+  const stack = [{ x, y }];
+
+  while (stack.length) {
+    const point = stack.pop();
+    const key = `${point.x}:${point.y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const cell = board[point.y]?.[point.x];
+    if (!cell?.ship) continue;
+
+    out.push(point);
+
+    [
+      { x: point.x + 1, y: point.y },
+      { x: point.x - 1, y: point.y },
+      { x: point.x, y: point.y + 1 },
+      { x: point.x, y: point.y - 1 }
+    ].forEach(next => {
+      if (isInsideBoard(next.x, next.y) && board[next.y]?.[next.x]?.ship) {
+        stack.push(next);
+      }
+    });
+  }
+
+  return out;
+};
+
+export const isShipSunk = (board, shipCells) =>
+  shipCells.length > 0 && shipCells.every(({ x, y }) => board[y]?.[x]?.status === 'hit');
+
+export const markSunkPerimeter = (board, shipCells) => {
+  let marked = 0;
+
+  shipCells.forEach(({ x, y }) => {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (!isInsideBoard(nx, ny)) continue;
+
+        const cell = board[ny]?.[nx];
+        if (!cell || cell.ship || cell.status) continue;
+
+        cell.status = 'blocked';
+        marked++;
+      }
+    }
+  });
+
+  return marked;
 };
 
 //=================================================
