@@ -1047,6 +1047,16 @@ const bind = () => {
   };
 };
 
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    schedulePlayerAutoShot();
+    return;
+  }
+
+  clearTimeout(playerAutoTimer);
+  clearTimeout(computerTimer);
+});
+
 bind();
 setStatus('preview', false);
 render();
