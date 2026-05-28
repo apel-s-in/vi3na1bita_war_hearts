@@ -15,9 +15,7 @@ export const renderChat = (messages, onSend) => {
     `;
   }).join('');
 
-  requestAnimationFrame(() => {
-    log.scrollTop = log.scrollHeight;
-  });
+  log.scrollTop = log.scrollHeight;
 
   const form = document.createElement('form');
   form.className = 'wh-chat-form';
