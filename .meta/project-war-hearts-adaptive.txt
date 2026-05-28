@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 18:31:11 UTC
+Сгенерировано: 2026-05-28 18:31:50 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -661,21 +661,32 @@ const computerShoot = () => {
   if (state.screen !== 'battle' || state.phase !== 'computer') return;
 
   const target = pickRandomTarget(state.myBoard);
-  if (!target) return;
+  if (!target) {
+    state.phase = 'player';
+    render();
+    return;
+  }
 
-  target.cell.status = target.cell.ship ? 'hit' : 'miss';
+  const coord = formatCellName(target.x, target.y);
+  const hit = !!target.cell.ship;
+
+  target.cell.status = hit ? 'hit' : 'miss';
+
+  const shipCells = hit ? getShipCellsAt(state.myBoard, target.x, target.y) : [];
+  const sunk = hit && isShipSunk(state.myBoard, shipCells);
+  if (sunk) markSunkPerimeter(state.myBoard, shipCells);
+
+  const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промахнулся';
 
   transcript.add({
     type: 'COMPUTER_SHOT',
     x: target.x,
     y: target.y,
-    result: target.cell.status,
+    result: sunk ? 'sunk' : target.cell.status,
     at: Date.now()
   });
 
-  addSystemMessage(target.cell.status === 'hit'
-    ? `Компьютер попал: ${target.x + 1}:${target.y + 1}`
-    : 'Компьютер промахнулся');
+  addSystemMessage(`Компьютер стреляет ${coord}: ${resultText}.`);
 
   if (isBoardDefeated(state.myBoard)) {
     state.result = 'loss';
@@ -684,8 +695,17 @@ const computerShoot = () => {
     return;
   }
 
-  state.phase = 'player';
+  // Классическое правило: ход переходит только при промахе.
+  if (!hit) {
+    state.phase = 'player';
+    render();
+    return;
+  }
+
+  // Компьютер попал/ранил/убил — он продолжает стрелять до промаха.
   render();
+  clearTimeout(computerTimer);
+  computerTimer = setTimeout(computerShoot, 650);
 };
 
 const setStatus = (text, online = false) => {
