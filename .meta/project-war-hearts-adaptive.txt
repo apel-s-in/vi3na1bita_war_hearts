@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 20:26:20 UTC
+Сгенерировано: 2026-05-28 20:30:23 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -629,6 +629,7 @@ const session = new WarHeartsSession({
 });
 
 let computerTimer = 0;
+let playerAutoTimer = 0;
 let inviteTimer = 0;
 
 const INVITE_TTL_MS = 120000;
@@ -639,15 +640,145 @@ const isBoardDefeated = board => {
   return ships.length > 0 && ships.every(cell => cell.status === 'hit');
 };
 
-const pickRandomTarget = board => {
+const createMatchStats = () => ({
+  startedAt: Date.now(),
+  finishedAt: 0,
+  playerShots: 0,
+  opponentShots: 0,
+  playerHits: 0,
+  opponentHits: 0,
+  playerMisses: 0,
+  opponentMisses: 0,
+  playerSunk: 0,
+  opponentSunk: 0
+});
+
+const resetMatchStats = () => {
+  state.matchStats = createMatchStats();
+};
+
+const finishMatch = (result, message) => {
+  state.result = result;
+  state.phase = 'finished';
+  state.autoBattle.player = false;
+  clearTimeout(playerAutoTimer);
+  clearTimeout(computerTimer);
+  state.matchStats.finishedAt = Date.now();
+  addSystemMessage(message);
+  render();
+};
+
+const registerShotStats = (side, result) => {
+  const stats = state.matchStats;
+  if (!stats.startedAt) stats.startedAt = Date.now();
+
+  if (side === 'player') {
+    stats.playerShots++;
+    if (result === 'miss') stats.playerMisses++;
+    if (result === 'hit' || result === 'sunk') stats.playerHits++;
+    if (result === 'sunk') stats.playerSunk++;
+    return;
+  }
+
+  stats.opponentShots++;
+  if (result === 'miss') stats.opponentMisses++;
+  if (result === 'hit' || result === 'sunk') stats.opponentHits++;
+  if (result === 'sunk') stats.opponentSunk++;
+};
+
+const getOpenTargets = board => {
   const cells = [];
   board.forEach((row, y) => {
     row.forEach((cell, x) => {
       if (!cell.status) cells.push({ x, y, cell });
     });
   });
-  return cells[Math.floor(Math.random() * cells.length)] || null;
+  return cells;
 };
+
+const pickRandom = list => list[Math.floor(Math.random() * list.length)] || null;
+
+const getAdjacentOpenTargets = (board, x, y) => [
+  { x: x + 1, y },
+  { x: x - 1, y },
+  { x, y: y + 1 },
+  { x, y: y - 1 }
+].filter(point => {
+  const cell = board[point.y]?.[point.x];
+  return cell && !cell.status;
+}).map(point => ({
+  ...point,
+  cell: board[point.y][point.x]
+}));
+
+const getKnownWoundedHits = board => {
+  const hits = [];
+
+  board.forEach((row, y) => {
+    row.forEach((cell, x) => {
+      if (cell.status !== 'hit') return;
+
+      const shipCells = getShipCellsAt(board, x, y);
+      if (shipCells.length && isShipSunk(board, shipCells)) return;
+
+      hits.push({ x, y, cell });
+    });
+  });
+
+  return hits;
+};
+
+const pickSmartTarget = board => {
+  const wounded = getKnownWoundedHits(board);
+
+  if (wounded.length) {
+    const byRows = new Map();
+    const byCols = new Map();
+
+    wounded.forEach(point => {
+      byRows.set(point.y, [...(byRows.get(point.y) || []), point]);
+      byCols.set(point.x, [...(byCols.get(point.x) || []), point]);
+    });
+
+    const lineCandidates = [];
+
+    byRows.forEach(points => {
+      if (points.length < 2) return;
+      const sorted = points.slice().sort((a, b) => a.x - b.x);
+      const left = { x: sorted[0].x - 1, y: sorted[0].y };
+      const right = { x: sorted[sorted.length - 1].x + 1, y: sorted[0].y };
+      [left, right].forEach(point => {
+        const cell = board[point.y]?.[point.x];
+        if (cell && !cell.status) lineCandidates.push({ ...point, cell });
+      });
+    });
+
+    byCols.forEach(points => {
+      if (points.length < 2) return;
+      const sorted = points.slice().sort((a, b) => a.y - b.y);
+      const top = { x: sorted[0].x, y: sorted[0].y - 1 };
+      const bottom = { x: sorted[0].x, y: sorted[sorted.length - 1].y + 1 };
+      [top, bottom].forEach(point => {
+        const cell = board[point.y]?.[point.x];
+        if (cell && !cell.status) lineCandidates.push({ ...point, cell });
+      });
+    });
+
+    if (lineCandidates.length) return pickRandom(lineCandidates);
+
+    const adjacent = wounded.flatMap(point => getAdjacentOpenTargets(board, point.x, point.y));
+    if (adjacent.length) return pickRandom(adjacent);
+  }
+
+  const open = getOpenTargets(board);
+  if (!open.length) return null;
+
+  // Честный базовый приоритет: шахматные клетки, без знания скрытых кораблей.
+  const checker = open.filter(point => (point.x + point.y) % 2 === 0);
+  return pickRandom(checker.length ? checker : open);
+};
+
+const pickRandomTarget = board => pickSmartTarget(board);
 
 const addSystemMessage = text => {
   state.chat.push({
@@ -685,10 +816,11 @@ const showBattleFx = (lane, kind) => {
 const computerShoot = () => {
   if (state.screen !== 'battle' || state.phase !== 'computer') return;
 
-  const target = pickRandomTarget(state.myBoard);
+  const target = pickSmartTarget(state.myBoard);
   if (!target) {
     state.phase = 'player';
     render();
+    schedulePlayerAutoShot();
     return;
   }
 
@@ -704,37 +836,34 @@ const computerShoot = () => {
   const fxKind = sunk ? 'sunk' : hit ? 'hit' : 'miss';
   const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промахнулся';
 
+  registerShotStats('opponent', fxKind);
   showBattleFx('mine', fxKind);
 
   transcript.add({
     type: 'COMPUTER_SHOT',
     x: target.x,
     y: target.y,
-    result: sunk ? 'sunk' : target.cell.status,
+    result: fxKind,
     at: Date.now()
   });
 
   addSystemMessage(`Компьютер стреляет ${coord}: ${resultText}.`);
 
   if (isBoardDefeated(state.myBoard)) {
-    state.result = 'loss';
-    state.phase = 'finished';
-    addSystemMessage('Матч завершён: поражение.');
-    render();
+    finishMatch('loss', 'Матч завершён: поражение.');
     return;
   }
 
-  // Классическое правило: ход переходит только при промахе.
   if (!hit) {
     state.phase = 'player';
     render();
+    schedulePlayerAutoShot();
     return;
   }
 
-  // Компьютер попал/ранил/убил — он продолжает стрелять до промаха.
   render();
   clearTimeout(computerTimer);
-  computerTimer = setTimeout(computerShoot, 650);
+  computerTimer = setTimeout(computerShoot, 720);
 };
 
 const setStatus = (text, online = false) => {
@@ -780,7 +909,7 @@ const openTurnDuel = () => {
       <div class="wh-rps-kicker">Розыгрыш первого хода</div>
       <h2 class="wh-rps-title">Камень · Ножницы · Бумага</h2>
       <p class="wh-rps-text" id="wh-rps-text">${state.rps.message}</p>
-      <div class="wh-rps-choices">
+      <div class="wh-rps-choices" id="wh-rps-choices">
         ${choices.map(choice => `
           <button class="wh-rps-choice" type="button" data-choice="${choice.id}">
             <span>${choice.icon}</span>
@@ -788,6 +917,7 @@ const openTurnDuel = () => {
           </button>
         `).join('')}
       </div>
+      <div class="wh-rps-result" id="wh-rps-result" hidden></div>
     </div>
   `;
 
@@ -806,6 +936,81 @@ const openTurnDuel = () => {
       return 'player';
     }
     return 'opponent';
+  };
+
+  const confirmLeave = () => {
+    const confirm = document.createElement('div');
+    confirm.className = 'wh-modal-overlay';
+    confirm.innerHTML = `
+      <div class="wh-modal-box">
+        <h3 class="wh-modal-title">Покинуть бой?</h3>
+        <p class="wh-modal-text">Если покинуть сейчас, это будет засчитано как поражение. Вернуться в главное меню?</p>
+        <div class="wh-modal-actions">
+          <button class="wh-btn secondary" type="button" id="wh-rps-leave-cancel">Остаться</button>
+          <button class="wh-btn" type="button" id="wh-rps-leave-confirm" style="background:var(--wh-red)">Покинуть</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(confirm);
+
+    confirm.querySelector('#wh-rps-leave-cancel').onclick = () => confirm.remove();
+    confirm.querySelector('#wh-rps-leave-confirm').onclick = () => {
+      confirm.remove();
+      overlay.remove();
+      state.rps.active = false;
+      state.result = 'loss';
+      state.phase = 'finished';
+      state.matchStats.finishedAt = Date.now();
+      addSystemMessage('Игрок покинул бой до первого выстрела. Засчитано поражение.');
+      actions.openMenu();
+    };
+  };
+
+  const showResult = result => {
+    const choicesEl = overlay.querySelector('#wh-rps-choices');
+    const resultEl = overlay.querySelector('#wh-rps-result');
+    const text = overlay.querySelector('#wh-rps-text');
+
+    if (choicesEl) choicesEl.hidden = true;
+    if (text) {
+      text.textContent = result === 'player'
+        ? 'Поздравляем, ваш ход первый.'
+        : 'Ваш соперник получил право первого выстрела.';
+    }
+
+    resultEl.hidden = false;
+    resultEl.innerHTML = `
+      <div class="wh-rps-result-card ${result === 'player' ? 'is-player' : 'is-opponent'}">
+        <b>${result === 'player' ? 'Первый ход твой' : 'Первым ходит соперник'}</b>
+        <span>${result === 'player' ? 'Начни бой и выбери цель.' : 'После старта соперник сделает первый выстрел.'}</span>
+      </div>
+      <div class="wh-rps-actions">
+        <button class="wh-btn" type="button" id="wh-rps-start">Начать бой</button>
+        <button class="wh-btn secondary" type="button" id="wh-rps-leave">Покинуть</button>
+      </div>
+    `;
+
+    resultEl.querySelector('#wh-rps-start').onclick = () => {
+      state.rps.active = false;
+      overlay.remove();
+
+      if (result === 'player') {
+        state.phase = 'player';
+        addSystemMessage('Розыгрыш завершён. Первый ход твой.');
+        render();
+        schedulePlayerAutoShot();
+        return;
+      }
+
+      state.phase = 'computer';
+      addSystemMessage('Розыгрыш завершён. Первым ходит соперник.');
+      render();
+      clearTimeout(computerTimer);
+      computerTimer = setTimeout(computerShoot, 720);
+    };
+
+    resultEl.querySelector('#wh-rps-leave').onclick = confirmLeave;
   };
 
   overlay.querySelectorAll('[data-choice]').forEach(btn => {
@@ -827,22 +1032,8 @@ const openTurnDuel = () => {
         return;
       }
 
-      state.rps.active = false;
-      overlay.remove();
-
-      if (result === 'player') {
-        state.phase = 'player';
-        addSystemMessage(`Розыгрыш хода: ${getChoiceLabel(playerChoice)} против ${getChoiceLabel(opponentChoice)}. Первый ход твой.`);
-        render();
-        return;
-      }
-
-      state.phase = 'computer';
-      addSystemMessage(`Розыгрыш хода: ${getChoiceLabel(playerChoice)} против ${getChoiceLabel(opponentChoice)}. Первым ходит соперник.`);
-      render();
-
-      clearTimeout(computerTimer);
-      computerTimer = setTimeout(computerShoot, 700);
+      state.rps.message = `${getChoiceLabel(playerChoice)} против ${getChoiceLabel(opponentChoice)}.`;
+      showResult(result);
     });
   });
 };
