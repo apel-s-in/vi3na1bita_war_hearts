@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 21:48:27 UTC
+Сгенерировано: 2026-05-28 21:49:47 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1520,6 +1520,7 @@ const actions = {
 
     session.sendChat(message);
     render();
+    scheduleSaveMatchDraft();
   },
 
   async toggleVoice(active) {
@@ -1747,6 +1748,7 @@ const bind = () => {
   session.onChat = msg => {
     state.chat.push(msg);
     render();
+    scheduleSaveMatchDraft();
   };
 };
 
