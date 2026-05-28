@@ -523,12 +523,100 @@ const openShotConfirm = (x, y) => {
     overlay.remove();
     state.selectedTarget = null;
     render();
+    schedulePlayerAutoShot();
   };
 
   overlay.querySelector('#wh-shot-confirm').onclick = () => {
     overlay.remove();
-    actions.confirmShot(x, y);
+    performPlayerShot(x, y);
   };
+};
+
+const schedulePlayerAutoShot = () => {
+  clearTimeout(playerAutoTimer);
+
+  if (!state.autoBattle.player) return;
+  if (state.screen !== 'battle') return;
+  if (state.phase !== 'player') return;
+
+  playerAutoTimer = setTimeout(() => {
+    if (!state.autoBattle.player || state.phase !== 'player') return;
+
+    const target = pickSmartTarget(state.enemyBoard);
+    if (!target) return;
+
+    state.selectedTarget = { x: target.x, y: target.y };
+    render();
+
+    playerAutoTimer = setTimeout(() => {
+      performPlayerShot(target.x, target.y, { auto: true });
+    }, 260);
+  }, 720);
+};
+
+const performPlayerShot = (x, y, { auto = false } = {}) => {
+  if (state.phase !== 'player' || state.phase === 'finished') return;
+
+  const cell = state.enemyBoard[y]?.[x];
+  if (!cell || cell.status) {
+    state.selectedTarget = null;
+    render();
+    schedulePlayerAutoShot();
+    return;
+  }
+
+  const coord = formatCellName(x, y);
+  const hit = !!cell.ship;
+
+  cell.status = hit ? 'hit' : 'miss';
+
+  const shipCells = hit ? getShipCellsAt(state.enemyBoard, x, y) : [];
+  const sunk = hit && isShipSunk(state.enemyBoard, shipCells);
+  if (sunk) markSunkPerimeter(state.enemyBoard, shipCells);
+
+  const fxKind = sunk ? 'sunk' : hit ? 'hit' : 'miss';
+  const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промах';
+
+  registerShotStats('player', fxKind);
+  showBattleFx('enemy', fxKind);
+
+  transcript.add({
+    type: auto ? 'AUTO_SHOT' : 'SHOT',
+    x,
+    y,
+    result: fxKind,
+    at: Date.now()
+  });
+
+  addSystemMessage(`${auto ? 'Автобой' : state.player.name} стреляет ${coord}: ${resultText}.`);
+  toast(sunk ? 'Корабль уничтожен!' : hit ? 'Попадание!' : 'Мимо');
+
+  state.selectedTarget = null;
+
+  if (isBoardDefeated(state.enemyBoard)) {
+    finishMatch('win', 'Матч завершён: победа!');
+    return;
+  }
+
+  if (!hit && state.opponent?.type === 'computer') {
+    state.phase = 'computer';
+    addSystemMessage('Компьютер думает...');
+    render();
+    clearTimeout(computerTimer);
+    computerTimer = setTimeout(computerShoot, 720);
+    return;
+  }
+
+  if (!hit && state.opponent?.type !== 'computer') {
+    state.phase = 'computer';
+    addSystemMessage('Ход переходит сопернику.');
+    render();
+    return;
+  }
+
+  state.phase = 'player';
+  render();
+  schedulePlayerAutoShot();
 };
 
 const setScreen = screen => {
@@ -574,6 +662,10 @@ const actions = {
   },
 
   openMenu() {
+    clearTimeout(computerTimer);
+    clearTimeout(playerAutoTimer);
+    state.autoBattle.player = false;
+
     // Если возвращаемся из завершённого боя, сбрасываем визуальное состояние матча.
     if (state.phase === 'finished') {
       state.phase = 'idle';
@@ -639,6 +731,8 @@ const actions = {
     state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
     state.selectedTarget = null;
     state.battleFx = null;
+    state.autoBattle.player = false;
+    resetMatchStats();
     state.phase = 'rps';
     state.result = '';
     state.chat = [
@@ -667,6 +761,8 @@ const actions = {
     state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
     state.selectedTarget = null;
     state.battleFx = null;
+    state.autoBattle.player = false;
+    resetMatchStats();
     state.phase = 'rps';
     state.result = '';
     state.chat = [
@@ -690,74 +786,24 @@ const actions = {
 
     state.selectedTarget = { x, y };
     render();
+
+    if (state.autoBattle.player) {
+      performPlayerShot(x, y, { auto: true });
+      return;
+    }
+
     openShotConfirm(x, y);
   },
 
   confirmShot(x, y) {
-    if (state.phase !== 'player' || state.phase === 'finished') return;
+    performPlayerShot(x, y);
+  },
 
-    const cell = state.enemyBoard[y]?.[x];
-    if (!cell || cell.status) {
-      state.selectedTarget = null;
-      render();
-      return;
-    }
-
-    const coord = formatCellName(x, y);
-    const hit = !!cell.ship;
-
-    cell.status = hit ? 'hit' : 'miss';
-
-    const shipCells = hit ? getShipCellsAt(state.enemyBoard, x, y) : [];
-    const sunk = hit && isShipSunk(state.enemyBoard, shipCells);
-    if (sunk) markSunkPerimeter(state.enemyBoard, shipCells);
-
-    const fxKind = sunk ? 'sunk' : hit ? 'hit' : 'miss';
-    const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промах';
-
-    showBattleFx('enemy', fxKind);
-
-    transcript.add({
-      type: 'SHOT',
-      x,
-      y,
-      result: sunk ? 'sunk' : cell.status,
-      at: Date.now()
-    });
-
-    addSystemMessage(`${state.player.name} стреляет ${coord}: ${resultText}.`);
-    toast(sunk ? 'Корабль уничтожен!' : hit ? 'Попадание!' : 'Мимо');
-
-    state.selectedTarget = null;
-
-    if (isBoardDefeated(state.enemyBoard)) {
-      state.result = 'win';
-      state.phase = 'finished';
-      addSystemMessage('Матч завершён: победа!');
-      render();
-      return;
-    }
-
-    // Классическое правило: ход переходит только при промахе.
-    if (!hit && state.opponent?.type === 'computer') {
-      state.phase = 'computer';
-      addSystemMessage('Компьютер думает...');
-      render();
-      clearTimeout(computerTimer);
-      computerTimer = setTimeout(computerShoot, 650);
-      return;
-    }
-
-    if (!hit && state.opponent?.type !== 'computer') {
-      state.phase = 'computer';
-      addSystemMessage('Ход переходит сопернику.');
-      render();
-      return;
-    }
-
-    // Попал/ранил/убил — игрок продолжает стрелять.
-    state.phase = 'player';
+  toggleAutoBattle() {
+    state.autoBattle.player = !state.autoBattle.player;
+    toast(state.autoBattle.player ? 'Автобой включён' : 'Автобой выключен');
     render();
+    schedulePlayerAutoShot();
   },
 
   sendChat(text) {
@@ -784,10 +830,7 @@ const actions = {
   },
 
   finishMock(result = 'win') {
-    state.result = result;
-    state.phase = 'finished';
-    addSystemMessage(result === 'win' ? 'Preview завершён: победа.' : 'Preview завершён: поражение.');
-    render();
+    finishMatch(result, result === 'win' ? 'Preview завершён: победа.' : 'Preview завершён: поражение.');
   },
 
   rematch() {
@@ -797,6 +840,8 @@ const actions = {
     state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
     state.selectedTarget = null;
     state.battleFx = null;
+    state.autoBattle.player = false;
+    resetMatchStats();
     state.result = '';
     state.phase = 'rps';
     state.chat = [
@@ -951,10 +996,7 @@ const bind = () => {
     overlay.querySelector('#wh-surrender-confirm').onclick = () => {
       overlay.remove();
       // Выставляем поражение, но оставляем поле, чат и голосовую кнопку на экране боя.
-      state.phase = 'finished';
-      state.result = 'loss';
-      addSystemMessage('Игрок сдался. Матч завершён.');
-      render();
+      finishMatch('loss', 'Игрок сдался. Матч завершён.');
     };
   });
 
