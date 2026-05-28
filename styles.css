@@ -107,6 +107,12 @@ button{
   fill:currentColor;
 }
 
+.wh-collapse-btn.is-player-stopped{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.28);
+  color:#fff;
+}
+
 .wh-topbar-icon{
   font-size:42px;
   line-height:1;
