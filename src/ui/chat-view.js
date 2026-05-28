@@ -4,7 +4,7 @@ export const renderChat = (messages, onSend) => {
 
   const log = document.createElement('div');
   log.className = 'wh-chat-log';
-  log.innerHTML = messages.slice(-40).map(msg => {
+  log.innerHTML = (messages || []).map(msg => {
     const isSystem = String(msg.from || '').toLowerCase() === 'система';
     return `
       <div class="wh-chat-line ${isSystem ? 'is-system' : ''}">
@@ -14,8 +14,6 @@ export const renderChat = (messages, onSend) => {
       </div>
     `;
   }).join('');
-
-  log.scrollTop = log.scrollHeight;
 
   const form = document.createElement('form');
   form.className = 'wh-chat-form';
@@ -33,6 +31,11 @@ export const renderChat = (messages, onSend) => {
   });
 
   wrap.append(log, form);
+
+  requestAnimationFrame(() => {
+    log.scrollTop = log.scrollHeight;
+  });
+
   return wrap;
 };
 
