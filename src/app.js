@@ -10,6 +10,26 @@ import { renderBattle } from './screens/battle.js';
 import { renderResult } from './screens/result.js';
 
 const $ = id => document.getElementById(id);
+const GAME_ID = 'war_hearts';
+
+const postToHost = (type, payload = {}) => {
+  if (window.parent === window) return false;
+  try {
+    window.parent.postMessage({
+      kind: 'vitrina:game',
+      type,
+      gameId: GAME_ID,
+      payload: {
+        gameId: GAME_ID,
+        ...payload,
+        at: payload.at || Date.now()
+      }
+    }, '*');
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const initialFleet = autoPlaceFleet(createFleet());
 const state = createInitialState({
@@ -43,30 +63,14 @@ window.addEventListener('message', e => {
     render();
 
     // После восстановления просим свежий snapshot, чтобы кнопка сворачивания не теряла play/pause-состояние.
-    const requestSnapshot = () => {
-      if (window.parent !== window) {
-        window.parent.postMessage({
-          kind: 'vitrina:game',
-          type: 'GC_REQUEST_SNAPSHOT',
-          gameId: 'war_hearts',
-          payload: { gameId: 'war_hearts', at: Date.now() }
-        }, '*');
-      }
-    };
+    const requestSnapshot = () => postToHost('GC_REQUEST_SNAPSHOT');
 
     requestSnapshot();
     setTimeout(requestSnapshot, 150);
   }
 });
 
-if (window.parent !== window) {
-  window.parent.postMessage({
-    kind: 'vitrina:game',
-    type: 'GC_READY',
-    gameId: 'war_hearts',
-    payload: { gameId: 'war_hearts', at: Date.now() }
-  }, '*');
-}
+postToHost('GC_READY');
 
 const transcript = createTranscript();
 const session = new WarHeartsSession({
@@ -354,18 +358,23 @@ const render = () => {
 
   const inBattle = state.phase === 'player' || state.phase === 'computer';
   
-  // Кнопка сворачивания игры, если загружен трек (играет или на паузе)
+  // Кнопка сворачивания всегда доступна внутри Game Center:
+  // play = трек загружен на паузе, pause = играет, stop = трека нет.
   const colBtn = $('collapse-btn');
   if (colBtn) {
-    const player = state.snapshot?.player;
-    if (player && player.uid) {
-      colBtn.hidden = false;
-      const playIcon = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-      const pauseIcon = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-      colBtn.innerHTML = player.playing ? playIcon : pauseIcon;
-    } else {
-      colBtn.hidden = true;
-    }
+    const player = state.snapshot?.player || {};
+    const embedded = window.parent !== window;
+    const playIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
+    const pauseIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+    const stopIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>`;
+
+    colBtn.hidden = !embedded;
+    colBtn.classList.toggle('is-player-stopped', embedded && !player.uid);
+    colBtn.innerHTML = player.uid ? (player.playing ? pauseIcon : playIcon) : stopIcon;
+    colBtn.title = player.uid
+      ? (player.playing ? 'Свернуть игру · музыка играет' : 'Свернуть игру · музыка на паузе')
+      : 'Свернуть игру · плеер остановлен';
+    colBtn.setAttribute('aria-label', colBtn.title);
   }
 
   // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активного сражения
@@ -421,14 +430,7 @@ const render = () => {
 
 const bind = () => {
   $('collapse-btn')?.addEventListener('click', () => {
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        kind: 'vitrina:game',
-        type: 'GC_COLLAPSE_GAME',
-        gameId: 'war_hearts',
-        payload: { gameId: 'war_hearts', at: Date.now() }
-      }, '*');
-    }
+    postToHost('GC_COLLAPSE_GAME');
   });
 
   $('back-btn')?.addEventListener('click', () => {
@@ -461,9 +463,7 @@ const bind = () => {
     overlay.querySelector('#wh-modal-cancel').onclick = () => overlay.remove();
     overlay.querySelector('#wh-modal-confirm').onclick = () => {
       overlay.remove();
-      if (window.parent !== window) {
-        window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_CLOSE' }, '*');
-      } else {
+      if (!postToHost('GC_CLOSE', { reason: 'war_hearts_exit' })) {
         window.location.href = new URL('../', window.location.href).toString();
       }
     };
