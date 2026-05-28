@@ -14,6 +14,7 @@ export const createInitialState = overrides => ({
     player: false
   },
   matchStats: {
+    matchId: '',
     startedAt: 0,
     finishedAt: 0,
     playerShots: 0,
@@ -23,7 +24,11 @@ export const createInitialState = overrides => ({
     playerMisses: 0,
     opponentMisses: 0,
     playerSunk: 0,
-    opponentSunk: 0
+    opponentSunk: 0,
+    playerHitStreak: 0,
+    opponentHitStreak: 0,
+    playerBestHitStreak: 0,
+    opponentBestHitStreak: 0
   },
   rps: {
     active: false,
