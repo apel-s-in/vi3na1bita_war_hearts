@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 20:49:10 UTC
+Сгенерировано: 2026-05-28 20:50:47 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1587,6 +1587,16 @@ const bind = () => {
     render();
   };
 };
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    schedulePlayerAutoShot();
+    return;
+  }
+
+  clearTimeout(playerAutoTimer);
+  clearTimeout(computerTimer);
+});
 
 bind();
 setStatus('preview', false);
