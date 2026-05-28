@@ -108,8 +108,8 @@ button{
 }
 
 .wh-collapse-btn.is-player-stopped{
-  background:rgba(255,255,255,.08);
-  border-color:rgba(255,255,255,.28);
+  background:linear-gradient(135deg,var(--wh-red),var(--wh-pink));
+  border-color:var(--wh-red);
   color:#fff;
 }
 
