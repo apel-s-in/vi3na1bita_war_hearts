@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 18:31:50 UTC
+Сгенерировано: 2026-05-28 18:33:08 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -727,6 +727,40 @@ const toast = text => {
   }, 1500);
 };
 
+const openShotConfirm = (x, y) => {
+  const coord = formatCellName(x, y);
+
+  const old = document.querySelector('.wh-shot-modal-overlay');
+  if (old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'wh-shot-modal-overlay';
+  overlay.innerHTML = `
+    <div class="wh-shot-modal-box">
+      <div class="wh-shot-modal-kicker">Подтвердить выстрел</div>
+      <div class="wh-shot-modal-coord">${coord}</div>
+      <div class="wh-shot-modal-text">Выстрел будет произведён по выбранной клетке.</div>
+      <div class="wh-modal-actions">
+        <button class="wh-btn secondary" type="button" id="wh-shot-cancel">Отмена</button>
+        <button class="wh-btn" type="button" id="wh-shot-confirm">Выстрел</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#wh-shot-cancel').onclick = () => {
+    overlay.remove();
+    state.selectedTarget = null;
+    render();
+  };
+
+  overlay.querySelector('#wh-shot-confirm').onclick = () => {
+    overlay.remove();
+    actions.confirmShot(x, y);
+  };
+};
+
 const setScreen = screen => {
   // Запрещаем переключать табы, если идет активный бой
   const inBattle = state.phase === 'player' || state.phase === 'computer';
@@ -856,22 +890,49 @@ const actions = {
   },
 
   shootCell(x, y) {
-    if (state.phase === 'computer' || state.phase === 'finished') return;
+    if (state.phase !== 'player' || state.phase === 'finished') return;
 
     const cell = state.enemyBoard[y]?.[x];
     if (!cell || cell.status) return;
 
-    cell.status = cell.ship ? 'hit' : 'miss';
+    state.selectedTarget = { x, y };
+    render();
+    openShotConfirm(x, y);
+  },
+
+  confirmShot(x, y) {
+    if (state.phase !== 'player' || state.phase === 'finished') return;
+
+    const cell = state.enemyBoard[y]?.[x];
+    if (!cell || cell.status) {
+      state.selectedTarget = null;
+      render();
+      return;
+    }
+
+    const coord = formatCellName(x, y);
+    const hit = !!cell.ship;
+
+    cell.status = hit ? 'hit' : 'miss';
+
+    const shipCells = hit ? getShipCellsAt(state.enemyBoard, x, y) : [];
+    const sunk = hit && isShipSunk(state.enemyBoard, shipCells);
+    if (sunk) markSunkPerimeter(state.enemyBoard, shipCells);
+
+    const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промах';
 
     transcript.add({
       type: 'SHOT',
       x,
       y,
-      result: cell.status,
+      result: sunk ? 'sunk' : cell.status,
       at: Date.now()
     });
 
-    toast(cell.status === 'hit' ? 'Попадание!' : 'Мимо');
+    addSystemMessage(`${state.player.name} стреляет ${coord}: ${resultText}.`);
+    toast(sunk ? 'Корабль уничтожен!' : hit ? 'Попадание!' : 'Мимо');
+
+    state.selectedTarget = null;
 
     if (isBoardDefeated(state.enemyBoard)) {
       state.result = 'win';
@@ -880,7 +941,8 @@ const actions = {
       return;
     }
 
-    if (state.opponent?.type === 'computer') {
+    // Классическое правило: ход переходит только при промахе.
+    if (!hit && state.opponent?.type === 'computer') {
       state.phase = 'computer';
       addSystemMessage('Компьютер думает...');
       render();
@@ -889,6 +951,15 @@ const actions = {
       return;
     }
 
+    if (!hit && state.opponent?.type !== 'computer') {
+      state.phase = 'computer';
+      addSystemMessage('Ход переходит сопернику.');
+      render();
+      return;
+    }
+
+    // Попал/ранил/убил — игрок продолжает стрелять.
+    state.phase = 'player';
     render();
   },
 
