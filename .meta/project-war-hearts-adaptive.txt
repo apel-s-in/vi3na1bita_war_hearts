@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 19:42:54 UTC
+Сгенерировано: 2026-05-28 20:26:20 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2450,6 +2450,21 @@ export const createInitialState = overrides => ({
   invite: null,
   selectedTarget: null,
   battleFx: null,
+  autoBattle: {
+    player: false
+  },
+  matchStats: {
+    startedAt: 0,
+    finishedAt: 0,
+    playerShots: 0,
+    opponentShots: 0,
+    playerHits: 0,
+    opponentHits: 0,
+    playerMisses: 0,
+    opponentMisses: 0,
+    playerSunk: 0,
+    opponentSunk: 0
+  },
   rps: {
     active: false,
     playerChoice: '',
