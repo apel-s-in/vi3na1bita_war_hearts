@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 20:48:04 UTC
+Сгенерировано: 2026-05-28 20:48:27 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3575,9 +3575,7 @@ export const renderChat = (messages, onSend) => {
     `;
   }).join('');
 
-  requestAnimationFrame(() => {
-    log.scrollTop = log.scrollHeight;
-  });
+  log.scrollTop = log.scrollHeight;
 
   const form = document.createElement('form');
   form.className = 'wh-chat-form';
