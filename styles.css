@@ -660,7 +660,7 @@ button{
   border:1px solid rgba(255,255,255,.08);
   color:var(--wh-muted);
   font-size:13px;
-  scroll-behavior:smooth;
+  scroll-behavior:auto;
 }
 
 .wh-chat-line{
