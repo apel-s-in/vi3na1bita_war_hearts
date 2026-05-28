@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 21:49:47 UTC
+Сгенерировано: 2026-05-28 21:50:41 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3259,9 +3259,12 @@ const renderStats = state => {
       <div><span>Твои выстрелы</span><b>${Number(s.playerShots || 0)}</b></div>
       <div><span>Попадания</span><b>${Number(s.playerHits || 0)}</b></div>
       <div><span>Промахи</span><b>${Number(s.playerMisses || 0)}</b></div>
+      <div><span>Твой лучший страйк</span><b>${Number(s.playerBestHitStreak || 0)}</b></div>
+      <div><span>Текущий страйк</span><b>${Number(s.playerHitStreak || 0)}</b></div>
       <div><span>Выстрелы соперника</span><b>${Number(s.opponentShots || 0)}</b></div>
       <div><span>Попадания соперника</span><b>${Number(s.opponentHits || 0)}</b></div>
       <div><span>Промахи соперника</span><b>${Number(s.opponentMisses || 0)}</b></div>
+      <div><span>Страйк соперника</span><b>${Number(s.opponentBestHitStreak || 0)}</b></div>
     </div>
   `;
 };
