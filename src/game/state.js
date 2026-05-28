@@ -10,6 +10,21 @@ export const createInitialState = overrides => ({
   invite: null,
   selectedTarget: null,
   battleFx: null,
+  autoBattle: {
+    player: false
+  },
+  matchStats: {
+    startedAt: 0,
+    finishedAt: 0,
+    playerShots: 0,
+    opponentShots: 0,
+    playerHits: 0,
+    opponentHits: 0,
+    playerMisses: 0,
+    opponentMisses: 0,
+    playerSunk: 0,
+    opponentSunk: 0
+  },
   rps: {
     active: false,
     playerChoice: '',
