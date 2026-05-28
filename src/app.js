@@ -26,16 +26,38 @@ const state = createInitialState({
 
 window.addEventListener('message', e => {
   const d = e.data || {};
-  if (d.kind === 'vitrina:game-host' && d.type === 'GC_SNAPSHOT') {
+  if (d.kind !== 'vitrina:game-host') return;
+
+  if (d.type === 'GC_SNAPSHOT') {
     state.snapshot = d.payload;
     if (d.payload?.user?.displayName) state.player.name = d.payload.user.displayName;
     if (d.payload?.user?.gcAccountId) state.player.id = d.payload.user.gcAccountId;
     render();
+    return;
+  }
+
+  if (d.type === 'GC_RESTORE_GAME') {
+    render();
+
+    // После восстановления просим свежий snapshot, чтобы кнопка сворачивания не теряла play/pause-состояние.
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        kind: 'vitrina:game',
+        type: 'GC_REQUEST_SNAPSHOT',
+        gameId: 'war_hearts',
+        payload: { gameId: 'war_hearts', at: Date.now() }
+      }, '*');
+    }
   }
 });
 
 if (window.parent !== window) {
-  window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_READY' }, '*');
+  window.parent.postMessage({
+    kind: 'vitrina:game',
+    type: 'GC_READY',
+    gameId: 'war_hearts',
+    payload: { gameId: 'war_hearts', at: Date.now() }
+  }, '*');
 }
 
 const transcript = createTranscript();
@@ -392,7 +414,12 @@ const render = () => {
 const bind = () => {
   $('collapse-btn')?.addEventListener('click', () => {
     if (window.parent !== window) {
-      window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_COLLAPSE_GAME' }, '*');
+      window.parent.postMessage({
+        kind: 'vitrina:game',
+        type: 'GC_COLLAPSE_GAME',
+        gameId: 'war_hearts',
+        payload: { gameId: 'war_hearts', at: Date.now() }
+      }, '*');
     }
   });
 
