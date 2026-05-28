@@ -979,6 +979,7 @@ const actions = {
 
     session.sendChat(message);
     render();
+    scheduleSaveMatchDraft();
   },
 
   async toggleVoice(active) {
@@ -1206,6 +1207,7 @@ const bind = () => {
   session.onChat = msg => {
     state.chat.push(msg);
     render();
+    scheduleSaveMatchDraft();
   };
 };
 
