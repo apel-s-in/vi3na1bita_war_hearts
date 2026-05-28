@@ -116,6 +116,31 @@ const addSystemMessage = text => {
   });
 };
 
+const showBattleFx = (lane, kind) => {
+  const labels = {
+    miss: 'ПРОМАХ',
+    hit: 'РАНИЛ',
+    sunk: 'УБИЛ'
+  };
+
+  state.battleFx = {
+    lane,
+    kind,
+    text: labels[kind] || String(kind || '').toUpperCase(),
+    id: Date.now()
+  };
+
+  render();
+
+  const fxId = state.battleFx.id;
+  setTimeout(() => {
+    if (state.battleFx?.id === fxId) {
+      state.battleFx = null;
+      render();
+    }
+  }, 920);
+};
+
 const computerShoot = () => {
   if (state.screen !== 'battle' || state.phase !== 'computer') return;
 
@@ -135,7 +160,10 @@ const computerShoot = () => {
   const sunk = hit && isShipSunk(state.myBoard, shipCells);
   if (sunk) markSunkPerimeter(state.myBoard, shipCells);
 
+  const fxKind = sunk ? 'sunk' : hit ? 'hit' : 'miss';
   const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промахнулся';
+
+  showBattleFx('mine', fxKind);
 
   transcript.add({
     type: 'COMPUTER_SHOT',
@@ -150,7 +178,8 @@ const computerShoot = () => {
   if (isBoardDefeated(state.myBoard)) {
     state.result = 'loss';
     state.phase = 'finished';
-    setScreen('result');
+    addSystemMessage('Матч завершён: поражение.');
+    render();
     return;
   }
 
@@ -184,6 +213,97 @@ const toast = text => {
   toast.timer = setTimeout(() => {
     el.hidden = true;
   }, 1500);
+};
+
+const openTurnDuel = () => {
+  const old = document.querySelector('.wh-rps-modal-overlay');
+  if (old) old.remove();
+
+  state.rps = {
+    active: true,
+    playerChoice: '',
+    opponentChoice: '',
+    message: 'Выбери знак. Победитель делает первый выстрел.'
+  };
+
+  const choices = [
+    { id: 'rock', icon: '✊', label: 'Камень' },
+    { id: 'scissors', icon: '✌️', label: 'Ножницы' },
+    { id: 'paper', icon: '✋', label: 'Бумага' }
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'wh-rps-modal-overlay';
+  overlay.innerHTML = `
+    <div class="wh-rps-modal-box">
+      <div class="wh-rps-kicker">Розыгрыш первого хода</div>
+      <h2 class="wh-rps-title">Камень · Ножницы · Бумага</h2>
+      <p class="wh-rps-text" id="wh-rps-text">${state.rps.message}</p>
+      <div class="wh-rps-choices">
+        ${choices.map(choice => `
+          <button class="wh-rps-choice" type="button" data-choice="${choice.id}">
+            <span>${choice.icon}</span>
+            <b>${choice.label}</b>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const getOpponentChoice = () => choices[Math.floor(Math.random() * choices.length)].id;
+  const getChoiceLabel = id => choices.find(choice => choice.id === id)?.label || id;
+
+  const compare = (player, opponent) => {
+    if (player === opponent) return 'draw';
+    if (
+      (player === 'rock' && opponent === 'scissors') ||
+      (player === 'scissors' && opponent === 'paper') ||
+      (player === 'paper' && opponent === 'rock')
+    ) {
+      return 'player';
+    }
+    return 'opponent';
+  };
+
+  overlay.querySelectorAll('[data-choice]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const playerChoice = btn.dataset.choice;
+      const opponentChoice = getOpponentChoice();
+      const result = compare(playerChoice, opponentChoice);
+      const text = overlay.querySelector('#wh-rps-text');
+
+      state.rps.playerChoice = playerChoice;
+      state.rps.opponentChoice = opponentChoice;
+
+      if (result === 'draw') {
+        state.rps.message = `Ничья: ${getChoiceLabel(playerChoice)} против ${getChoiceLabel(opponentChoice)}. Ещё раз!`;
+        if (text) text.textContent = state.rps.message;
+        overlay.classList.remove('is-shake');
+        void overlay.offsetWidth;
+        overlay.classList.add('is-shake');
+        return;
+      }
+
+      state.rps.active = false;
+      overlay.remove();
+
+      if (result === 'player') {
+        state.phase = 'player';
+        addSystemMessage(`Розыгрыш хода: ${getChoiceLabel(playerChoice)} против ${getChoiceLabel(opponentChoice)}. Первый ход твой.`);
+        render();
+        return;
+      }
+
+      state.phase = 'computer';
+      addSystemMessage(`Розыгрыш хода: ${getChoiceLabel(playerChoice)} против ${getChoiceLabel(opponentChoice)}. Первым ходит соперник.`);
+      render();
+
+      clearTimeout(computerTimer);
+      computerTimer = setTimeout(computerShoot, 700);
+    });
+  });
 };
 
 const openShotConfirm = (x, y) => {
@@ -221,8 +341,8 @@ const openShotConfirm = (x, y) => {
 };
 
 const setScreen = screen => {
-  // Запрещаем переключать табы, если идет активный бой
-  const inBattle = state.phase === 'player' || state.phase === 'computer';
+  // Запрещаем переключать табы, если идет активный бой или розыгрыш первого хода.
+  const inBattle = state.phase === 'player' || state.phase === 'computer' || state.phase === 'rps';
   if (inBattle && screen !== 'battle') {
     toast('Бой активен! Нажмите белый флаг, чтобы сдаться.');
     return;
@@ -313,15 +433,31 @@ const actions = {
   },
 
   acceptMockOpponent() {
+    clearTimeout(computerTimer);
     state.opponent = {
       id: 'friend_preview',
       name: 'Друг рядом',
       title: 'Гость арены',
-      type: 'friend'
+      type: 'computer'
     };
-    state.phase = 'player';
+
+    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
+    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
+    state.selectedTarget = null;
+    state.battleFx = null;
+    state.phase = 'rps';
+    state.result = '';
+    state.chat = [
+      {
+        from: 'Система',
+        text: 'Preview-соперник выбран. Сейчас разыграем первый ход.',
+        at: Date.now()
+      }
+    ];
+
     toast('Соперник выбран');
     setScreen('battle');
+    openTurnDuel();
   },
 
   startComputerGame() {
@@ -332,20 +468,24 @@ const actions = {
       title: 'Случайный стрелок',
       type: 'computer'
     };
-    // Синхронизируем текущий флот (расставленный юзером) с myBoard для игры
+
     state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
     state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
-    state.phase = 'player';
+    state.selectedTarget = null;
+    state.battleFx = null;
+    state.phase = 'rps';
     state.result = '';
     state.chat = [
       {
         from: 'Система',
-        text: 'Тренировка против компьютера началась. Компьютер стреляет случайно.',
+        text: 'Новая тренировка началась. Сейчас разыграем первый ход.',
         at: Date.now()
       }
     ];
+
     toast('Игра с компьютером');
     setScreen('battle');
+    openTurnDuel();
   },
 
   shootCell(x, y) {
@@ -378,7 +518,10 @@ const actions = {
     const sunk = hit && isShipSunk(state.enemyBoard, shipCells);
     if (sunk) markSunkPerimeter(state.enemyBoard, shipCells);
 
+    const fxKind = sunk ? 'sunk' : hit ? 'hit' : 'miss';
     const resultText = sunk ? 'убил корабль' : hit ? 'ранил корабль' : 'промах';
+
+    showBattleFx('enemy', fxKind);
 
     transcript.add({
       type: 'SHOT',
@@ -396,7 +539,8 @@ const actions = {
     if (isBoardDefeated(state.enemyBoard)) {
       state.result = 'win';
       state.phase = 'finished';
-      setScreen('result');
+      addSystemMessage('Матч завершён: победа!');
+      render();
       return;
     }
 
@@ -447,7 +591,30 @@ const actions = {
 
   finishMock(result = 'win') {
     state.result = result;
-    setScreen('result');
+    state.phase = 'finished';
+    addSystemMessage(result === 'win' ? 'Preview завершён: победа.' : 'Preview завершён: поражение.');
+    render();
+  },
+
+  rematch() {
+    clearTimeout(computerTimer);
+
+    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
+    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
+    state.selectedTarget = null;
+    state.battleFx = null;
+    state.result = '';
+    state.phase = 'rps';
+    state.chat = [
+      {
+        from: 'Система',
+        text: 'Реванш начался. Голосовой канал не прерывается. Разыгрываем первый ход.',
+        at: Date.now()
+      }
+    ];
+
+    setScreen('battle');
+    openTurnDuel();
   }
 };
 
@@ -456,7 +623,7 @@ const render = () => {
   const subtitle = $('screen-subtitle');
   if (!root || !subtitle) return;
 
-  const inBattle = state.phase === 'player' || state.phase === 'computer';
+  const inBattle = state.phase === 'player' || state.phase === 'computer' || state.phase === 'rps';
   
   // Кнопка сворачивания всегда доступна внутри Game Center:
   // play = трек загружен на паузе, pause = играет, stop = трека нет.
@@ -477,9 +644,10 @@ const render = () => {
     colBtn.setAttribute('aria-label', colBtn.title);
   }
 
-  // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активного сражения
+  // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активной стрельбы.
   const surrenderBtn = $('surrender-btn');
-  if (surrenderBtn) surrenderBtn.hidden = !(inBattle && state.screen === 'battle');
+  const canSurrender = (state.phase === 'player' || state.phase === 'computer') && state.screen === 'battle';
+  if (surrenderBtn) surrenderBtn.hidden = !canSurrender;
 
   // Во время боя активна только вкладка "Бой". Вне боя вкладка "Бой" заблокирована.
   document.querySelectorAll('.wh-tab').forEach(btn => {
@@ -588,10 +756,11 @@ const bind = () => {
     overlay.querySelector('#wh-surrender-cancel').onclick = () => overlay.remove();
     overlay.querySelector('#wh-surrender-confirm').onclick = () => {
       overlay.remove();
-      // Выставляем поражение и отправляем на экран результатов
+      // Выставляем поражение, но оставляем поле, чат и голосовую кнопку на экране боя.
       state.phase = 'finished';
       state.result = 'loss';
-      setScreen('result');
+      addSystemMessage('Игрок сдался. Матч завершён.');
+      render();
     };
   });
 
