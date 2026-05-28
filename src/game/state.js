@@ -8,6 +8,7 @@ export const createInitialState = overrides => ({
   },
   opponent: null,
   invite: null,
+  selectedTarget: null,
   fleet: [],
   myBoard: [],
   enemyBoard: [],
