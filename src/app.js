@@ -383,9 +383,12 @@ const actions = {
   },
 
   openMenu() {
-    // Если возвращаемся из результатов боя, сбрасываем сессию и очищаем поля
+    // Если возвращаемся из завершённого боя, сбрасываем визуальное состояние матча.
     if (state.phase === 'finished') {
       state.phase = 'idle';
+      state.result = '';
+      state.selectedTarget = null;
+      state.battleFx = null;
       state.myBoard.forEach(row => row.forEach(c => c.status = ''));
       state.enemyBoard.forEach(row => row.forEach(c => {
         c.status = '';
