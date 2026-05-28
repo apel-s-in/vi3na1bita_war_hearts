@@ -11,6 +11,7 @@ export const renderBattle = (root, state, actions) => {
   enemy.innerHTML = `<div class="wh-board-title"><span>Поле соперника${state.opponent?.name ? ` · ${state.opponent.name}` : ''}</span><b>${state.phase === 'computer' ? 'ходит AI' : 'атака'}</b></div>`;
   enemy.append(renderBoard(state.enemyBoard, {
     mode: 'enemy',
+    target: state.selectedTarget,
     onCell: actions.shootCell
   }));
 
