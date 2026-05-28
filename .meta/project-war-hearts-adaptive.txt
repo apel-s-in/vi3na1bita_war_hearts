@@ -82,7 +82,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-28 18:33:08 UTC
+Сгенерировано: 2026-05-28 18:34:05 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2203,6 +2203,7 @@ export const renderBattle = (root, state, actions) => {
   enemy.innerHTML = `<div class="wh-board-title"><span>Поле соперника${state.opponent?.name ? ` · ${state.opponent.name}` : ''}</span><b>${state.phase === 'computer' ? 'ходит AI' : 'атака'}</b></div>`;
   enemy.append(renderBoard(state.enemyBoard, {
     mode: 'enemy',
+    target: state.selectedTarget,
     onCell: actions.shootCell
   }));
 
