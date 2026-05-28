@@ -37,6 +37,9 @@ window.addEventListener('message', e => {
   }
 
   if (d.type === 'GC_RESTORE_GAME') {
+    document.body.dataset.screen = state.screen || 'menu';
+    $('app')?.removeAttribute('hidden');
+    $('screen-root')?.removeAttribute('hidden');
     render();
 
     // После восстановления просим свежий snapshot, чтобы кнопка сворачивания не теряла play/pause-состояние.
