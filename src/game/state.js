@@ -27,6 +27,31 @@ export const createInitialState = overrides => ({
     enemyCommitOk: null,
     note: ''
   },
+  network: {
+    active: false,
+    connected: false,
+    status: 'offline',
+    text: '',
+    peerName: '',
+    myReady: false,
+    peerReady: false,
+    myCommitSent: false,
+    peerCommitReceived: false,
+    awaitingShotResult: false,
+    awaitingReveal: false,
+    lastEventAt: 0
+  },
+  networkRps: {
+    active: false,
+    myChoice: '',
+    peerChoice: '',
+    round: 0
+  },
+  rematchOffer: {
+    active: false,
+    from: '',
+    matchId: ''
+  },
   matchStats: {
     matchId: '',
     startedAt: 0,
