@@ -37,6 +37,8 @@ export const createMatchPersistence = ({
     selectedTarget: state.selectedTarget,
     autoBattle: { player: false },
     fairPlay: state.fairPlay,
+    network: state.network,
+    networkRps: state.networkRps,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -182,6 +184,15 @@ export const createMatchPersistence = ({
       ...state.fairPlay,
       ...(draft.fairPlay || {}),
       revealed: !!draft.fairPlay?.revealed
+    };
+    state.network = {
+      ...state.network,
+      ...(draft.network || {}),
+      active: draft.opponent?.type === 'network' || !!draft.network?.active
+    };
+    state.networkRps = {
+      ...state.networkRps,
+      ...(draft.networkRps || {})
     };
     state.matchStats = {
       ...createMatchStats(),
