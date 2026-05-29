@@ -83,7 +83,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:04:05 UTC
+Сгенерировано: 2026-05-29 14:04:35 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2993,6 +2993,7 @@ export const isInsideBoard = (x, y) =>
 export const createInitialState = overrides => ({
   screen: 'menu',
   phase: 'idle',
+  menuTab: 'stats',
   player: {
     id: 'local',
     name: 'Слушатель',
