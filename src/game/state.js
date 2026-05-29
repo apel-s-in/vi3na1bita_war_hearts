@@ -39,6 +39,7 @@ export const createInitialState = overrides => ({
     peerCommitReceived: false,
     awaitingShotResult: false,
     awaitingReveal: false,
+    myRevealSent: false,
     lastEventAt: 0
   },
   networkRps: {
