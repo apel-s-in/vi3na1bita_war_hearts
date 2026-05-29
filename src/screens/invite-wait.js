@@ -1,3 +1,5 @@
+import { renderNetworkIndicator } from '../ui/network-indicator.js';
+
 export const renderInviteWait = (root, state, actions) => {
   const left = Math.max(0, Math.ceil(((state.invite?.expiresAt || Date.now()) - Date.now()) / 1000));
   const url = String(state.invite?.url || '').trim();
@@ -22,6 +24,12 @@ export const renderInviteWait = (root, state, actions) => {
       <button class="wh-btn secondary" type="button" data-act="menu">Назад</button>
     </div>
   `;
+
+  if (state.network?.active) {
+    el.prepend(renderNetworkIndicator(state, {
+      fallbackText: 'Приглашение создано. Ожидаем подключение второго устройства.'
+    }));
+  }
 
   el.querySelector('[data-act="extend"]')?.addEventListener('click', actions.extendInvite);
   el.querySelector('[data-act="accepted"]')?.addEventListener('click', actions.acceptMockOpponent);
