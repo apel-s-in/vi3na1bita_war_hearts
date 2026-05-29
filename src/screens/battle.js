@@ -1,6 +1,7 @@
 import { renderBoard } from '../ui/board-view.js';
 import { renderChat } from '../ui/chat-view.js';
 import { renderVoiceButton } from '../ui/voice-button.js';
+import { renderNetworkIndicator } from '../ui/network-indicator.js';
 
 export const renderBattle = (root, state, actions) => {
   const wrap = document.createElement('section');
@@ -96,8 +97,13 @@ const renderFx = (state, lane) => {
 
 const renderFairPlay = state => {
   const fp = state.fairPlay || {};
-  const enemyOk = fp.enemyLayoutOk === true && fp.enemyCommitOk !== false;
+  const shots = state.networkShots || {};
   const myOk = fp.myLayoutOk === true;
+  const enemyCommitBad = fp.enemyCommitOk === false;
+  const enemyLayoutBad = fp.enemyLayoutOk === false;
+  const transcriptBad = fp.enemyTranscriptOk === false || shots.enemyTranscriptOk === false;
+  const enemyOk = fp.enemyLayoutOk === true && fp.enemyCommitOk !== false && !transcriptBad;
+  const transcriptOk = fp.enemyTranscriptOk === true || shots.enemyTranscriptOk === true;
 
   return `
     <div class="wh-fairplay">
@@ -105,29 +111,17 @@ const renderFairPlay = state => {
         <span>Твоя доска</span>
         <b>${myOk ? 'правила OK' : 'проверка'}</b>
       </div>
-      <div class="${enemyOk ? 'is-ok' : 'is-warn'}">
+      <div class="${enemyOk ? 'is-ok' : enemyCommitBad || enemyLayoutBad ? 'is-bad' : 'is-warn'}">
         <span>Доска соперника</span>
-        <b>${enemyOk ? 'честность OK' : 'ожидает reveal'}</b>
+        <b>${enemyOk ? 'честность OK' : enemyCommitBad ? 'commit ошибка' : enemyLayoutBad ? 'правила нарушены' : 'ожидает reveal'}</b>
       </div>
-      <p>${fp.note || 'После финала обе расстановки раскрываются для сверки.'}</p>
+      <div class="${transcriptOk ? 'is-ok' : transcriptBad ? 'is-bad' : 'is-warn'}">
+        <span>История выстрелов</span>
+        <b>${transcriptOk ? 'выстрелы OK' : transcriptBad ? 'есть расхождения' : 'проверка'}</b>
+      </div>
+      <p>${fp.note || shots.note || 'После финала обе расстановки и результаты выстрелов сверяются.'}</p>
     </div>
   `;
-};
-const renderNetworkIndicator = state => {
-  const net = state.network || {};
-  const el = document.createElement('div');
-  el.className = `wh-network-indicator is-${net.status || 'info'}`;
-
-  const peer = net.peerName || state.opponent?.name || 'Соперник';
-  const text = net.text || 'Сетевой режим: синхронизация с соперником.';
-
-  el.innerHTML = `
-    <span>🟡</span>
-    <b>${peer}</b>
-    <em>${text}</em>
-  `;
-
-  return el;
 };
 const renderStats = state => {
   const s = state.matchStats || {};
