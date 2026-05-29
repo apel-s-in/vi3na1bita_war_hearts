@@ -1,6 +1,17 @@
 import { MessageType } from './protocol.js';
 import { verifyShotResultsAgainstReveal } from './shot-verifier.js';
 import {
+  canSendNetworkShot,
+  clearOutgoingShotExpectation,
+  createNetworkTurnState,
+  recordIncomingShot,
+  recordIncomingShotResult,
+  recordOutgoingShot,
+  recordTurnViolation,
+  verifyIncomingShot,
+  verifyIncomingShotResult
+} from './turn-guard.js';
+import {
   applyRevealToBoard,
   createBoardCommit,
   createSalt,
@@ -116,6 +127,8 @@ export const createNetworkCombat = ({
       enemyTranscriptOk: null,
       note: ''
     };
+
+    state.networkTurn = createNetworkTurnState();
 
     state.myBoard.forEach(row => row.forEach(cell => {
       cell.status = '';
@@ -331,10 +344,20 @@ export const createNetworkCombat = ({
 
   const shoot = (x, y) => {
     if (state.opponent?.type !== 'network') return false;
-    if (state.phase !== 'player') return true;
 
-    const cell = state.enemyBoard[y]?.[x];
-    if (!cell || cell.status) return true;
+    const guard = canSendNetworkShot({
+      state,
+      x,
+      y
+    });
+
+    if (!guard.ok) {
+      setNetworkStatus(`Выстрел отклонён: ${guard.reason}.`, 'error');
+      addSystemMessage(`Turn guard: выстрел ${formatCellName(x, y)} отклонён (${guard.reason}).`);
+      render();
+      scheduleSaveMatchDraft();
+      return true;
+    }
 
     const shotId = `${state.matchStats.matchId}_${++shotSeq}`;
 
@@ -343,6 +366,24 @@ export const createNetworkCombat = ({
 
     const sent = session.sendShot({
       matchId: state.matchStats.matchId,
+      shotId,
+      x,
+      y,
+      seq: shotSeq
+    });
+
+    if (!sent) {
+      state.network.awaitingShotResult = false;
+      clearOutgoingShotExpectation(state);
+      setNetworkStatus('Не удалось отправить выстрел. Проверьте соединение.', 'error');
+      addSystemMessage(`Выстрел ${formatCellName(x, y)} не отправлен: нет связи.`);
+      render();
+      scheduleSaveMatchDraft();
+      return true;
+    }
+
+    recordOutgoingShot({
+      state,
       shotId,
       x,
       y,
@@ -359,15 +400,6 @@ export const createNetworkCombat = ({
       at: Date.now()
     });
 
-    if (!sent) {
-      state.network.awaitingShotResult = false;
-      setNetworkStatus('Не удалось отправить выстрел. Проверьте соединение.', 'error');
-      addSystemMessage(`Выстрел ${formatCellName(x, y)} не отправлен: нет связи.`);
-      render();
-      scheduleSaveMatchDraft();
-      return true;
-    }
-
     addSystemMessage(`Выстрел ${formatCellName(x, y)} отправлен сопернику.`);
     setNetworkStatus(`Выстрел ${formatCellName(x, y)} отправлен. Ожидаем результат...`, 'waiting');
 
@@ -381,21 +413,31 @@ export const createNetworkCombat = ({
     const payload = msg.payload || {};
     const x = Number(payload.x);
     const y = Number(payload.y);
+    const shotId = String(payload.shotId || '');
 
     if (state.phase === 'finished') return;
 
-    const cell = state.myBoard[y]?.[x];
-    if (!cell || cell.status) {
-      session.sendShotResult({
-        matchId: state.matchStats.matchId,
-        shotId: payload.shotId,
-        x,
-        y,
-        result: 'miss',
-        duplicate: true
-      });
+    const guard = verifyIncomingShot({
+      state,
+      shotId,
+      x,
+      y
+    });
+
+    if (!guard.ok) {
+      setNetworkStatus(`SHOT соперника отклонён: ${guard.reason}.`, 'error');
+      addSystemMessage(`Turn guard: SHOT соперника отклонён (${guard.reason}).`);
+      render();
+      scheduleSaveMatchDraft();
       return;
     }
+
+    recordIncomingShot({
+      state,
+      shotId
+    });
+
+    const cell = state.myBoard[y]?.[x];
 
     const coord = formatCellName(x, y);
     const hit = !!cell.ship;
@@ -454,9 +496,33 @@ export const createNetworkCombat = ({
     const x = Number(payload.x);
     const y = Number(payload.y);
     const result = payload.result || 'miss';
+    const shotId = String(payload.shotId || '');
+
+    const guard = verifyIncomingShotResult({
+      state,
+      shotId
+    });
+
+    if (!guard.ok) {
+      setNetworkStatus(`SHOT_RESULT отклонён: ${guard.reason}.`, 'error');
+      addSystemMessage(`Turn guard: SHOT_RESULT отклонён (${guard.reason}).`);
+      render();
+      scheduleSaveMatchDraft();
+      return;
+    }
 
     const cell = state.enemyBoard[y]?.[x];
-    if (!cell) return;
+    if (!cell) {
+      recordTurnViolation(state, 'shot_result_outside_enemy_board', {
+        shotId,
+        x,
+        y
+      });
+      setNetworkStatus('SHOT_RESULT указывает на клетку вне поля.', 'error');
+      render();
+      scheduleSaveMatchDraft();
+      return;
+    }
 
     cell.status = result === 'miss' ? 'miss' : 'hit';
     if (result === 'sunk') {
@@ -504,6 +570,11 @@ export const createNetworkCombat = ({
         at: Date.now()
       });
     }
+
+    recordIncomingShotResult({
+      state,
+      shotId
+    });
 
     registerShotStats('player', result);
     showBattleFx('enemy', result);
