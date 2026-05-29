@@ -39,6 +39,7 @@ export const createMatchPersistence = ({
     fairPlay: state.fairPlay,
     network: state.network,
     networkRps: state.networkRps,
+    networkShots: state.networkShots,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -94,6 +95,7 @@ export const createMatchPersistence = ({
         myLayoutOk: state.fairPlay?.myLayoutOk,
         enemyLayoutOk: state.fairPlay?.enemyLayoutOk,
         enemyCommitOk: state.fairPlay?.enemyCommitOk,
+        enemyTranscriptOk: state.fairPlay?.enemyTranscriptOk,
         revealed: !!state.fairPlay?.revealed,
         note: String(state.fairPlay?.note || '')
       }
@@ -193,6 +195,12 @@ export const createMatchPersistence = ({
     state.networkRps = {
       ...state.networkRps,
       ...(draft.networkRps || {})
+    };
+    state.networkShots = {
+      ...state.networkShots,
+      ...(draft.networkShots || {}),
+      mine: Array.isArray(draft.networkShots?.mine) ? draft.networkShots.mine : [],
+      peer: Array.isArray(draft.networkShots?.peer) ? draft.networkShots.peer : []
     };
     state.matchStats = {
       ...createMatchStats(),
