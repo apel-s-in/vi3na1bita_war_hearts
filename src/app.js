@@ -217,6 +217,7 @@ const finishMatch = (result, message) => {
   addSystemMessage(message);
   addSystemMessage('Расстановки раскрыты. Проверка правил завершена.');
   if (state.opponent?.type === 'network') {
+    networkCombat?.sendMatchFinished(result);
     networkCombat?.sendBoardReveal();
   }
 
@@ -536,7 +537,7 @@ matchPersistence = createMatchPersistence({
 networkCombat = createNetworkCombat({
   state,
   session,
-  setScreen,
+  setScreen: screen => setScreen(screen),
   render: () => render(),
   toast,
   addSystemMessage,
@@ -1115,14 +1116,17 @@ const bind = () => {
       };
     }
 
-    if (state.phase === 'idle') state.phase = 'player';
+    state.network.active = true;
+    state.network.peerName = state.opponent.name;
   };
 
   session.onRoom = info => {
     if (info?.role === 'guest') {
       ensureNetworkOpponent('Хост комнаты');
+      state.network.text = 'Комната найдена. Устанавливаем P2P-соединение...';
+      state.network.status = 'waiting';
       toast('Подключаемся к комнате');
-      setScreen('battle');
+      render();
     }
   };
 
@@ -1130,6 +1134,7 @@ const bind = () => {
     state.opponent = {
       id: peer?.id || 'network-peer',
       name: peer?.name || 'Соперник',
+      title: 'Сетевая дуэль',
       type: 'network'
     };
 
@@ -1140,6 +1145,15 @@ const bind = () => {
     networkCombat?.onConnected(state.opponent.name);
 
     addSystemMessage('Сетевое соединение установлено.');
+
+    const canStartPreparation = !['setup', 'rps', 'player', 'computer'].includes(state.phase);
+    if (canStartPreparation) {
+      networkCombat?.startNetworkPreparation({
+        initiator: session.room?.role !== 'guest'
+      });
+      return;
+    }
+
     render();
   };
 
