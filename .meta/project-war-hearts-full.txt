@@ -83,7 +83,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:06:21 UTC
+Сгенерировано: 2026-05-29 14:07:07 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1926,6 +1926,197 @@ button{
   display:grid;
   gap:10px;
   margin-top:12px;
+}
+
+.wh-menu-flat{
+  display:grid;
+  gap:12px;
+  margin:0 0 12px;
+}
+
+.wh-menu-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.wh-menu-tabs button{
+  min-height:42px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  background:rgba(255,255,255,.06);
+  color:var(--wh-muted);
+  font-weight:950;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.wh-menu-tabs button.is-active{
+  color:#fff;
+  background:linear-gradient(135deg,rgba(255,49,89,.92),rgba(255,107,149,.68));
+  border-color:rgba(255,49,89,.8);
+  box-shadow:0 10px 26px rgba(255,49,89,.18);
+}
+
+.wh-menu-tab-body{
+  min-height:120px;
+}
+
+.wh-stat-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+}
+
+.wh-stat-grid div{
+  min-height:64px;
+  padding:10px;
+  border-radius:16px;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.wh-stat-grid span{
+  display:block;
+  margin-bottom:5px;
+  color:var(--wh-muted);
+  font-size:11px;
+  font-weight:850;
+}
+
+.wh-stat-grid b{
+  display:block;
+  color:#fff;
+  font-size:20px;
+  line-height:1;
+}
+
+.wh-ach-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+
+.wh-ach{
+  min-height:76px;
+  display:grid;
+  place-items:center;
+  gap:4px;
+  padding:8px 5px;
+  border-radius:16px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.08);
+  opacity:.42;
+  filter:grayscale(.8);
+}
+
+.wh-ach.is-open{
+  opacity:1;
+  filter:none;
+  background:linear-gradient(135deg,rgba(255,49,89,.16),rgba(36,232,255,.08));
+  border-color:rgba(255,49,89,.28);
+  box-shadow:0 10px 24px rgba(255,49,89,.1);
+}
+
+.wh-ach span{
+  font-size:24px;
+  line-height:1;
+}
+
+.wh-ach b{
+  color:#fff;
+  font-size:10px;
+  line-height:1.12;
+  text-align:center;
+}
+
+.wh-opponents-page{
+  display:grid;
+  gap:12px;
+}
+
+.wh-opponent-head{
+  padding:0 4px;
+}
+
+.wh-opponent-head h2,
+.wh-opponent-block h3{
+  margin:0 0 7px;
+}
+
+.wh-opponent-head p,
+.wh-opponent-block p{
+  margin:0;
+  color:var(--wh-muted);
+  font-size:13px;
+  line-height:1.35;
+}
+
+.wh-opponent-block{
+  padding:14px;
+  border-radius:22px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.wh-friends-list{
+  display:grid;
+  gap:8px;
+  margin-top:12px;
+}
+
+.wh-friend-row{
+  min-height:54px;
+  display:grid;
+  grid-template-columns:38px 1fr auto;
+  align-items:center;
+  gap:10px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  background:rgba(255,255,255,.055);
+  color:#fff;
+  text-align:left;
+  cursor:pointer;
+}
+
+.wh-friend-row span,
+.wh-friend-empty span{
+  font-size:24px;
+  text-align:center;
+}
+
+.wh-friend-row b{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.wh-friend-row small{
+  padding-right:10px;
+  color:var(--wh-muted);
+  font-size:11px;
+}
+
+.wh-friend-empty{
+  min-height:120px;
+  display:grid;
+  place-items:center;
+  gap:6px;
+  padding:18px;
+  border-radius:18px;
+  background:rgba(0,0,0,.16);
+  color:var(--wh-muted);
+  text-align:center;
+}
+
+.wh-friend-empty b{
+  color:#fff;
+}
+
+.wh-friend-empty small{
+  max-width:260px;
+  line-height:1.35;
 }
 
 .wh-btn{
