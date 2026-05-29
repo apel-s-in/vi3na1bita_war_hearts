@@ -743,6 +743,10 @@ const setScreen = screen => {
     screen = 'opponents';
   }
 
+  if (screen === 'invite' && !state.invite) {
+    screen = 'opponents';
+  }
+
   // Запрещаем переключать табы, если идет активный бой или розыгрыш первого хода.
   const inBattle = state.phase === 'player' || state.phase === 'computer' || state.phase === 'rps';
   if (inBattle && screen !== 'battle') {
@@ -1195,25 +1199,18 @@ const bind = () => {
     setStatus(info.label, info.online);
   };
 
-  const ensureNetworkOpponent = name => {
-    if (state.opponent?.type !== 'network') {
-      state.opponent = {
-        id: 'network_peer',
-        name: name || 'Соперник',
-        title: 'Сетевая дуэль',
-        type: 'network'
-      };
-    }
-
+  const markNetworkPeerHint = name => {
     state.network.active = true;
-    state.network.peerName = state.opponent.name;
+    state.network.connected = false;
+    state.network.peerName = name || state.network.peerName || 'Соперник';
   };
 
   session.onRoom = info => {
     if (info?.role === 'guest') {
-      ensureNetworkOpponent('Хост комнаты');
+      markNetworkPeerHint('Хост комнаты');
       state.network.text = 'Комната найдена. Устанавливаем P2P-соединение...';
       state.network.status = 'waiting';
+      state.network.lastEventAt = Date.now();
       toast('Подключаемся к комнате');
       render();
     }
