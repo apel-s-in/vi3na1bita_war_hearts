@@ -95,7 +95,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 15:55:37 UTC
+Сгенерировано: 2026-05-29 15:56:13 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1716,6 +1716,12 @@ const bind = () => {
       return;
     }
 
+    render();
+  };
+
+  session.onDisconnect = () => {
+    networkCombat?.onDisconnected();
+    addSystemMessage('Соединение с соперником потеряно.');
     render();
   };
 
