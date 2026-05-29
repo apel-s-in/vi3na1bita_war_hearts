@@ -41,6 +41,7 @@ export const createMatchPersistence = ({
     networkRps: state.networkRps,
     networkShots: state.networkShots,
     networkTurn: state.networkTurn,
+    networkWatchdog: state.networkWatchdog,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -210,6 +211,12 @@ export const createMatchPersistence = ({
       receivedShotIds: Array.isArray(draft.networkTurn?.receivedShotIds) ? draft.networkTurn.receivedShotIds : [],
       resolvedShotIds: Array.isArray(draft.networkTurn?.resolvedShotIds) ? draft.networkTurn.resolvedShotIds : [],
       violations: Array.isArray(draft.networkTurn?.violations) ? draft.networkTurn.violations : []
+    };
+    state.networkWatchdog = {
+      ...state.networkWatchdog,
+      ...(draft.networkWatchdog || {}),
+      warning: false,
+      note: ''
     };
     state.matchStats = {
       ...createMatchStats(),
