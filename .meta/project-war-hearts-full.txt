@@ -83,7 +83,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:02:27 UTC
+Сгенерировано: 2026-05-29 14:04:05 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -634,8 +634,12 @@ const session = new WarHeartsSession({
 let computerTimer = 0;
 let playerAutoTimer = 0;
 let inviteTimer = 0;
-let saveDraftTimer = 0;
-let draftRestored = false;
+let matchPersistence = null;
+
+const saveMatchDraftNow = () => matchPersistence?.saveMatchDraftNow();
+const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
+const restoreMatchDraft = () => matchPersistence?.restoreMatchDraft() || false;
+const clearMatchDraft = () => matchPersistence?.clearMatchDraft();
 
 const INVITE_TTL_MS = 120000;
 
@@ -813,134 +817,6 @@ const addSystemMessage = text => {
     at: Date.now()
   });
   scheduleSaveMatchDraft();
-};
-
-const packBoard = board => board.map(row => row.map(cell => ({
-  h: !!cell.ship,
-  s: cell.status || ''
-})));
-
-const unpackBoard = packed => Array.isArray(packed)
-  ? packed.map(row => Array.isArray(row)
-    ? row.map(cell => ({ ship: !!cell?.h, status: String(cell?.s || '') }))
-    : [])
-  : [];
-
-const getSavedGameData = key => {
-  const data = state.snapshot?.gameData || {};
-  return data[`${GAME_ID}_${key}`] || data[key] || null;
-};
-
-const makeMatchDraft = () => ({
-  v: 1,
-  gameId: GAME_ID,
-  savedAt: Date.now(),
-  screen: state.screen,
-  phase: state.phase,
-  result: state.result,
-  opponent: state.opponent,
-  selectedTarget: state.selectedTarget,
-  autoBattle: { player: false },
-  matchStats: state.matchStats,
-  fleet: state.fleet,
-  myBoard: packBoard(state.myBoard),
-  enemyBoard: packBoard(state.enemyBoard),
-  chat: state.chat.slice(-500)
-});
-
-const saveMatchStats = () => {
-  if (!state.matchStats?.matchId) return;
-  postToHost('GC_SAVE_DATA', {
-    key: 'matchStats',
-    data: {
-      gameId: GAME_ID,
-      savedAt: Date.now(),
-      result: state.result,
-      stats: state.matchStats
-    }
-  });
-};
-
-const saveMatchDraftNow = () => {
-  clearTimeout(saveDraftTimer);
-
-  const active = ['rps', 'player', 'computer', 'finished'].includes(state.phase);
-  if (!active || !state.matchStats?.matchId) return;
-
-  const draft = makeMatchDraft();
-
-  try {
-    localStorage.setItem('wh_matchDraft', JSON.stringify(draft));
-  } catch {}
-
-  postToHost('GC_SAVE_DATA', {
-    key: 'matchDraft',
-    data: draft
-  });
-
-  if (state.phase === 'finished') saveMatchStats();
-};
-
-const scheduleSaveMatchDraft = () => {
-  clearTimeout(saveDraftTimer);
-  saveDraftTimer = setTimeout(saveMatchDraftNow, 350);
-};
-
-const restoreMatchDraft = () => {
-  if (draftRestored) return false;
-
-  let draft = getSavedGameData('matchDraft');
-  if (!draft) {
-    try {
-      draft = JSON.parse(localStorage.getItem('wh_matchDraft') || 'null');
-    } catch {}
-  }
-
-  if (!draft || draft.gameId !== GAME_ID || !draft.matchStats?.matchId) return false;
-  if (!['rps', 'player', 'computer', 'finished'].includes(draft.phase)) return false;
-  if (Date.now() - Number(draft.savedAt || 0) > 24 * 60 * 60 * 1000) return false;
-
-  draftRestored = true;
-
-  state.screen = draft.screen || 'battle';
-  state.phase = draft.phase;
-  state.result = draft.result || '';
-  state.opponent = draft.opponent || state.opponent;
-  state.selectedTarget = draft.selectedTarget || null;
-  state.autoBattle = { player: false };
-  state.matchStats = {
-    ...createMatchStats(),
-    ...(draft.matchStats || {})
-  };
-  state.fleet = Array.isArray(draft.fleet) ? draft.fleet : state.fleet;
-  state.myBoard = unpackBoard(draft.myBoard);
-  state.enemyBoard = unpackBoard(draft.enemyBoard);
-  state.chat = Array.isArray(draft.chat) && draft.chat.length ? draft.chat : state.chat;
-
-  document.body.dataset.screen = state.screen;
-
-  if (state.phase === 'computer' && state.screen === 'battle' && !document.hidden) {
-    clearTimeout(computerTimer);
-    computerTimer = setTimeout(computerShoot, 720);
-  }
-
-  if (state.phase === 'rps' && state.screen === 'battle') {
-    setTimeout(openTurnDuel, 120);
-  }
-
-  render();
-  return true;
-};
-
-const clearMatchDraft = () => {
-  clearTimeout(saveDraftTimer);
-  try {
-    localStorage.removeItem('wh_matchDraft');
-  } catch {}
-  postToHost('GC_SAVE_DATA', {
-    key: 'matchDraft',
-    data: null
-  });
 };
 
 const showBattleFx = (lane, kind) => {
@@ -1196,6 +1072,19 @@ const openTurnDuel = () => {
     });
   });
 };
+
+matchPersistence = createMatchPersistence({
+  state,
+  gameId: GAME_ID,
+  postToHost,
+  createMatchStats,
+  render: () => render(),
+  openTurnDuel: () => openTurnDuel(),
+  scheduleComputerTurn: () => {
+    clearTimeout(computerTimer);
+    computerTimer = setTimeout(computerShoot, 720);
+  }
+});
 
 const openShotConfirm = (x, y) => {
   const coord = formatCellName(x, y);
