@@ -136,7 +136,7 @@ export const createMatchPersistence = ({
   const saveMatchDraftNow = () => {
     clearTimeout(saveDraftTimer);
 
-    const active = ['rps', 'player', 'computer', 'finished'].includes(state.phase);
+    const active = ['setup', 'rps', 'player', 'computer', 'finished'].includes(state.phase);
     if (!active || !state.matchStats?.matchId) return;
 
     const draft = makeMatchDraft();
@@ -169,7 +169,7 @@ export const createMatchPersistence = ({
     }
 
     if (!draft || draft.gameId !== gameId || !draft.matchStats?.matchId) return false;
-    if (!['rps', 'player', 'computer', 'finished'].includes(draft.phase)) return false;
+    if (!['setup', 'rps', 'player', 'computer', 'finished'].includes(draft.phase)) return false;
     if (Date.now() - Number(draft.savedAt || 0) > 24 * 60 * 60 * 1000) return false;
 
     draftRestored = true;
@@ -209,7 +209,7 @@ export const createMatchPersistence = ({
       scheduleComputerTurn();
     }
 
-    if (state.phase === 'rps' && state.screen === 'battle') {
+    if (state.phase === 'rps' && state.screen === 'battle' && state.opponent?.type !== 'network') {
       setTimeout(openTurnDuel, 120);
     }
 
