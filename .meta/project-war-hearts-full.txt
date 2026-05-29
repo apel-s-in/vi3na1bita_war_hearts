@@ -85,7 +85,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:38:09 UTC
+Сгенерировано: 2026-05-29 14:39:22 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1871,6 +1871,11 @@ button{
   min-height:120px;
 }
 
+.wh-stats-wrap{
+  display:grid;
+  gap:12px;
+}
+
 .wh-stat-grid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -1907,7 +1912,7 @@ button{
 }
 
 .wh-ach{
-  min-height:76px;
+  min-height:74px;
   display:grid;
   place-items:center;
   gap:4px;
@@ -1934,8 +1939,129 @@ button{
 
 .wh-ach b{
   color:#fff;
-  font-size:10px;
+  font-size:9.5px;
   line-height:1.12;
+  text-align:center;
+}
+
+.wh-history{
+  border-radius:18px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.08);
+  overflow:hidden;
+}
+
+.wh-history summary{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:0 12px;
+  color:#fff;
+  font-weight:950;
+  text-transform:uppercase;
+  cursor:pointer;
+  list-style:none;
+}
+
+.wh-history summary::-webkit-details-marker{
+  display:none;
+}
+
+.wh-history summary::after{
+  content:"⌄";
+  color:var(--wh-muted);
+  font-size:16px;
+  transition:transform .18s ease;
+}
+
+.wh-history[open] summary::after{
+  transform:rotate(180deg);
+}
+
+.wh-history summary b{
+  min-width:28px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:rgba(255,49,89,.2);
+  color:#fff;
+  font-size:12px;
+}
+
+.wh-history-list{
+  display:grid;
+  gap:6px;
+  padding:0 8px 10px;
+}
+
+.wh-history-row{
+  min-height:34px;
+  display:grid;
+  grid-template-columns:64px 1fr 38px 38px 32px 30px;
+  align-items:center;
+  gap:6px;
+  padding:6px 8px;
+  border-radius:12px;
+  background:rgba(0,0,0,.2);
+  color:var(--wh-muted);
+  font-size:11px;
+}
+
+.wh-history-row.is-win{
+  border:1px solid rgba(70,230,165,.18);
+}
+
+.wh-history-row.is-loss{
+  border:1px solid rgba(255,49,89,.18);
+}
+
+.wh-history-date{
+  color:rgba(174,181,220,.82);
+  white-space:nowrap;
+}
+
+.wh-history-vs{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#fff;
+}
+
+.wh-history-score,
+.wh-history-acc,
+.wh-history-bal{
+  text-align:center;
+  font-weight:900;
+}
+
+.wh-history-row b{
+  min-height:22px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  color:#fff;
+  font-size:10px;
+  line-height:1;
+}
+
+.wh-history-row.is-win b{
+  background:rgba(70,230,165,.22);
+  color:#adffdf;
+}
+
+.wh-history-row.is-loss b{
+  background:rgba(255,49,89,.22);
+  color:#ffd7df;
+}
+
+.wh-history-empty{
+  padding:14px;
+  color:var(--wh-muted);
+  font-size:13px;
   text-align:center;
 }
 
