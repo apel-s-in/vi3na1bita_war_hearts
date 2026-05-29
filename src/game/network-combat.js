@@ -117,6 +117,12 @@ export const createNetworkCombat = ({
 
   const startNetworkPreparation = ({ initiator = false } = {}) => {
     ensureNetworkOpponent();
+
+    if (!state.network.connected) {
+      setNetworkStatus('Ожидаем P2P-соединение с соперником...', 'waiting');
+      return;
+    }
+
     clearTimers?.();
     resetNetworkRound();
     resetMatchStats();
@@ -211,16 +217,24 @@ export const createNetworkCombat = ({
     state.fairPlay.myCommitHash = commit.hash;
     state.fairPlay.myReveal = myReveal;
 
-    session.sendBoardCommit({
+    const commitSent = session.sendBoardCommit({
       matchId: state.matchStats.matchId,
       commitHash: commit.hash,
       algorithm: commit.algorithm
     });
 
-    session.sendReady({
+    const readySent = session.sendReady({
       matchId: state.matchStats.matchId,
       ready: true
     });
+
+    if (!commitSent || !readySent) {
+      setNetworkStatus('Не удалось отправить готовность. Проверьте соединение.', 'error');
+      addSystemMessage('READY/BOARD_COMMIT не отправлены: нет связи с соперником.');
+      render();
+      scheduleSaveMatchDraft();
+      return false;
+    }
 
     state.network.myReady = true;
     state.network.myCommitSent = true;
@@ -603,11 +617,19 @@ export const createNetworkCombat = ({
     state.fairPlay.myReveal = reveal;
     state.fairPlay.myLayoutOk = layoutCheck.ok;
 
-    session.sendBoardReveal({
+    const sent = session.sendBoardReveal({
       matchId: state.matchStats.matchId,
       salt: state.fairPlay.mySalt,
       reveal
     });
+
+    if (!sent) {
+      setNetworkStatus('Не удалось отправить BOARD_REVEAL. Проверьте соединение.', 'error');
+      addSystemMessage('BOARD_REVEAL не отправлен: нет связи с соперником.');
+      render();
+      scheduleSaveMatchDraft();
+      return false;
+    }
 
     state.network.myRevealSent = true;
     state.network.awaitingReveal = true;
@@ -664,11 +686,19 @@ export const createNetworkCombat = ({
   };
 
   const sendMatchFinished = result => {
-    session.sendMatchFinished({
+    const sent = session.sendMatchFinished({
       matchId: state.matchStats.matchId,
       result,
       stats: state.matchStats
     });
+
+    if (!sent) {
+      addSystemMessage('MATCH_FINISHED не отправлен: нет связи с соперником.');
+      setNetworkStatus('Не удалось отправить финал матча. Проверьте соединение.', 'error');
+      return false;
+    }
+
+    return true;
   };
 
   const receiveMatchFinished = msg => {
@@ -813,6 +843,10 @@ export const createNetworkCombat = ({
 
   const handleGameData = msg => {
     if (!msg?.type) return;
+
+    if (!state.network.connected) {
+      state.network.connected = true;
+    }
 
     ensureNetworkOpponent();
 
