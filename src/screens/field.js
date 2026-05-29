@@ -242,7 +242,27 @@ export const renderField = (root, state, actions) => {
       presetsWrap.append(card);
     });
 
-    el.append(topNav, boardWrap, infoBar, fleetWrap, actionsWrap, presetsWrap);
+    const networkReadyBox = document.createElement('section');
+    networkReadyBox.className = 'wh-network-ready-box';
+    networkReadyBox.hidden = !(state.opponent?.type === 'network' || state.network?.active);
+    networkReadyBox.innerHTML = `
+      <p>${state.network?.text || 'Расставьте корабли и подтвердите готовность к сетевому бою.'}</p>
+      <button class="wh-btn" type="button" ${state.network?.myReady ? 'disabled' : ''}>
+        ${state.network?.myReady ? 'Готовность отправлена' : 'Готов к сетевому бою'}
+      </button>
+    `;
+
+    networkReadyBox.querySelector('button')?.addEventListener('click', () => {
+      if (!state.fleet.every(s => s.placed)) {
+        actions.toast('Сначала расставьте все корабли!');
+        return;
+      }
+
+      syncFleetToBoard(state.fleet, state.myBoard);
+      actions.networkReady();
+    });
+
+    el.append(topNav, boardWrap, infoBar, fleetWrap, actionsWrap, networkReadyBox, presetsWrap);
   };
 
   renderUI();
