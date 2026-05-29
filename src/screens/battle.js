@@ -37,8 +37,8 @@ export const renderBattle = (root, state, actions) => {
     <div class="wh-board-title">
       <span>Поле соперника${state.opponent?.name ? ` · ${state.opponent.name}` : ''}</span>
       <div class="wh-board-title-actions">
-        <button class="wh-auto-btn ${state.autoBattle?.player ? 'is-active' : ''}" type="button" data-act="auto" aria-label="Автобой">A</button>
-        <b>${state.phase === 'computer' ? 'ходит AI' : state.phase === 'rps' ? 'розыгрыш' : state.phase === 'finished' ? 'итог' : 'атака'}</b>
+        ${state.opponent?.type === 'network' ? '' : `<button class="wh-auto-btn ${state.autoBattle?.player ? 'is-active' : ''}" type="button" data-act="auto" aria-label="Автобой">A</button>`}
+        <b>${state.opponent?.type === 'network' && state.phase === 'computer' ? 'ходит соперник' : state.phase === 'computer' ? 'ходит AI' : state.phase === 'rps' ? 'розыгрыш' : state.phase === 'finished' ? 'итог' : 'атака'}</b>
       </div>
     </div>
   `;
@@ -77,7 +77,7 @@ export const renderBattle = (root, state, actions) => {
   finish.className = 'wh-btn secondary';
   finish.type = 'button';
   finish.textContent = 'Завершить preview';
-  finish.hidden = state.phase === 'finished';
+  finish.hidden = state.phase === 'finished' || state.opponent?.type === 'network';
   finish.addEventListener('click', () => actions.finishMock('win'));
 
   bottom.append(finish, renderVoiceButton(actions.toggleVoice));
