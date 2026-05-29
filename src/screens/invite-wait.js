@@ -33,7 +33,7 @@ export const renderInviteWait = (root, state, actions) => {
 
   el.querySelector('[data-act="extend"]')?.addEventListener('click', actions.extendInvite);
   el.querySelector('[data-act="accepted"]')?.addEventListener('click', actions.acceptMockOpponent);
-  el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.openMenu);
+  el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.cancelInvite || actions.openMenu);
   el.querySelector('[data-act="copy"]')?.addEventListener('click', () => navigator.clipboard?.writeText?.(url));
   el.querySelector('[data-act="share"]')?.addEventListener('click', () => {
     if (navigator.share) navigator.share({ title: 'Война Сердец', text: 'Присоединяйся к игре', url }).catch(() => {});
