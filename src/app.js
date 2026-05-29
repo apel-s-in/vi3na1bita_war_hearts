@@ -939,13 +939,20 @@ const actions = {
     const message = String(text || '').trim().slice(0, 300);
     if (!message) return;
 
+    const sent = session.sendChat(message);
+
     state.chat.push({
       from: state.player.name,
-      text: message,
+      text: sent || state.opponent?.type !== 'network'
+        ? message
+        : `${message} · не отправлено`,
       at: Date.now()
     });
 
-    session.sendChat(message);
+    if (!sent && state.opponent?.type === 'network') {
+      networkWatchdog?.warn('Сообщение не отправлено. Проверьте соединение.');
+    }
+
     render();
     scheduleSaveMatchDraft();
   },
