@@ -94,7 +94,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 15:04:43 UTC
+Сгенерировано: 2026-05-29 15:05:10 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1622,6 +1622,11 @@ const bind = () => {
     state.chat.push(msg);
     render();
     scheduleSaveMatchDraft();
+  };
+
+  session.onGameData = msg => {
+    addSystemMessage(`Сетевое событие: ${msg.type}`);
+    render();
   };
 };
 
