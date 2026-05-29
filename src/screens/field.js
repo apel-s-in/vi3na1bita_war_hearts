@@ -1,4 +1,5 @@
 import { renderBoard } from '../ui/board-view.js';
+import { renderNetworkIndicator } from '../ui/network-indicator.js';
 import { createEmptyBoard, syncFleetToBoard, placeShipRandomly, autoPlaceFleet, canPlaceShip } from '../game/board.js';
 
 let activeShipId = null;
@@ -21,29 +22,13 @@ export const renderField = (root, state, actions) => {
   const el = document.createElement('section');
   el.className = 'wh-field-editor';
 
-  if (state.opponent?.type === 'network' || state.network?.active) {
-    const indicator = document.createElement('div');
-    indicator.className = `wh-network-indicator is-${state.network?.status || 'setup'}`;
-    indicator.innerHTML = `
-      <span>🟡</span>
-      <b>${state.network?.peerName || state.opponent?.name || 'Соперник'}</b>
-      <em>${state.network?.text || 'Сетевой режим: подготовка к бою.'}</em>
-    `;
-    el.append(indicator);
-  }
-  
   const renderUI = () => {
     el.innerHTML = '';
 
     if (state.opponent?.type === 'network' || state.network?.active) {
-      const indicator = document.createElement('div');
-      indicator.className = `wh-network-indicator is-${state.network?.status || 'setup'}`;
-      indicator.innerHTML = `
-        <span>🟡</span>
-        <b>${state.network?.peerName || state.opponent?.name || 'Соперник'}</b>
-        <em>${state.network?.text || 'Сетевой режим: подготовка к бою.'}</em>
-      `;
-      el.append(indicator);
+      el.append(renderNetworkIndicator(state, {
+        fallbackText: 'Сетевой режим: расставьте корабли и подтвердите готовность.'
+      }));
     }
     
     // 0. Строго синхронизируем боевое поле (myBoard), чтобы вкладка Бой всегда видела актуальную расстановку
