@@ -14,6 +14,19 @@ export const createInitialState = overrides => ({
   autoBattle: {
     player: false
   },
+  fairPlay: {
+    matchId: '',
+    mySalt: '',
+    myCommitHash: '',
+    enemyCommitHash: '',
+    myReveal: null,
+    enemyReveal: null,
+    revealed: false,
+    myLayoutOk: null,
+    enemyLayoutOk: null,
+    enemyCommitOk: null,
+    note: ''
+  },
   matchStats: {
     matchId: '',
     startedAt: 0,
