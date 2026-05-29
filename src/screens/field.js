@@ -262,7 +262,7 @@ export const renderField = (root, state, actions) => {
 
     const networkReadyBox = document.createElement('section');
     networkReadyBox.className = 'wh-network-ready-box';
-    networkReadyBox.hidden = !(state.opponent?.type === 'network' || state.network?.active);
+    networkReadyBox.hidden = state.opponent?.type !== 'network';
     networkReadyBox.innerHTML = `
       <p>${state.network?.text || 'Расставьте корабли и подтвердите готовность к сетевому бою.'}</p>
       <button class="wh-btn" type="button" ${state.network?.myReady ? 'disabled' : ''}>
