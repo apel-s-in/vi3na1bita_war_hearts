@@ -99,7 +99,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 19:37:58 UTC
+Сгенерировано: 2026-05-29 19:39:15 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2603,6 +2603,11 @@ button{
   background:rgba(255,212,90,.07);
 }
 
+.wh-fairplay div.is-bad{
+  border-color:rgba(255,49,89,.34);
+  background:rgba(255,49,89,.09);
+}
+
 .wh-fairplay span{
   display:block;
   margin-bottom:4px;
@@ -3086,30 +3091,49 @@ button{
 .wh-preset-del:hover{ color:var(--wh-red) }
 .wh-network-indicator{
   display:grid;
-  grid-template-columns:auto auto 1fr;
+  grid-template-columns:auto 1fr;
+  grid-template-areas:
+    "dot main"
+    "dot meta";
   align-items:center;
-  gap:8px;
-  min-height:42px;
-  padding:9px 12px;
+  gap:3px 10px;
+  min-height:54px;
+  padding:10px 12px;
   border-radius:16px;
-  background:linear-gradient(135deg,rgba(255,212,90,.2),rgba(255,170,50,.1));
-  border:1px solid rgba(255,212,90,.42);
+  background:linear-gradient(135deg,rgba(255,212,90,.24),rgba(255,170,50,.1));
+  border:1px solid rgba(255,212,90,.46);
   color:#ffe7a3;
   box-shadow:0 10px 24px rgba(0,0,0,.18);
 }
 
-.wh-network-indicator span{
-  font-size:16px;
-  line-height:1;
+.wh-network-dot{
+  grid-area:dot;
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  background:var(--wh-yellow);
+  box-shadow:0 0 0 4px rgba(255,212,90,.13),0 0 18px rgba(255,212,90,.55);
 }
 
-.wh-network-indicator b{
+.wh-network-indicator.is-waiting .wh-network-dot{
+  animation:whNetworkPulse 1.05s ease-in-out infinite;
+}
+
+.wh-network-main{
+  grid-area:main;
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+}
+
+.wh-network-main b{
   color:#fff;
   font-size:12px;
   white-space:nowrap;
 }
 
-.wh-network-indicator em{
+.wh-network-main em{
   min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -3117,13 +3141,33 @@ button{
   color:#ffe7a3;
   font-size:12px;
   font-style:normal;
-  font-weight:800;
+  font-weight:850;
 }
 
-.wh-network-indicator.is-error{
-  background:linear-gradient(135deg,rgba(255,49,89,.22),rgba(255,49,89,.08));
-  border-color:rgba(255,49,89,.42);
+.wh-network-indicator small{
+  grid-area:meta;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:rgba(255,231,163,.78);
+  font-size:10.5px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+
+.wh-network-indicator.is-error,
+.wh-network-indicator.is-error-state{
+  background:linear-gradient(135deg,rgba(255,49,89,.24),rgba(255,49,89,.08));
+  border-color:rgba(255,49,89,.46);
   color:#ffd7df;
+}
+
+.wh-network-indicator.is-error .wh-network-dot,
+.wh-network-indicator.is-error-state .wh-network-dot{
+  background:var(--wh-red);
+  box-shadow:0 0 0 4px rgba(255,49,89,.14),0 0 18px rgba(255,49,89,.55);
 }
 
 .wh-network-indicator.is-ready,
@@ -3133,12 +3177,29 @@ button{
   color:#baffdf;
 }
 
+.wh-network-indicator.is-ready .wh-network-dot,
+.wh-network-indicator.is-your-turn .wh-network-dot{
+  background:var(--wh-green);
+  box-shadow:0 0 0 4px rgba(70,230,165,.13),0 0 18px rgba(70,230,165,.45);
+}
+
 .wh-network-indicator.is-peer-turn,
 .wh-network-indicator.is-waiting,
 .wh-network-indicator.is-setup{
-  background:linear-gradient(135deg,rgba(255,212,90,.22),rgba(255,212,90,.08));
-  border-color:rgba(255,212,90,.42);
+  background:linear-gradient(135deg,rgba(255,212,90,.24),rgba(255,212,90,.08));
+  border-color:rgba(255,212,90,.46);
   color:#ffe7a3;
+}
+
+@keyframes whNetworkPulse{
+  0%,100%{
+    transform:scale(1);
+    opacity:1;
+  }
+  50%{
+    transform:scale(.72);
+    opacity:.58;
+  }
 }
 
 .wh-network-ready-box{
