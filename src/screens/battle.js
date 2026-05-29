@@ -15,6 +15,7 @@ export const renderBattle = (root, state, actions) => {
         <span>${state.result === 'win' ? 'Поле сохранено. Можно взять реванш.' : 'Поле сохранено. Можно сыграть ещё раз.'}</span>
       </div>
       ${renderStats(state)}
+      ${renderFairPlay(state)}
       <div class="wh-match-result-actions">
         <button class="wh-btn" type="button" data-act="rematch">РЕВАНШ</button>
         <button class="wh-btn secondary" type="button" data-act="menu">В главное меню</button>
@@ -44,6 +45,7 @@ export const renderBattle = (root, state, actions) => {
   enemy.append(renderBoard(state.enemyBoard, {
     mode: 'enemy',
     target: state.selectedTarget,
+    revealShips: state.phase === 'finished' || !!state.fairPlay?.revealed,
     onCell: state.phase === 'player' ? actions.shootCell : null
   }));
 
@@ -86,6 +88,26 @@ const renderFx = (state, lane) => {
   el.className = `wh-board-fx ${fx ? `is-visible is-${fx.kind}` : ''}`;
   el.textContent = fx?.text || '';
   return el;
+};
+
+const renderFairPlay = state => {
+  const fp = state.fairPlay || {};
+  const enemyOk = fp.enemyLayoutOk === true && fp.enemyCommitOk !== false;
+  const myOk = fp.myLayoutOk === true;
+
+  return `
+    <div class="wh-fairplay">
+      <div class="${myOk ? 'is-ok' : 'is-warn'}">
+        <span>Твоя доска</span>
+        <b>${myOk ? 'правила OK' : 'проверка'}</b>
+      </div>
+      <div class="${enemyOk ? 'is-ok' : 'is-warn'}">
+        <span>Доска соперника</span>
+        <b>${enemyOk ? 'честность OK' : 'ожидает reveal'}</b>
+      </div>
+      <p>${fp.note || 'После финала обе расстановки раскрываются для сверки.'}</p>
+    </div>
+  `;
 };
 
 const renderStats = state => {
