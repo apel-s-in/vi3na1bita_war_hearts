@@ -738,6 +738,11 @@ const performPlayerShot = (x, y, { auto = false } = {}) => {
 };
 
 const setScreen = screen => {
+  if (screen === 'battle' && !state.opponent && state.phase !== 'finished') {
+    toast('Сначала выберите соперника.');
+    screen = 'opponents';
+  }
+
   // Запрещаем переключать табы, если идет активный бой или розыгрыш первого хода.
   const inBattle = state.phase === 'player' || state.phase === 'computer' || state.phase === 'rps';
   if (inBattle && screen !== 'battle') {
