@@ -101,11 +101,24 @@ let computerTimer = 0;
 let playerAutoTimer = 0;
 let inviteTimer = 0;
 let matchPersistence = null;
+let networkCombat = null;
 
 const saveMatchDraftNow = () => matchPersistence?.saveMatchDraftNow();
 const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
 const restoreMatchDraft = () => matchPersistence?.restoreMatchDraft() || false;
 const clearMatchDraft = () => matchPersistence?.clearMatchDraft();
+
+const makeEmptyBoard = () => Array.from({ length: 10 }, () =>
+  Array.from({ length: 10 }, () => ({
+    ship: false,
+    status: ''
+  }))
+);
+
+const clearBattleTimers = () => {
+  clearTimeout(computerTimer);
+  clearTimeout(playerAutoTimer);
+};
 
 const INVITE_TTL_MS = 120000;
 
@@ -155,11 +168,29 @@ const resetFairPlayForMatch = () => {
 
 const revealFinalBoards = () => {
   const myReveal = packBoardReveal(state.myBoard);
-  const enemyReveal = packBoardReveal(state.enemyBoard);
   const myCheck = validateRevealLayout(myReveal);
-  const enemyCheck = validateRevealLayout(enemyReveal);
 
   applyRevealToBoard(state.myBoard, myReveal);
+
+  if (state.opponent?.type === 'network') {
+    state.fairPlay = {
+      ...state.fairPlay,
+      matchId: state.matchStats.matchId,
+      myReveal,
+      revealed: !!state.fairPlay.enemyReveal,
+      myLayoutOk: myCheck.ok,
+      enemyLayoutOk: state.fairPlay.enemyLayoutOk,
+      enemyCommitOk: state.fairPlay.enemyCommitOk,
+      note: state.fairPlay.enemyReveal
+        ? state.fairPlay.note
+        : 'ожидается BOARD_REVEAL соперника'
+    };
+    return;
+  }
+
+  const enemyReveal = packBoardReveal(state.enemyBoard);
+  const enemyCheck = validateRevealLayout(enemyReveal);
+
   applyRevealToBoard(state.enemyBoard, enemyReveal);
 
   state.fairPlay = {
@@ -170,10 +201,8 @@ const revealFinalBoards = () => {
     revealed: true,
     myLayoutOk: myCheck.ok,
     enemyLayoutOk: enemyCheck.ok,
-    enemyCommitOk: state.opponent?.type === 'network' ? state.fairPlay.enemyCommitOk : true,
-    note: state.opponent?.type === 'network'
-      ? 'ожидается или проверен BOARD_REVEAL соперника'
-      : 'локальный бой: расстановка раскрыта и проверена по правилам'
+    enemyCommitOk: true,
+    note: 'локальный бой: расстановка раскрыта и проверена по правилам'
   };
 };
 
@@ -187,6 +216,10 @@ const finishMatch = (result, message) => {
   revealFinalBoards();
   addSystemMessage(message);
   addSystemMessage('Расстановки раскрыты. Проверка правил завершена.');
+  if (state.opponent?.type === 'network') {
+    networkCombat?.sendBoardReveal();
+  }
+
   render();
   saveMatchDraftNow();
 };
@@ -500,6 +533,29 @@ matchPersistence = createMatchPersistence({
   }
 });
 
+networkCombat = createNetworkCombat({
+  state,
+  session,
+  setScreen,
+  render: () => render(),
+  toast,
+  addSystemMessage,
+  formatCellName,
+  getShipCellsAt,
+  isShipSunk,
+  markSunkPerimeter,
+  isBoardDefeated,
+  registerShotStats,
+  showBattleFx,
+  finishMatch,
+  resetMatchStats,
+  resetFairPlayForMatch,
+  scheduleSaveMatchDraft,
+  saveMatchDraftNow,
+  clearTimers: clearBattleTimers,
+  makeEmptyBoard
+});
+
 const openShotConfirm = (x, y) => {
   const coord = formatCellName(x, y);
 
@@ -558,6 +614,11 @@ const schedulePlayerAutoShot = () => {
 };
 
 const performPlayerShot = (x, y, { auto = false } = {}) => {
+  if (state.opponent?.type === 'network') {
+    networkCombat?.shoot(x, y);
+    return;
+  }
+
   if (state.phase !== 'player' || state.phase === 'finished') return;
 
   const cell = state.enemyBoard[y]?.[x];
@@ -699,6 +760,10 @@ const actions = {
     render();
   },
 
+  networkReady() {
+    networkCombat?.markReady();
+  },
+
   async createInvite() {
     try {
       const invite = await session.createInvite();
@@ -801,6 +866,11 @@ const actions = {
     state.selectedTarget = { x, y };
     render();
 
+    if (state.opponent?.type === 'network') {
+      performPlayerShot(x, y);
+      return;
+    }
+
     if (state.autoBattle.player) {
       performPlayerShot(x, y, { auto: true });
       return;
@@ -849,6 +919,10 @@ const actions = {
   },
 
   rematch() {
+    if (state.opponent?.type === 'network') {
+      networkCombat?.requestRematch();
+      return;
+    }
     clearTimeout(computerTimer);
 
     state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
@@ -1052,10 +1126,21 @@ const bind = () => {
     }
   };
 
-  session.onConnect = () => {
-    ensureNetworkOpponent('Соперник онлайн');
-    toast('Соперник подключён');
-    setScreen('battle');
+  session.onConnect = peer => {
+    state.opponent = {
+      id: peer?.id || 'network-peer',
+      name: peer?.name || 'Соперник',
+      type: 'network'
+    };
+
+    state.network.active = true;
+    state.network.connected = true;
+    state.network.peerName = state.opponent.name;
+
+    networkCombat?.onConnected(state.opponent.name);
+
+    addSystemMessage('Сетевое соединение установлено.');
+    render();
   };
 
   session.onChat = msg => {
@@ -1065,8 +1150,7 @@ const bind = () => {
   };
 
   session.onGameData = msg => {
-    addSystemMessage(`Сетевое событие: ${msg.type}`);
-    render();
+    networkCombat?.handleGameData(msg);
   };
 };
 
