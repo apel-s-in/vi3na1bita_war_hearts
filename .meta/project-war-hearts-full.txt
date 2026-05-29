@@ -94,7 +94,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:58:56 UTC
+Сгенерировано: 2026-05-29 15:00:02 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4746,7 +4746,7 @@ export const renderResult = (root, state, actions) => {
 // FILE: /src/ui/board-view.js
 import { LETTERS } from '../game/board.js';
 
-export const renderBoard = (board, { mode = 'own', target = null, onCell = null } = {}) => {
+export const renderBoard = (board, { mode = 'own', target = null, revealShips = false, onCell = null } = {}) => {
   const el = document.createElement('div');
   el.className = 'wh-board';
 
@@ -4769,6 +4769,7 @@ export const renderBoard = (board, { mode = 'own', target = null, onCell = null 
       btn.className = [
         'wh-cell',
         mode === 'own' && cell.ship ? 'ship' : '',
+        mode !== 'own' && revealShips && cell.ship ? 'ship revealed-ship' : '',
         cell.status || '',
         inTargetRow ? 'target-row' : '',
         inTargetCol ? 'target-col' : '',
