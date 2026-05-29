@@ -99,7 +99,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 19:41:05 UTC
+Сгенерировано: 2026-05-29 19:44:32 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4003,6 +4003,7 @@ export const createMatchPersistence = ({
 //=================================================
 // FILE: /src/game/network-combat.js
 import { MessageType } from './protocol.js';
+import { verifyShotResultsAgainstReveal } from './shot-verifier.js';
 import {
   applyRevealToBoard,
   createBoardCommit,
@@ -4063,12 +4064,16 @@ export const createNetworkCombat = ({
   let shotSeq = 0;
 
   const setNetworkStatus = (text, status = 'info') => {
-    state.network.active = state.opponent?.type === 'network';
+    state.network.active = state.opponent?.type === 'network' || !!state.network.active;
     state.network.status = status;
     state.network.text = text;
-    state.network.connected = status !== 'offline' && status !== 'error';
     state.network.peerName = state.opponent?.name || state.network.peerName || 'Соперник';
     state.network.lastEventAt = Date.now();
+
+    if (status === 'offline' || status === 'error') {
+      state.network.connected = false;
+    }
+
     render();
   };
 
@@ -4092,6 +4097,7 @@ export const createNetworkCombat = ({
     state.network.awaitingShotResult = false;
     state.network.awaitingReveal = false;
     state.network.myRevealSent = false;
+    state.network.rpsStarted = false;
 
     state.networkRps = {
       active: false,
@@ -4107,6 +4113,13 @@ export const createNetworkCombat = ({
     resetNetworkRound();
     resetMatchStats();
     resetFairPlayForMatch();
+
+    state.networkShots = {
+      mine: [],
+      peer: [],
+      enemyTranscriptOk: null,
+      note: ''
+    };
 
     state.myBoard.forEach(row => row.forEach(cell => {
       cell.status = '';
@@ -4212,9 +4225,11 @@ export const createNetworkCombat = ({
   };
 
   const maybeStartRps = () => {
+    if (state.network.rpsStarted || state.networkRps.active || state.phase === 'rps') return;
     if (!state.network.myReady || !state.network.peerReady) return;
     if (!state.network.myCommitSent || !state.network.peerCommitReceived) return;
 
+    state.network.rpsStarted = true;
     state.phase = 'rps';
     setScreen('battle');
 
@@ -4330,13 +4345,32 @@ export const createNetworkCombat = ({
     state.selectedTarget = { x, y };
     state.network.awaitingShotResult = true;
 
-    session.sendShot({
+    const sent = session.sendShot({
       matchId: state.matchStats.matchId,
       shotId,
       x,
       y,
       seq: shotSeq
     });
+
+    state.networkShots.mine.push({
+      shotId,
+      x,
+      y,
+      seq: shotSeq,
+      result: '',
+      sunkCells: [],
+      at: Date.now()
+    });
+
+    if (!sent) {
+      state.network.awaitingShotResult = false;
+      setNetworkStatus('Не удалось отправить выстрел. Проверьте соединение.', 'error');
+      addSystemMessage(`Выстрел ${formatCellName(x, y)} не отправлен: нет связи.`);
+      render();
+      scheduleSaveMatchDraft();
+      return true;
+    }
 
     addSystemMessage(`Выстрел ${formatCellName(x, y)} отправлен сопернику.`);
     setNetworkStatus(`Выстрел ${formatCellName(x, y)} отправлен. Ожидаем результат...`, 'waiting');
@@ -4378,6 +4412,15 @@ export const createNetworkCombat = ({
     if (sunk) markSunkPerimeter(state.myBoard, shipCells);
 
     const result = sunk ? 'sunk' : hit ? 'hit' : 'miss';
+
+    state.networkShots.peer.push({
+      shotId: payload.shotId || '',
+      x,
+      y,
+      result,
+      sunkCells: sunk ? shipCells.map(p => ({ x: p.x, y: p.y })) : [],
+      at: Date.now()
+    });
 
     registerShotStats('opponent', result);
     showBattleFx('mine', result);
@@ -4444,6 +4487,28 @@ export const createNetworkCombat = ({
     state.network.awaitingShotResult = false;
     state.selectedTarget = null;
 
+    const shotLog = state.networkShots.mine.find(shot => shot.shotId === payload.shotId)
+      || state.networkShots.mine.find(shot => shot.x === x && shot.y === y && !shot.result);
+
+    if (shotLog) {
+      shotLog.result = result;
+      shotLog.sunkCells = Array.isArray(payload.sunkCells)
+        ? payload.sunkCells.map(point => ({ x: Number(point.x), y: Number(point.y) }))
+        : [];
+      shotLog.resultAt = Date.now();
+    } else {
+      state.networkShots.mine.push({
+        shotId: payload.shotId || '',
+        x,
+        y,
+        result,
+        sunkCells: Array.isArray(payload.sunkCells)
+          ? payload.sunkCells.map(point => ({ x: Number(point.x), y: Number(point.y) }))
+          : [],
+        at: Date.now()
+      });
+    }
+
     registerShotStats('player', result);
     showBattleFx('enemy', result);
 
@@ -4501,15 +4566,26 @@ export const createNetworkCombat = ({
 
     state.fairPlay.enemyCommitOk = commitCheck.ok;
 
-    if (layoutCheck.ok && commitCheck.ok) {
+    const transcriptCheck = verifyShotResultsAgainstReveal({
+      shots: state.networkShots?.mine || [],
+      reveal
+    });
+
+    state.networkShots.enemyTranscriptOk = transcriptCheck.ok;
+    state.networkShots.note = transcriptCheck.ok
+      ? `Проверено выстрелов: ${transcriptCheck.checked}.`
+      : `Расхождения выстрелов: ${transcriptCheck.mismatches.length}.`;
+    state.fairPlay.enemyTranscriptOk = transcriptCheck.ok;
+
+    if (layoutCheck.ok && commitCheck.ok && transcriptCheck.ok) {
       applyRevealToBoard(state.enemyBoard, reveal);
-      state.fairPlay.note = 'BOARD_REVEAL соперника проверен: commit совпал, расстановка корректна.';
-      addSystemMessage('Проверка соперника: честность OK.');
-      setNetworkStatus('Reveal соперника проверен. Честность OK.', 'ready');
+      state.fairPlay.note = 'BOARD_REVEAL соперника проверен: commit совпал, расстановка корректна, ответы на выстрелы подтверждены.';
+      addSystemMessage('Проверка соперника: честность OK, история выстрелов совпала.');
+      setNetworkStatus('Reveal соперника проверен. Commit, поле и выстрелы OK.', 'ready');
     } else {
-      state.fairPlay.note = `Проблема проверки: ${layoutCheck.reason || commitCheck.reason}.`;
+      state.fairPlay.note = `Проблема проверки: ${layoutCheck.reason || commitCheck.reason || transcriptCheck.reason}.`;
       addSystemMessage(`Проверка соперника не пройдена: ${state.fairPlay.note}`);
-      setNetworkStatus('Reveal соперника не прошёл проверку.', 'error');
+      setNetworkStatus('Reveal соперника не прошёл fair-play проверку.', 'error');
     }
 
     state.fairPlay.revealed = true;
