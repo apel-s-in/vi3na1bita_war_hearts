@@ -36,6 +36,7 @@ export const createMatchPersistence = ({
     opponent: state.opponent,
     selectedTarget: state.selectedTarget,
     autoBattle: { player: false },
+    fairPlay: state.fairPlay,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -86,7 +87,14 @@ export const createMatchPersistence = ({
       opponentHits: Number(s.opponentHits || 0),
       opponentMisses: Number(s.opponentMisses || 0),
       playerBestHitStreak: Number(s.playerBestHitStreak || 0),
-      opponentBestHitStreak: Number(s.opponentBestHitStreak || 0)
+      opponentBestHitStreak: Number(s.opponentBestHitStreak || 0),
+      fairPlay: {
+        myLayoutOk: state.fairPlay?.myLayoutOk,
+        enemyLayoutOk: state.fairPlay?.enemyLayoutOk,
+        enemyCommitOk: state.fairPlay?.enemyCommitOk,
+        revealed: !!state.fairPlay?.revealed,
+        note: String(state.fairPlay?.note || '')
+      }
     };
   };
 
@@ -170,6 +178,11 @@ export const createMatchPersistence = ({
     state.opponent = draft.opponent || state.opponent;
     state.selectedTarget = draft.selectedTarget || null;
     state.autoBattle = { player: false };
+    state.fairPlay = {
+      ...state.fairPlay,
+      ...(draft.fairPlay || {}),
+      revealed: !!draft.fairPlay?.revealed
+    };
     state.matchStats = {
       ...createMatchStats(),
       ...(draft.matchStats || {})
