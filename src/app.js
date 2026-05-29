@@ -162,6 +162,7 @@ const resetFairPlayForMatch = () => {
     myLayoutOk: null,
     enemyLayoutOk: null,
     enemyCommitOk: null,
+    enemyTranscriptOk: null,
     note: 'commit будет рассчитан перед сетевым матчем'
   };
 };
