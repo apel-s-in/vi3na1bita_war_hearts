@@ -56,6 +56,15 @@ export const createInitialState = overrides => ({
     enemyTranscriptOk: null,
     note: ''
   },
+  networkTurn: {
+    ok: true,
+    expectedShotId: '',
+    sentShotIds: [],
+    receivedShotIds: [],
+    resolvedShotIds: [],
+    violations: [],
+    note: ''
+  },
   rematchOffer: {
     active: false,
     from: '',
