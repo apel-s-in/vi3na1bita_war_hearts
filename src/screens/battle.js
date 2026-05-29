@@ -98,11 +98,13 @@ const renderFx = (state, lane) => {
 const renderFairPlay = state => {
   const fp = state.fairPlay || {};
   const shots = state.networkShots || {};
+  const turn = state.networkTurn || {};
   const myOk = fp.myLayoutOk === true;
   const enemyCommitBad = fp.enemyCommitOk === false;
   const enemyLayoutBad = fp.enemyLayoutOk === false;
   const transcriptBad = fp.enemyTranscriptOk === false || shots.enemyTranscriptOk === false;
-  const enemyOk = fp.enemyLayoutOk === true && fp.enemyCommitOk !== false && !transcriptBad;
+  const turnBad = turn.ok === false;
+  const enemyOk = fp.enemyLayoutOk === true && fp.enemyCommitOk !== false && !transcriptBad && !turnBad;
   const transcriptOk = fp.enemyTranscriptOk === true || shots.enemyTranscriptOk === true;
 
   return `
@@ -119,7 +121,11 @@ const renderFairPlay = state => {
         <span>История выстрелов</span>
         <b>${transcriptOk ? 'выстрелы OK' : transcriptBad ? 'есть расхождения' : 'проверка'}</b>
       </div>
-      <p>${fp.note || shots.note || 'После финала обе расстановки и результаты выстрелов сверяются.'}</p>
+      <div class="${turnBad ? 'is-bad' : 'is-ok'}">
+        <span>Очередность ходов</span>
+        <b>${turnBad ? 'нарушена' : 'порядок OK'}</b>
+      </div>
+      <p>${turnBad ? `Turn guard: ${turn.note || 'есть нарушение очередности.'}` : fp.note || shots.note || 'После финала обе расстановки и результаты выстрелов сверяются.'}</p>
     </div>
   `;
 };
