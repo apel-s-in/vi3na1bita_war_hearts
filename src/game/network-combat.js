@@ -105,6 +105,7 @@ export const createNetworkCombat = ({
     state.network.awaitingReveal = false;
     state.network.myRevealSent = false;
     state.network.rpsStarted = false;
+    state.network.rematchPending = false;
 
     state.networkRps = {
       active: false,
@@ -704,19 +705,35 @@ export const createNetworkCombat = ({
   const requestRematch = () => {
     if (state.opponent?.type !== 'network') return false;
 
-    session.sendGame(MessageType.REMATCH_REQUEST, {
+    if (state.network.rematchPending) {
+      setNetworkStatus('Предложение реванша уже отправлено. Ждём ответ соперника...', 'waiting');
+      toast?.('Уже ждём ответ на реванш');
+      return true;
+    }
+
+    const sent = session.sendGame(MessageType.REMATCH_REQUEST, {
       matchId: state.matchStats.matchId,
       at: Date.now()
     });
 
+    if (!sent) {
+      setNetworkStatus('Не удалось отправить предложение реванша. Проверьте соединение.', 'error');
+      toast?.('Реванш не отправлен');
+      return false;
+    }
+
+    state.network.rematchPending = true;
+
     setNetworkStatus('Предложение реванша отправлено. Ждём ответ соперника...', 'waiting');
     addSystemMessage('Вы предложили сопернику реванш.');
     toast?.('Предложение реванша отправлено');
+    scheduleSaveMatchDraft();
 
     return true;
   };
 
   const receiveRematchRequest = msg => {
+    state.network.rematchPending = false;
     state.rematchOffer = {
       active: true,
       from: msg.payload?.from?.name || state.opponent?.name || 'Соперник',
@@ -725,6 +742,7 @@ export const createNetworkCombat = ({
 
     openRematchModal();
     setNetworkStatus('Соперник предлагает реванш.', 'waiting');
+    scheduleSaveMatchDraft();
   };
 
   const openRematchModal = () => {
@@ -757,8 +775,10 @@ export const createNetworkCombat = ({
       });
 
       state.rematchOffer.active = false;
+      state.network.rematchPending = false;
       setNetworkStatus('Вы отклонили реванш.', 'ready');
       addSystemMessage('Реванш отклонён.');
+      scheduleSaveMatchDraft();
     });
 
     overlay.querySelector('#wh-rematch-accept')?.addEventListener('click', () => {
@@ -770,21 +790,25 @@ export const createNetworkCombat = ({
       });
 
       state.rematchOffer.active = false;
+      state.network.rematchPending = false;
       addSystemMessage('Реванш принят. Переходим к расстановке.');
       startNetworkPreparation({ initiator: false });
     });
   };
 
   const receiveRematchAccept = () => {
+    state.network.rematchPending = false;
     addSystemMessage('Соперник принял реванш. Переходим к расстановке.');
     setNetworkStatus('Реванш принят. Расставьте корабли.', 'setup');
     startNetworkPreparation({ initiator: true });
   };
 
   const receiveRematchReject = () => {
+    state.network.rematchPending = false;
     addSystemMessage('Соперник отклонил реванш.');
     setNetworkStatus('Соперник отклонил реванш.', 'ready');
     toast?.('Реванш отклонён');
+    scheduleSaveMatchDraft();
   };
 
   const handleGameData = msg => {
@@ -842,6 +866,22 @@ export const createNetworkCombat = ({
 
       case MessageType.REMATCH_REJECT:
         receiveRematchReject(msg);
+        break;
+
+      case MessageType.PING:
+        state.networkWatchdog.lastPeerAt = Date.now();
+        session.sendGame(MessageType.PONG, {
+          matchId: state.matchStats.matchId,
+          phase: state.phase,
+          hidden: !!document.hidden
+        });
+        break;
+
+      case MessageType.PONG:
+        state.networkWatchdog.lastPongAt = Date.now();
+        state.networkWatchdog.lastPeerAt = Date.now();
+        state.networkWatchdog.warning = false;
+        state.networkWatchdog.note = '';
         break;
 
       case MessageType.MATCH_ABORTED:
