@@ -6,6 +6,10 @@ export const renderBattle = (root, state, actions) => {
   const wrap = document.createElement('section');
   wrap.className = 'wh-grid-wrap';
 
+  if (state.opponent?.type === 'network' || state.network?.active) {
+    wrap.append(renderNetworkIndicator(state));
+  }
+  
   if (state.phase === 'finished') {
     const resultBar = document.createElement('div');
     resultBar.className = `wh-match-result ${state.result === 'win' ? 'is-win' : 'is-loss'}`;
@@ -109,7 +113,22 @@ const renderFairPlay = state => {
     </div>
   `;
 };
+const renderNetworkIndicator = state => {
+  const net = state.network || {};
+  const el = document.createElement('div');
+  el.className = `wh-network-indicator is-${net.status || 'info'}`;
 
+  const peer = net.peerName || state.opponent?.name || 'Соперник';
+  const text = net.text || 'Сетевой режим: синхронизация с соперником.';
+
+  el.innerHTML = `
+    <span>🟡</span>
+    <b>${peer}</b>
+    <em>${text}</em>
+  `;
+
+  return el;
+};
 const renderStats = state => {
   const s = state.matchStats || {};
   const started = s.startedAt || Date.now();
