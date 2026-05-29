@@ -20,6 +20,7 @@ import { createTranscript } from './game/transcript.js';
 import { createMatchPersistence } from './game/match-persistence.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
 import { createNetworkCombat } from './game/network-combat.js';
+import { createNetworkWatchdog } from './game/network-watchdog.js';
 import { renderMenu } from './screens/menu.js';
 import { renderOpponentSelect } from './screens/opponent-select.js';
 import { renderField } from './screens/field.js';
@@ -102,6 +103,7 @@ let playerAutoTimer = 0;
 let inviteTimer = 0;
 let matchPersistence = null;
 let networkCombat = null;
+let networkWatchdog = null;
 
 const saveMatchDraftNow = () => matchPersistence?.saveMatchDraftNow();
 const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
@@ -557,6 +559,16 @@ networkCombat = createNetworkCombat({
   clearTimers: clearBattleTimers,
   makeEmptyBoard
 });
+
+networkWatchdog = createNetworkWatchdog({
+  state,
+  session,
+  render: () => render(),
+  addSystemMessage,
+  scheduleSaveMatchDraft
+});
+
+networkWatchdog.start();
 
 const openShotConfirm = (x, y) => {
   const coord = formatCellName(x, y);
@@ -1153,6 +1165,7 @@ const bind = () => {
     state.network.peerName = state.opponent.name;
 
     networkCombat?.onConnected(state.opponent.name);
+    networkWatchdog?.touchPeer();
 
     addSystemMessage('Сетевое соединение установлено.');
 
@@ -1169,27 +1182,32 @@ const bind = () => {
 
   session.onDisconnect = () => {
     networkCombat?.onDisconnected();
+    networkWatchdog?.warn('Соединение с соперником потеряно.', { hard: true });
     addSystemMessage('Соединение с соперником потеряно.');
     render();
   };
 
   session.onChat = msg => {
+    networkWatchdog?.touchPeer();
     state.chat.push(msg);
     render();
     scheduleSaveMatchDraft();
   };
 
   session.onGameData = msg => {
+    networkWatchdog?.touchPeer();
     networkCombat?.handleGameData(msg);
   };
 };
 
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
+    networkWatchdog?.resume();
     schedulePlayerAutoShot();
     return;
   }
 
+  networkWatchdog?.pause();
   saveMatchDraftNow();
   clearTimeout(playerAutoTimer);
   clearTimeout(computerTimer);
