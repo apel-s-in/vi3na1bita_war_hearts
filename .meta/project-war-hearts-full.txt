@@ -108,7 +108,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 20:44:24 UTC
+Сгенерировано: 2026-05-29 20:46:20 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5782,7 +5782,7 @@ export const renderNetworkIndicator = (state, {
   const status = net.status || 'info';
   const connected = !!net.connected;
   const waiting = ['waiting', 'setup', 'peer-turn'].includes(status);
-  const error = status === 'error' || status === 'offline';
+  const error = status === 'error' || status === 'offline' || !!state.networkWatchdog?.warning;
 
   el.className = [
     'wh-network-indicator',
@@ -5793,7 +5793,9 @@ export const renderNetworkIndicator = (state, {
   ].filter(Boolean).join(' ');
 
   const peer = net.peerName || state.opponent?.name || 'Соперник';
-  const text = net.text || fallbackText;
+  const text = state.networkWatchdog?.warning && state.networkWatchdog?.note
+    ? state.networkWatchdog.note
+    : net.text || fallbackText;
   const stage = getStageLabel(state, net);
   const link = getConnectionLabel(net);
 
