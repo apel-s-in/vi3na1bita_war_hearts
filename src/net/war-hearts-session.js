@@ -115,8 +115,16 @@ export class WarHeartsSession {
   }
 
   send(data) {
-    if (!this.bridge) return false;
-    return this.bridge.send(data);
+    if (!this.bridge || !this.ready) return false;
+
+    try {
+      return !!this.bridge.send(data);
+    } catch {
+      this.ready = false;
+      this.onStatus({ label: 'send err', online: false });
+      this.onDisconnect({ reason: 'send_error' });
+      return false;
+    }
   }
 
   sendChat(text) {
@@ -125,8 +133,18 @@ export class WarHeartsSession {
       text
     });
 
-    if (!this.bridge) return false;
-    return this.bridge.sendChat ? this.bridge.sendChat(text, this.player.name) : this.send(msg);
+    if (!this.bridge || !this.ready) return false;
+
+    try {
+      return this.bridge.sendChat
+        ? !!this.bridge.sendChat(text, this.player.name)
+        : this.send(msg);
+    } catch {
+      this.ready = false;
+      this.onStatus({ label: 'chat err', online: false });
+      this.onDisconnect({ reason: 'chat_send_error' });
+      return false;
+    }
   }
 
   sendGame(type, payload = {}) {
