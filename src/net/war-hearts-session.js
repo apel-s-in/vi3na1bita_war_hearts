@@ -9,6 +9,7 @@ export class WarHeartsSession {
     this.room = null;
     this.onStatus = () => {};
     this.onChat = () => {};
+    this.onGameData = () => {};
     this.onRoom = () => {};
     this.onConnect = () => {};
   }
@@ -80,12 +81,19 @@ export class WarHeartsSession {
   }
 
   handleData(data) {
+    if (!data) return;
+
     if (data?.type === MessageType.CHAT_MESSAGE || data?.type === 'CHAT_MESSAGE') {
       this.onChat({
         from: data.payload?.from || 'Соперник',
         text: data.payload?.text || '',
         at: data.at || Date.now()
       });
+      return;
+    }
+
+    if (Object.values(MessageType).includes(data.type)) {
+      this.onGameData(data);
     }
   }
 
@@ -102,6 +110,41 @@ export class WarHeartsSession {
 
     if (!this.bridge) return false;
     return this.bridge.sendChat ? this.bridge.sendChat(text, this.player.name) : this.send(msg);
+  }
+
+  sendGame(type, payload = {}) {
+    return this.send(createMessage(type, {
+      gameId: this.gameId,
+      from: {
+        id: this.player.id,
+        name: this.player.name
+      },
+      ...payload
+    }));
+  }
+
+  sendReady(payload = {}) {
+    return this.sendGame(MessageType.READY, payload);
+  }
+
+  sendBoardCommit(payload = {}) {
+    return this.sendGame(MessageType.BOARD_COMMIT, payload);
+  }
+
+  sendBoardReveal(payload = {}) {
+    return this.sendGame(MessageType.BOARD_REVEAL, payload);
+  }
+
+  sendShot(payload = {}) {
+    return this.sendGame(MessageType.SHOT, payload);
+  }
+
+  sendShotResult(payload = {}) {
+    return this.sendGame(MessageType.SHOT_RESULT, payload);
+  }
+
+  sendMatchFinished(payload = {}) {
+    return this.sendGame(MessageType.MATCH_FINISHED, payload);
   }
 
   async toggleVoice(active) {
