@@ -10,6 +10,12 @@ import {
 } from './game/board.js';
 import { createInitialState } from './game/state.js';
 import { pickSmartTarget } from './game/targeting.js';
+import {
+  applyRevealToBoard,
+  createSalt,
+  packBoardReveal,
+  validateRevealLayout
+} from './game/fair-play.js';
 import { createTranscript } from './game/transcript.js';
 import { createMatchPersistence } from './game/match-persistence.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
@@ -130,6 +136,46 @@ const resetMatchStats = () => {
   state.matchStats = createMatchStats();
 };
 
+const resetFairPlayForMatch = () => {
+  state.fairPlay = {
+    matchId: state.matchStats.matchId,
+    mySalt: createSalt(),
+    myCommitHash: '',
+    enemyCommitHash: '',
+    myReveal: null,
+    enemyReveal: null,
+    revealed: false,
+    myLayoutOk: null,
+    enemyLayoutOk: null,
+    enemyCommitOk: null,
+    note: 'commit будет рассчитан перед сетевым матчем'
+  };
+};
+
+const revealFinalBoards = () => {
+  const myReveal = packBoardReveal(state.myBoard);
+  const enemyReveal = packBoardReveal(state.enemyBoard);
+  const myCheck = validateRevealLayout(myReveal);
+  const enemyCheck = validateRevealLayout(enemyReveal);
+
+  applyRevealToBoard(state.myBoard, myReveal);
+  applyRevealToBoard(state.enemyBoard, enemyReveal);
+
+  state.fairPlay = {
+    ...state.fairPlay,
+    matchId: state.matchStats.matchId,
+    myReveal,
+    enemyReveal,
+    revealed: true,
+    myLayoutOk: myCheck.ok,
+    enemyLayoutOk: enemyCheck.ok,
+    enemyCommitOk: state.opponent?.type === 'network' ? state.fairPlay.enemyCommitOk : true,
+    note: state.opponent?.type === 'network'
+      ? 'ожидается или проверен BOARD_REVEAL соперника'
+      : 'локальный бой: расстановка раскрыта и проверена по правилам'
+  };
+};
+
 const finishMatch = (result, message) => {
   state.result = result;
   state.phase = 'finished';
@@ -137,7 +183,9 @@ const finishMatch = (result, message) => {
   clearTimeout(playerAutoTimer);
   clearTimeout(computerTimer);
   state.matchStats.finishedAt = Date.now();
+  revealFinalBoards();
   addSystemMessage(message);
+  addSystemMessage('Расстановки раскрыты. Проверка правил завершена.');
   render();
   saveMatchDraftNow();
 };
@@ -694,6 +742,7 @@ const actions = {
     state.battleFx = null;
     state.autoBattle.player = false;
     resetMatchStats();
+    resetFairPlayForMatch();
     state.phase = 'rps';
     state.result = '';
     state.chat = [
@@ -725,6 +774,7 @@ const actions = {
     state.battleFx = null;
     state.autoBattle.player = false;
     resetMatchStats();
+    resetFairPlayForMatch();
     state.phase = 'rps';
     state.result = '';
     state.chat = [
@@ -806,6 +856,7 @@ const actions = {
     state.battleFx = null;
     state.autoBattle.player = false;
     resetMatchStats();
+    resetFairPlayForMatch();
     state.result = '';
     state.phase = 'rps';
     state.chat = [
