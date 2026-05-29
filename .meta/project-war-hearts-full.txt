@@ -68,6 +68,7 @@ vi3na1bita_war_hearts/
 │   │   ├── board.js
 │   │   ├── fair-play.js
 │   │   ├── match-persistence.js
+│   │   ├── network-combat.js
 │   │   ├── protocol.js
 │   │   ├── rules.js
 │   │   ├── state.js
@@ -94,7 +95,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 15:27:20 UTC
+Сгенерировано: 2026-05-29 15:28:58 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3723,6 +3724,714 @@ export const createMatchPersistence = ({
     scheduleSaveMatchDraft,
     restoreMatchDraft,
     clearMatchDraft
+  };
+};
+
+//=================================================
+// FILE: /src/game/network-combat.js
+import { MessageType } from './protocol.js';
+import {
+  applyRevealToBoard,
+  createBoardCommit,
+  createSalt,
+  packBoardReveal,
+  validateRevealLayout,
+  verifyBoardCommit
+} from './fair-play.js';
+
+const RPS_CHOICES = [
+  { id: 'rock', icon: '✊', label: 'Камень' },
+  { id: 'scissors', icon: '✌️', label: 'Ножницы' },
+  { id: 'paper', icon: '✋', label: 'Бумага' }
+];
+
+const compareRps = (mine, peer) => {
+  if (mine === peer) return 'draw';
+
+  if (
+    (mine === 'rock' && peer === 'scissors') ||
+    (mine === 'scissors' && peer === 'paper') ||
+    (mine === 'paper' && peer === 'rock')
+  ) {
+    return 'mine';
+  }
+
+  return 'peer';
+};
+
+const getChoiceLabel = id => RPS_CHOICES.find(item => item.id === id)?.label || id;
+
+const clearModal = selector => {
+  document.querySelectorAll(selector).forEach(el => el.remove());
+};
+
+export const createNetworkCombat = ({
+  state,
+  session,
+  setScreen,
+  render,
+  toast,
+  addSystemMessage,
+  formatCellName,
+  getShipCellsAt,
+  isShipSunk,
+  markSunkPerimeter,
+  isBoardDefeated,
+  registerShotStats,
+  showBattleFx,
+  finishMatch,
+  resetMatchStats,
+  resetFairPlayForMatch,
+  scheduleSaveMatchDraft,
+  saveMatchDraftNow,
+  clearTimers,
+  makeEmptyBoard
+}) => {
+  let shotSeq = 0;
+
+  const setNetworkStatus = (text, status = 'info') => {
+    state.network.active = state.opponent?.type === 'network';
+    state.network.status = status;
+    state.network.text = text;
+    state.network.connected = status !== 'offline' && status !== 'error';
+    state.network.peerName = state.opponent?.name || state.network.peerName || 'Соперник';
+    state.network.lastEventAt = Date.now();
+    render();
+  };
+
+  const ensureNetworkOpponent = () => {
+    if (!state.opponent || state.opponent.type !== 'network') {
+      state.opponent = {
+        id: 'network-peer',
+        name: state.network.peerName || 'Соперник',
+        type: 'network'
+      };
+    }
+
+    state.network.active = true;
+  };
+
+  const resetNetworkRound = () => {
+    state.network.myReady = false;
+    state.network.peerReady = false;
+    state.network.myCommitSent = false;
+    state.network.peerCommitReceived = false;
+    state.network.awaitingShotResult = false;
+    state.network.awaitingReveal = false;
+
+    state.networkRps = {
+      active: false,
+      myChoice: '',
+      peerChoice: '',
+      round: 0
+    };
+  };
+
+  const startNetworkPreparation = ({ initiator = false } = {}) => {
+    ensureNetworkOpponent();
+    clearTimers?.();
+    resetNetworkRound();
+    resetMatchStats();
+    resetFairPlayForMatch();
+
+    state.enemyBoard = makeEmptyBoard();
+    state.selectedTarget = null;
+    state.result = '';
+    state.phase = 'setup';
+
+    setNetworkStatus(
+      initiator
+        ? 'Сетевой бой: расставьте корабли и нажмите «Готов к бою».'
+        : 'Соперник готовит бой. Расставьте корабли и подтвердите готовность.',
+      'setup'
+    );
+
+    setScreen('field');
+    openReadyModal();
+    scheduleSaveMatchDraft();
+  };
+
+  const openReadyModal = () => {
+    clearModal('.wh-network-ready-overlay');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'wh-modal-overlay wh-network-ready-overlay';
+    overlay.innerHTML = `
+      <div class="wh-modal-box">
+        <h3 class="wh-modal-title">Сетевой бой</h3>
+        <p class="wh-modal-text">
+          Расставьте корабли на поле. Когда будете готовы — нажмите кнопку.
+          После готовности начнётся синхронизация с соперником.
+        </p>
+        <div class="wh-modal-actions">
+          <button class="wh-btn secondary" type="button" id="wh-network-ready-later">Позже</button>
+          <button class="wh-btn" type="button" id="wh-network-ready-now">Готов к бою</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#wh-network-ready-later')?.addEventListener('click', () => {
+      overlay.remove();
+      setNetworkStatus('Расставьте корабли. Когда будете готовы — подтвердите готовность.', 'setup');
+    });
+
+    overlay.querySelector('#wh-network-ready-now')?.addEventListener('click', async () => {
+      overlay.remove();
+      await markReady();
+    });
+  };
+
+  const markReady = async () => {
+    ensureNetworkOpponent();
+
+    const myReveal = packBoardReveal(state.myBoard);
+    const layoutCheck = validateRevealLayout(myReveal);
+
+    state.fairPlay.myLayoutOk = layoutCheck.ok;
+
+    if (!layoutCheck.ok) {
+      toast?.('Расстановка нарушает правила');
+      setNetworkStatus('Расстановка кораблей некорректна. Исправьте поле.', 'error');
+      addSystemMessage(`Проверка расстановки: ${layoutCheck.reason}.`);
+      render();
+      return false;
+    }
+
+    state.fairPlay.mySalt = state.fairPlay.mySalt || createSalt();
+
+    const commit = await createBoardCommit(state.myBoard, state.fairPlay.mySalt);
+    state.fairPlay.myCommitHash = commit.hash;
+    state.fairPlay.myReveal = myReveal;
+
+    session.sendBoardCommit({
+      matchId: state.matchStats.matchId,
+      commitHash: commit.hash,
+      algorithm: commit.algorithm
+    });
+
+    session.sendReady({
+      matchId: state.matchStats.matchId,
+      ready: true
+    });
+
+    state.network.myReady = true;
+    state.network.myCommitSent = true;
+
+    addSystemMessage('Вы готовы к сетевому бою. Commit доски отправлен.');
+    setNetworkStatus('Вы готовы. Ожидаем готовность соперника...', 'waiting');
+
+    maybeStartRps();
+    scheduleSaveMatchDraft();
+
+    return true;
+  };
+
+  const maybeStartRps = () => {
+    if (!state.network.myReady || !state.network.peerReady) return;
+    if (!state.network.myCommitSent || !state.network.peerCommitReceived) return;
+
+    state.phase = 'rps';
+    setScreen('battle');
+
+    setNetworkStatus('Оба игрока готовы. Розыгрыш первого хода.', 'ready');
+    addSystemMessage('Оба игрока готовы. Начинается сетевой розыгрыш первого хода.');
+
+    openNetworkRpsModal();
+    scheduleSaveMatchDraft();
+  };
+
+  const openNetworkRpsModal = () => {
+    clearModal('.wh-rps-modal-overlay');
+
+    state.networkRps.active = true;
+    state.networkRps.myChoice = '';
+    state.networkRps.peerChoice = '';
+    state.networkRps.round++;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'wh-rps-modal-overlay';
+    overlay.innerHTML = `
+      <div class="wh-rps-modal-box">
+        <div class="wh-rps-kicker">Сетевой розыгрыш первого хода</div>
+        <h2 class="wh-rps-title">Камень · Ножницы · Бумага</h2>
+        <p class="wh-rps-text" id="wh-net-rps-text">
+          Выберите знак. Ждём выбор соперника.
+        </p>
+        <div class="wh-rps-choices">
+          ${RPS_CHOICES.map(choice => `
+            <button class="wh-rps-choice" type="button" data-choice="${choice.id}">
+              <span>${choice.icon}</span>
+              <b>${choice.label}</b>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('[data-choice]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const choice = btn.dataset.choice;
+        state.networkRps.myChoice = choice;
+
+        session.sendGame(MessageType.RPS_CHOICE, {
+          matchId: state.matchStats.matchId,
+          round: state.networkRps.round,
+          choice
+        });
+
+        overlay.querySelectorAll('[data-choice]').forEach(item => item.disabled = true);
+
+        const text = overlay.querySelector('#wh-net-rps-text');
+        if (text) text.textContent = `Вы выбрали: ${getChoiceLabel(choice)}. Ждём соперника...`;
+
+        setNetworkStatus('Ваш выбор отправлен. Ждём выбор соперника...', 'waiting');
+        maybeResolveRps();
+      });
+    });
+  };
+
+  const maybeResolveRps = () => {
+    if (!state.networkRps.myChoice || !state.networkRps.peerChoice) return;
+
+    const result = compareRps(state.networkRps.myChoice, state.networkRps.peerChoice);
+    const overlay = document.querySelector('.wh-rps-modal-overlay');
+    const text = overlay?.querySelector('#wh-net-rps-text');
+
+    if (result === 'draw') {
+      if (text) {
+        text.textContent = `Ничья: ${getChoiceLabel(state.networkRps.myChoice)} против ${getChoiceLabel(state.networkRps.peerChoice)}. Повторяем.`;
+      }
+
+      setNetworkStatus('Ничья в розыгрыше. Повторите выбор.', 'waiting');
+
+      setTimeout(() => {
+        state.networkRps.myChoice = '';
+        state.networkRps.peerChoice = '';
+        openNetworkRpsModal();
+      }, 900);
+
+      return;
+    }
+
+    clearModal('.wh-rps-modal-overlay');
+
+    state.networkRps.active = false;
+
+    if (result === 'mine') {
+      state.phase = 'player';
+      addSystemMessage('Розыгрыш завершён. Первый ход ваш.');
+      setNetworkStatus('Ваш ход. Выберите клетку для выстрела.', 'your-turn');
+    } else {
+      state.phase = 'computer';
+      addSystemMessage('Розыгрыш завершён. Первым ходит соперник.');
+      setNetworkStatus('Ход соперника. Ожидаем выстрел...', 'peer-turn');
+    }
+
+    render();
+    scheduleSaveMatchDraft();
+  };
+
+  const shoot = (x, y) => {
+    if (state.opponent?.type !== 'network') return false;
+    if (state.phase !== 'player') return true;
+
+    const cell = state.enemyBoard[y]?.[x];
+    if (!cell || cell.status) return true;
+
+    const shotId = `${state.matchStats.matchId}_${++shotSeq}`;
+
+    state.selectedTarget = { x, y };
+    state.network.awaitingShotResult = true;
+
+    session.sendShot({
+      matchId: state.matchStats.matchId,
+      shotId,
+      x,
+      y,
+      seq: shotSeq
+    });
+
+    addSystemMessage(`Выстрел ${formatCellName(x, y)} отправлен сопернику.`);
+    setNetworkStatus(`Выстрел ${formatCellName(x, y)} отправлен. Ожидаем результат...`, 'waiting');
+
+    render();
+    scheduleSaveMatchDraft();
+
+    return true;
+  };
+
+  const receiveShot = msg => {
+    const payload = msg.payload || {};
+    const x = Number(payload.x);
+    const y = Number(payload.y);
+
+    if (state.phase === 'finished') return;
+
+    const cell = state.myBoard[y]?.[x];
+    if (!cell || cell.status) {
+      session.sendShotResult({
+        matchId: state.matchStats.matchId,
+        shotId: payload.shotId,
+        x,
+        y,
+        result: 'miss',
+        duplicate: true
+      });
+      return;
+    }
+
+    const coord = formatCellName(x, y);
+    const hit = !!cell.ship;
+
+    cell.status = hit ? 'hit' : 'miss';
+
+    const shipCells = hit ? getShipCellsAt(state.myBoard, x, y) : [];
+    const sunk = hit && isShipSunk(state.myBoard, shipCells);
+
+    if (sunk) markSunkPerimeter(state.myBoard, shipCells);
+
+    const result = sunk ? 'sunk' : hit ? 'hit' : 'miss';
+
+    registerShotStats('opponent', result);
+    showBattleFx('mine', result);
+
+    session.sendShotResult({
+      matchId: state.matchStats.matchId,
+      shotId: payload.shotId,
+      x,
+      y,
+      result,
+      sunkCells: sunk ? shipCells.map(p => ({ x: p.x, y: p.y })) : []
+    });
+
+    addSystemMessage(`Соперник стреляет ${coord}: ${result === 'sunk' ? 'убил корабль' : result === 'hit' ? 'ранил корабль' : 'промахнулся'}.`);
+
+    if (isBoardDefeated(state.myBoard)) {
+      sendMatchFinished('loss');
+      finishMatch('loss', 'Матч завершён: поражение.');
+      sendBoardReveal();
+      return;
+    }
+
+    if (!hit) {
+      state.phase = 'player';
+      setNetworkStatus('Соперник промахнулся. Ваш ход.', 'your-turn');
+    } else {
+      state.phase = 'computer';
+      setNetworkStatus('Соперник попал и продолжает ход.', 'peer-turn');
+    }
+
+    render();
+    scheduleSaveMatchDraft();
+  };
+
+  const receiveShotResult = msg => {
+    const payload = msg.payload || {};
+    const x = Number(payload.x);
+    const y = Number(payload.y);
+    const result = payload.result || 'miss';
+
+    const cell = state.enemyBoard[y]?.[x];
+    if (!cell) return;
+
+    cell.status = result === 'miss' ? 'miss' : 'hit';
+    if (result === 'sunk') {
+      cell.status = 'hit';
+
+      if (Array.isArray(payload.sunkCells)) {
+        payload.sunkCells.forEach(point => {
+          const target = state.enemyBoard[point.y]?.[point.x];
+          if (target) target.status = 'hit';
+        });
+      }
+    }
+
+    const shipCells = result === 'sunk' && Array.isArray(payload.sunkCells)
+      ? payload.sunkCells.map(point => ({
+        x: Number(point.x),
+        y: Number(point.y),
+        cell: state.enemyBoard[point.y]?.[point.x]
+      })).filter(point => point.cell)
+      : [];
+
+    if (shipCells.length) markSunkPerimeter(state.enemyBoard, shipCells);
+
+    state.network.awaitingShotResult = false;
+    state.selectedTarget = null;
+
+    registerShotStats('player', result);
+    showBattleFx('enemy', result);
+
+    addSystemMessage(`Ответ соперника: ${formatCellName(x, y)} — ${result === 'sunk' ? 'корабль уничтожен' : result === 'hit' ? 'попадание' : 'мимо'}.`);
+
+    if (result === 'miss') {
+      state.phase = 'computer';
+      setNetworkStatus('Вы промахнулись. Ход соперника.', 'peer-turn');
+    } else {
+      state.phase = 'player';
+      setNetworkStatus(result === 'sunk' ? 'Корабль уничтожен. Ваш ход продолжается.' : 'Попадание. Ваш ход продолжается.', 'your-turn');
+    }
+
+    render();
+    scheduleSaveMatchDraft();
+  };
+
+  const sendBoardReveal = () => {
+    const reveal = packBoardReveal(state.myBoard);
+    state.fairPlay.myReveal = reveal;
+
+    session.sendBoardReveal({
+      matchId: state.matchStats.matchId,
+      salt: state.fairPlay.mySalt,
+      reveal
+    });
+
+    state.network.awaitingReveal = true;
+    setNetworkStatus('Финал. Ваша доска раскрыта. Ожидаем reveal соперника...', 'waiting');
+    scheduleSaveMatchDraft();
+  };
+
+  const receiveBoardReveal = async msg => {
+    const payload = msg.payload || {};
+    const reveal = payload.reveal;
+
+    state.fairPlay.enemyReveal = reveal;
+
+    const layoutCheck = validateRevealLayout(reveal);
+    state.fairPlay.enemyLayoutOk = layoutCheck.ok;
+
+    const commitCheck = await verifyBoardCommit({
+      reveal,
+      salt: payload.salt,
+      commitHash: state.fairPlay.enemyCommitHash
+    });
+
+    state.fairPlay.enemyCommitOk = commitCheck.ok;
+
+    if (layoutCheck.ok && commitCheck.ok) {
+      applyRevealToBoard(state.enemyBoard, reveal);
+      state.fairPlay.note = 'BOARD_REVEAL соперника проверен: commit совпал, расстановка корректна.';
+      addSystemMessage('Проверка соперника: честность OK.');
+      setNetworkStatus('Reveal соперника проверен. Честность OK.', 'ready');
+    } else {
+      state.fairPlay.note = `Проблема проверки: ${layoutCheck.reason || commitCheck.reason}.`;
+      addSystemMessage(`Проверка соперника не пройдена: ${state.fairPlay.note}`);
+      setNetworkStatus('Reveal соперника не прошёл проверку.', 'error');
+    }
+
+    state.fairPlay.revealed = true;
+    state.network.awaitingReveal = false;
+
+    render();
+    saveMatchDraftNow();
+  };
+
+  const sendMatchFinished = result => {
+    session.sendMatchFinished({
+      matchId: state.matchStats.matchId,
+      result,
+      stats: state.matchStats
+    });
+  };
+
+  const receiveMatchFinished = msg => {
+    const payload = msg.payload || {};
+    addSystemMessage(`Соперник сообщил финал матча: ${payload.result || 'unknown'}.`);
+
+    if (state.phase !== 'finished') {
+      state.result = payload.result === 'loss' ? 'win' : 'loss';
+      state.phase = 'finished';
+      state.matchStats.finishedAt = Date.now();
+      sendBoardReveal();
+      render();
+      saveMatchDraftNow();
+    }
+  };
+
+  const requestRematch = () => {
+    if (state.opponent?.type !== 'network') return false;
+
+    session.sendGame(MessageType.REMATCH_REQUEST, {
+      matchId: state.matchStats.matchId,
+      at: Date.now()
+    });
+
+    setNetworkStatus('Предложение реванша отправлено. Ждём ответ соперника...', 'waiting');
+    addSystemMessage('Вы предложили сопернику реванш.');
+    toast?.('Предложение реванша отправлено');
+
+    return true;
+  };
+
+  const receiveRematchRequest = msg => {
+    state.rematchOffer = {
+      active: true,
+      from: msg.payload?.from?.name || state.opponent?.name || 'Соперник',
+      matchId: msg.payload?.matchId || ''
+    };
+
+    openRematchModal();
+    setNetworkStatus('Соперник предлагает реванш.', 'waiting');
+  };
+
+  const openRematchModal = () => {
+    clearModal('.wh-rematch-offer-overlay');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'wh-modal-overlay wh-rematch-offer-overlay';
+    overlay.innerHTML = `
+      <div class="wh-modal-box">
+        <h3 class="wh-modal-title">Реванш?</h3>
+        <p class="wh-modal-text">
+          ${state.rematchOffer.from || 'Соперник'} предлагает сыграть ещё раз.
+          Если принять, вы перейдёте к новой расстановке кораблей.
+        </p>
+        <div class="wh-modal-actions">
+          <button class="wh-btn secondary" type="button" id="wh-rematch-reject">Отклонить</button>
+          <button class="wh-btn" type="button" id="wh-rematch-accept">Принять</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#wh-rematch-reject')?.addEventListener('click', () => {
+      overlay.remove();
+
+      session.sendGame(MessageType.REMATCH_REJECT, {
+        matchId: state.rematchOffer.matchId,
+        at: Date.now()
+      });
+
+      state.rematchOffer.active = false;
+      setNetworkStatus('Вы отклонили реванш.', 'ready');
+      addSystemMessage('Реванш отклонён.');
+    });
+
+    overlay.querySelector('#wh-rematch-accept')?.addEventListener('click', () => {
+      overlay.remove();
+
+      session.sendGame(MessageType.REMATCH_ACCEPT, {
+        matchId: state.rematchOffer.matchId,
+        at: Date.now()
+      });
+
+      state.rematchOffer.active = false;
+      addSystemMessage('Реванш принят. Переходим к расстановке.');
+      startNetworkPreparation({ initiator: false });
+    });
+  };
+
+  const receiveRematchAccept = () => {
+    addSystemMessage('Соперник принял реванш. Переходим к расстановке.');
+    setNetworkStatus('Реванш принят. Расставьте корабли.', 'setup');
+    startNetworkPreparation({ initiator: true });
+  };
+
+  const receiveRematchReject = () => {
+    addSystemMessage('Соперник отклонил реванш.');
+    setNetworkStatus('Соперник отклонил реванш.', 'ready');
+    toast?.('Реванш отклонён');
+  };
+
+  const handleGameData = msg => {
+    if (!msg?.type) return;
+
+    ensureNetworkOpponent();
+
+    switch (msg.type) {
+      case MessageType.BOARD_COMMIT:
+        state.fairPlay.enemyCommitHash = msg.payload?.commitHash || '';
+        state.network.peerCommitReceived = !!state.fairPlay.enemyCommitHash;
+        addSystemMessage('Получен commit доски соперника.');
+        setNetworkStatus('Commit соперника получен. Ожидаем готовность...', 'waiting');
+        maybeStartRps();
+        scheduleSaveMatchDraft();
+        break;
+
+      case MessageType.READY:
+        state.network.peerReady = true;
+        addSystemMessage('Соперник готов к бою.');
+        setNetworkStatus('Соперник готов. Синхронизация боя...', 'waiting');
+        maybeStartRps();
+        scheduleSaveMatchDraft();
+        break;
+
+      case MessageType.RPS_CHOICE:
+        state.networkRps.peerChoice = msg.payload?.choice || '';
+        setNetworkStatus('Выбор соперника в розыгрыше получен.', 'waiting');
+        maybeResolveRps();
+        break;
+
+      case MessageType.SHOT:
+        receiveShot(msg);
+        break;
+
+      case MessageType.SHOT_RESULT:
+        receiveShotResult(msg);
+        break;
+
+      case MessageType.MATCH_FINISHED:
+        receiveMatchFinished(msg);
+        break;
+
+      case MessageType.BOARD_REVEAL:
+        receiveBoardReveal(msg);
+        break;
+
+      case MessageType.REMATCH_REQUEST:
+        receiveRematchRequest(msg);
+        break;
+
+      case MessageType.REMATCH_ACCEPT:
+        receiveRematchAccept(msg);
+        break;
+
+      case MessageType.REMATCH_REJECT:
+        receiveRematchReject(msg);
+        break;
+
+      case MessageType.MATCH_ABORTED:
+        addSystemMessage('Соперник прервал матч.');
+        setNetworkStatus('Соперник прервал матч или отключился.', 'error');
+        break;
+
+      default:
+        addSystemMessage(`Сетевое событие: ${msg.type}`);
+        break;
+    }
+
+    render();
+  };
+
+  const onConnected = peerName => {
+    ensureNetworkOpponent();
+    state.network.connected = true;
+    state.network.peerName = peerName || state.opponent?.name || 'Соперник';
+    setNetworkStatus('Соединение установлено. Можно готовиться к бою.', 'ready');
+  };
+
+  const onDisconnected = () => {
+    state.network.connected = false;
+    setNetworkStatus('Связь с соперником потеряна. Проверьте интернет.', 'error');
+  };
+
+  return {
+    setNetworkStatus,
+    startNetworkPreparation,
+    openReadyModal,
+    markReady,
+    shoot,
+    requestRematch,
+    sendBoardReveal,
+    sendMatchFinished,
+    handleGameData,
+    onConnected,
+    onDisconnected
   };
 };
 
