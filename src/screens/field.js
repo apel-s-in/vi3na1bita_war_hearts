@@ -38,14 +38,25 @@ export const renderField = (root, state, actions) => {
     // 1. Верхняя навигация со стрелками
     const topNav = document.createElement('div');
     topNav.className = 'wh-field-topnav';
+    const hasLocalPreparedOpponent = state.phase === 'setup' && state.opponent && state.opponent?.type !== 'network';
+
     topNav.innerHTML = `
       <button class="wh-btn secondary mini" type="button" id="fn-menu">❮ Меню</button>
-      <button class="wh-btn mini" type="button" id="fn-next" style="background:${allPlaced ? 'var(--wh-green)' : 'rgba(255,255,255,0.08)'}; color:${allPlaced ? '#000' : 'var(--wh-muted)'}">Выбор соперника ❯</button>
+      <button class="wh-btn mini" type="button" id="fn-next" style="background:${allPlaced ? 'var(--wh-green)' : 'rgba(255,255,255,0.08)'}; color:${allPlaced ? '#000' : 'var(--wh-muted)'}">${hasLocalPreparedOpponent ? 'Начать бой ❯' : 'Выбор соперника ❯'}</button>
     `;
     topNav.querySelector('#fn-menu').onclick = () => actions.openMenu();
     topNav.querySelector('#fn-next').onclick = () => {
-      if (!allPlaced) actions.toast('Сначала расставьте все корабли на поле!');
-      else actions.openOpponents();
+      if (!allPlaced) {
+        actions.toast('Сначала расставьте все корабли на поле!');
+        return;
+      }
+
+      if (hasLocalPreparedOpponent) {
+        actions.startPreparedBattle();
+        return;
+      }
+
+      actions.openOpponents();
     };
 
     // 2. Доска превью (визуальная копия для редактора)
@@ -269,7 +280,27 @@ export const renderField = (root, state, actions) => {
       actions.networkReady();
     });
 
-    el.append(topNav, boardWrap, infoBar, fleetWrap, actionsWrap, networkReadyBox, presetsWrap);
+    const localReadyBox = document.createElement('section');
+    localReadyBox.className = 'wh-network-ready-box';
+    localReadyBox.hidden = state.opponent?.type === 'network' || state.phase !== 'setup' || !state.opponent;
+    localReadyBox.innerHTML = `
+      <p>Реванш: можно изменить расстановку. Когда поле готово — начните новый бой.</p>
+      <button class="wh-btn" type="button">
+        Начать бой с этой расстановкой
+      </button>
+    `;
+
+    localReadyBox.querySelector('button')?.addEventListener('click', () => {
+      if (!state.fleet.every(s => s.placed)) {
+        actions.toast('Сначала расставьте все корабли!');
+        return;
+      }
+
+      syncFleetToBoard(state.fleet, state.myBoard);
+      actions.startPreparedBattle();
+    });
+
+    el.append(topNav, boardWrap, infoBar, fleetWrap, actionsWrap, networkReadyBox, localReadyBox, presetsWrap);
   };
 
   renderUI();
