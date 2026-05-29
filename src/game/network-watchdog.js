@@ -163,7 +163,47 @@ export const createNetworkWatchdog = ({
     if (paused || document.hidden) return;
     if (!state.network?.active) return;
 
-    send').onclick = () => {
-      if (!allPlaced) actions.toast('Сначала расставьте все корабли на поле!');
-      else actions.openOpponents();
-    };
+    sendPingIfNeeded();
+    checkPending();
+    checkSilence();
+  };
+
+  const start = () => {
+    if (timer) return;
+
+    const wd = ensureNetworkWatchdogState(state);
+    wd.active = true;
+    timer = setInterval(tick, TICK_MS);
+  };
+
+  const stop = () => {
+    clearInterval(timer);
+    timer = 0;
+    paused = false;
+
+    const wd = ensureNetworkWatchdogState(state);
+    wd.active = false;
+  };
+
+  const pause = () => {
+    paused = true;
+  };
+
+  const resume = () => {
+    paused = false;
+    touchPeer();
+    tick();
+  };
+
+  return {
+    start,
+    stop,
+    pause,
+    resume,
+    tick,
+    touchPeer,
+    markPong,
+    warn,
+    clearWarning
+  };
+};
