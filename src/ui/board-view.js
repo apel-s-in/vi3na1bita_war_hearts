@@ -1,6 +1,6 @@
 import { LETTERS } from '../game/board.js';
 
-export const renderBoard = (board, { mode = 'own', target = null, onCell = null } = {}) => {
+export const renderBoard = (board, { mode = 'own', target = null, revealShips = false, onCell = null } = {}) => {
   const el = document.createElement('div');
   el.className = 'wh-board';
 
@@ -23,6 +23,7 @@ export const renderBoard = (board, { mode = 'own', target = null, onCell = null 
       btn.className = [
         'wh-cell',
         mode === 'own' && cell.ship ? 'ship' : '',
+        mode !== 'own' && revealShips && cell.ship ? 'ship revealed-ship' : '',
         cell.status || '',
         inTargetRow ? 'target-row' : '',
         inTargetCol ? 'target-col' : '',
