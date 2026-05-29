@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 21:05:54 UTC
+Сгенерировано: 2026-05-29 21:38:41 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4750,8 +4750,11 @@ export class WarHeartsSession {
     if (!this.bridge) {
       const invite = {
         id: `mock_${Date.now().toString(36)}`,
-        url: window.location.href,
+        roomId: '',
+        roomSecret: '',
+        url: '',
         expiresAt: Date.now() + 120000,
+        preview: true,
         mock: true
       };
       this.room = invite;
@@ -4863,7 +4866,16 @@ export class WarHeartsSession {
   }
 
   async close() {
-    await this.bridge?.close?.();
+    try {
+      await this.bridge?.close?.();
+      await this.bridge?.disconnect?.();
+    } catch {
+      // ignore bridge close errors
+    }
+
+    this.ready = false;
+    this.room = null;
+    this.onStatus({ label: 'offline', online: false });
   }
 }
 
