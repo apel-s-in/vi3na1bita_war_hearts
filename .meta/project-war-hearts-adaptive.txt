@@ -83,7 +83,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:04:35 UTC
+Сгенерировано: 2026-05-29 14:05:02 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1278,6 +1278,11 @@ const actions = {
 
   openBattle() {
     setScreen('battle');
+  },
+
+  setMenuTab(tab) {
+    state.menuTab = tab === 'achievements' ? 'achievements' : 'stats';
+    render();
   },
 
   async createInvite() {
