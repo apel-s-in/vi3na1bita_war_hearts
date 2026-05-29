@@ -1,21 +1,22 @@
 export const renderOpponentSelect = (root, state, actions) => {
   const friends = getFriends(state);
+  const prepared = state.fleet?.every?.(ship => ship.placed);
+  const fromSetup = state.phase === 'setup' || state.screen === 'opponents';
 
   const el = document.createElement('section');
   el.className = 'wh-opponents-page';
   el.innerHTML = `
     <div class="wh-opponent-head">
       <h2>Соперник</h2>
-      <p>Выбери тренировку, preview-соперника, приглашение или друга из Game Center.</p>
+      <p>${prepared ? 'Поле готово. Выбери формат боя.' : 'Сначала расставь все корабли на вкладке «Поле».'}</p>
     </div>
 
     <div class="wh-opponent-block">
       <h3>Быстрый старт</h3>
       <div class="wh-actions">
-        <button class="wh-btn" type="button" data-act="computer">Играть с компьютером</button>
-        <button class="wh-btn secondary" type="button" data-act="mock">Друг рядом · preview</button>
+        <button class="wh-btn" type="button" data-act="computer">${fromSetup ? 'Начать бой с компьютером' : 'Играть с компьютером'}</button>
+        <button class="wh-btn secondary" type="button" data-act="mock">Preview-бой с другом рядом</button>
         <button class="wh-btn secondary" type="button" data-act="invite">Пригласить по ссылке</button>
-        <button class="wh-btn secondary" type="button" data-act="battle">Открыть поле preview</button>
       </div>
     </div>
 
@@ -43,7 +44,6 @@ export const renderOpponentSelect = (root, state, actions) => {
   el.querySelector('[data-act="computer"]')?.addEventListener('click', actions.startComputerGame);
   el.querySelector('[data-act="mock"]')?.addEventListener('click', actions.acceptMockOpponent);
   el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
-  el.querySelector('[data-act="battle"]')?.addEventListener('click', actions.openBattle);
 
   root.append(el);
 };
