@@ -1,6 +1,7 @@
 export const createInitialState = overrides => ({
   screen: 'menu',
   phase: 'idle',
+  menuTab: 'stats',
   player: {
     id: 'local',
     name: 'Слушатель',
