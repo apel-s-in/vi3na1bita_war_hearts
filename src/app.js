@@ -1157,6 +1157,12 @@ const bind = () => {
     render();
   };
 
+  session.onDisconnect = () => {
+    networkCombat?.onDisconnected();
+    addSystemMessage('Соединение с соперником потеряно.');
+    render();
+  };
+
   session.onChat = msg => {
     state.chat.push(msg);
     render();
