@@ -1062,6 +1062,11 @@ const bind = () => {
     render();
     scheduleSaveMatchDraft();
   };
+
+  session.onGameData = msg => {
+    addSystemMessage(`Сетевое событие: ${msg.type}`);
+    render();
+  };
 };
 
 document.addEventListener('visibilitychange', () => {
