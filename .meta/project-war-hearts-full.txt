@@ -97,7 +97,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 19:27:48 UTC
+Сгенерировано: 2026-05-29 19:30:07 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4763,6 +4763,7 @@ export const createInitialState = overrides => ({
     myLayoutOk: null,
     enemyLayoutOk: null,
     enemyCommitOk: null,
+    enemyTranscriptOk: null,
     note: ''
   },
   network: {
@@ -4778,6 +4779,7 @@ export const createInitialState = overrides => ({
     awaitingShotResult: false,
     awaitingReveal: false,
     myRevealSent: false,
+    rpsStarted: false,
     lastEventAt: 0
   },
   networkRps: {
@@ -4785,6 +4787,12 @@ export const createInitialState = overrides => ({
     myChoice: '',
     peerChoice: '',
     round: 0
+  },
+  networkShots: {
+    mine: [],
+    peer: [],
+    enemyTranscriptOk: null,
+    note: ''
   },
   rematchOffer: {
     active: false,
