@@ -6,7 +6,7 @@ export const renderNetworkIndicator = (state, {
   const status = net.status || 'info';
   const connected = !!net.connected;
   const waiting = ['waiting', 'setup', 'peer-turn'].includes(status);
-  const error = status === 'error' || status === 'offline';
+  const error = status === 'error' || status === 'offline' || !!state.networkWatchdog?.warning;
 
   el.className = [
     'wh-network-indicator',
@@ -17,7 +17,9 @@ export const renderNetworkIndicator = (state, {
   ].filter(Boolean).join(' ');
 
   const peer = net.peerName || state.opponent?.name || 'Соперник';
-  const text = net.text || fallbackText;
+  const text = state.networkWatchdog?.warning && state.networkWatchdog?.note
+    ? state.networkWatchdog.note
+    : net.text || fallbackText;
   const stage = getStageLabel(state, net);
   const link = getConnectionLabel(net);
 
