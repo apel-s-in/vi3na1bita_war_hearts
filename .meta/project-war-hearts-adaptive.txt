@@ -108,7 +108,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 20:40:49 UTC
+Сгенерировано: 2026-05-29 20:43:02 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1362,6 +1362,49 @@ const actions = {
     networkCombat?.markReady();
   },
 
+  startPreparedBattle() {
+    if (!state.fleet.every(s => s.placed)) {
+      toast('Сначала расставьте все корабли!');
+      return;
+    }
+
+    if (!state.opponent) {
+      setScreen('opponents');
+      return;
+    }
+
+    if (state.opponent.type === 'network') {
+      networkCombat?.markReady();
+      return;
+    }
+
+    clearTimeout(computerTimer);
+    clearTimeout(playerAutoTimer);
+
+    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
+    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
+    state.selectedTarget = null;
+    state.battleFx = null;
+    state.autoBattle.player = false;
+
+    resetMatchStats();
+    resetFairPlayForMatch();
+
+    state.result = '';
+    state.phase = 'rps';
+    state.chat = [
+      {
+        from: 'Система',
+        text: 'Расстановка подтверждена. Разыгрываем первый ход.',
+        at: Date.now()
+      }
+    ];
+
+    scheduleSaveMatchDraft();
+    setScreen('battle');
+    openTurnDuel();
+  },
+
   async createInvite() {
     try {
       const invite = await session.createInvite();
@@ -1530,28 +1573,33 @@ const actions = {
       networkCombat?.requestRematch();
       return;
     }
-    clearTimeout(computerTimer);
 
-    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
-    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
+    clearTimeout(computerTimer);
+    clearTimeout(playerAutoTimer);
+
     state.selectedTarget = null;
     state.battleFx = null;
     state.autoBattle.player = false;
-    resetMatchStats();
-    resetFairPlayForMatch();
     state.result = '';
-    state.phase = 'rps';
+    state.phase = 'setup';
+
+    state.myBoard.forEach(row => row.forEach(cell => {
+      cell.status = '';
+    }));
+
+    state.enemyBoard = createEmptyBoard();
+
     state.chat = [
       {
         from: 'Система',
-        text: 'Реванш начался. Голосовой канал не прерывается. Разыгрываем первый ход.',
+        text: 'Реванш: можно изменить расстановку. После подтверждения будет новый розыгрыш первого хода.',
         at: Date.now()
       }
     ];
 
     scheduleSaveMatchDraft();
-    setScreen('battle');
-    openTurnDuel();
+    toast('Реванш: подготовьте поле');
+    setScreen('field');
   }
 };
 
