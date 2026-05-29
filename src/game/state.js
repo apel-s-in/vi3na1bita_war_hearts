@@ -42,7 +42,20 @@ export const createInitialState = overrides => ({
     awaitingReveal: false,
     myRevealSent: false,
     rpsStarted: false,
+    rematchPending: false,
     lastEventAt: 0
+  },
+  networkWatchdog: {
+    active: false,
+    lastPeerAt: 0,
+    lastPingAt: 0,
+    lastPongAt: 0,
+    lastWarningAt: 0,
+    softTimeoutMs: 20000,
+    hardTimeoutMs: 45000,
+    pendingTimeoutMs: 16000,
+    warning: false,
+    note: ''
   },
   networkRps: {
     active: false,
