@@ -95,7 +95,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 15:37:12 UTC
+Сгенерировано: 2026-05-29 15:37:46 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3058,6 +3058,79 @@ button{
   cursor:pointer;
 }
 .wh-preset-del:hover{ color:var(--wh-red) }
+.wh-network-indicator{
+  display:grid;
+  grid-template-columns:auto auto 1fr;
+  align-items:center;
+  gap:8px;
+  min-height:42px;
+  padding:9px 12px;
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,212,90,.2),rgba(255,170,50,.1));
+  border:1px solid rgba(255,212,90,.42);
+  color:#ffe7a3;
+  box-shadow:0 10px 24px rgba(0,0,0,.18);
+}
+
+.wh-network-indicator span{
+  font-size:16px;
+  line-height:1;
+}
+
+.wh-network-indicator b{
+  color:#fff;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.wh-network-indicator em{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#ffe7a3;
+  font-size:12px;
+  font-style:normal;
+  font-weight:800;
+}
+
+.wh-network-indicator.is-error{
+  background:linear-gradient(135deg,rgba(255,49,89,.22),rgba(255,49,89,.08));
+  border-color:rgba(255,49,89,.42);
+  color:#ffd7df;
+}
+
+.wh-network-indicator.is-ready,
+.wh-network-indicator.is-your-turn{
+  background:linear-gradient(135deg,rgba(70,230,165,.18),rgba(70,230,165,.06));
+  border-color:rgba(70,230,165,.35);
+  color:#baffdf;
+}
+
+.wh-network-indicator.is-peer-turn,
+.wh-network-indicator.is-waiting,
+.wh-network-indicator.is-setup{
+  background:linear-gradient(135deg,rgba(255,212,90,.22),rgba(255,212,90,.08));
+  border-color:rgba(255,212,90,.42);
+  color:#ffe7a3;
+}
+
+.wh-network-ready-box{
+  display:grid;
+  gap:10px;
+  margin:12px 0;
+  padding:12px;
+  border-radius:18px;
+  background:rgba(255,212,90,.08);
+  border:1px solid rgba(255,212,90,.28);
+}
+
+.wh-network-ready-box p{
+  margin:0;
+  color:#ffe7a3;
+  font-size:13px;
+  line-height:1.35;
+}
 
 //=================================================
 // FILE: /src/game/achievements.js
