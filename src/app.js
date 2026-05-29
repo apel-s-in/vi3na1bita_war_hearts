@@ -10,6 +10,7 @@ import {
 } from './game/board.js';
 import { createInitialState } from './game/state.js';
 import { createTranscript } from './game/transcript.js';
+import { createMatchPersistence } from './game/match-persistence.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
 import { renderMenu } from './screens/menu.js';
 import { renderOpponentSelect } from './screens/opponent-select.js';
