@@ -84,7 +84,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:35:51 UTC
+Сгенерировано: 2026-05-29 14:36:40 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2922,16 +2922,83 @@ export const createMatchPersistence = ({
     chat: state.chat.slice(-500)
   });
 
+  const readMatchHistory = () => {
+    const saved = getSavedGameData('matchHistory');
+    if (Array.isArray(saved)) return saved;
+
+    try {
+      const local = JSON.parse(localStorage.getItem('wh_matchHistory') || '[]');
+      return Array.isArray(local) ? local : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const makeHistoryItem = () => {
+    const s = state.matchStats || {};
+    const playerSunk = Number(s.playerSunk || 0);
+    const opponentSunk = Number(s.opponentSunk || 0);
+    const playerShots = Number(s.playerShots || 0);
+    const playerHits = Number(s.playerHits || 0);
+    const accuracy = playerShots ? Math.round((playerHits / playerShots) * 100) : 0;
+    const opponentType = state.opponent?.type || 'computer';
+
+    return {
+      matchId: String(s.matchId || ''),
+      gameId,
+      finishedAt: Number(s.finishedAt || Date.now()),
+      startedAt: Number(s.startedAt || 0),
+      opponentId: String(state.opponent?.id || ''),
+      opponentName: String(state.opponent?.name || (opponentType === 'computer' ? 'Компьютер' : 'Соперник')),
+      opponentType,
+      opponentIcon: opponentType === 'computer' ? '🤖' : opponentType === 'network' ? '🌐' : '👤',
+      result: state.result || 'unknown',
+      resultIcon: state.result === 'win' ? '🏆' : '💔',
+      playerSunk,
+      opponentSunk,
+      balance: playerSunk - opponentSunk,
+      accuracy,
+      playerShots,
+      playerHits,
+      playerMisses: Number(s.playerMisses || 0),
+      opponentShots: Number(s.opponentShots || 0),
+      opponentHits: Number(s.opponentHits || 0),
+      opponentMisses: Number(s.opponentMisses || 0),
+      playerBestHitStreak: Number(s.playerBestHitStreak || 0),
+      opponentBestHitStreak: Number(s.opponentBestHitStreak || 0)
+    };
+  };
+
   const saveMatchStats = () => {
     if (!state.matchStats?.matchId) return;
+
+    const latest = {
+      gameId,
+      savedAt: Date.now(),
+      result: state.result,
+      stats: state.matchStats
+    };
+
+    const item = makeHistoryItem();
+    const history = readMatchHistory()
+      .filter(row => row?.matchId && row.matchId !== item.matchId);
+
+    const nextHistory = [item, ...history]
+      .sort((a, b) => Number(b.finishedAt || 0) - Number(a.finishedAt || 0))
+      .slice(0, 50);
+
+    try {
+      localStorage.setItem('wh_matchHistory', JSON.stringify(nextHistory));
+    } catch {}
+
     postToHost('GC_SAVE_DATA', {
       key: 'matchStats',
-      data: {
-        gameId,
-        savedAt: Date.now(),
-        result: state.result,
-        stats: state.matchStats
-      }
+      data: latest
+    });
+
+    postToHost('GC_SAVE_DATA', {
+      key: 'matchHistory',
+      data: nextHistory
     });
   };
 
