@@ -1,4 +1,5 @@
 import { renderProfileCard } from '../ui/profile-card.js';
+import { evaluateAchievements, summarizeProgress } from '../game/achievements.js';
 
 export const renderMenu = (root, state, actions) => {
   const prepWrap = document.createElement('div');
@@ -30,12 +31,34 @@ const getSavedStats = state => {
   return data.war_hearts_matchStats?.stats || data.matchStats?.stats || state.matchStats || {};
 };
 
+const getSavedHistory = state => {
+  const data = state.snapshot?.gameData || {};
+  const cloud = data.war_hearts_matchHistory || data.matchHistory;
+  if (Array.isArray(cloud)) return cloud;
+
+  try {
+    const local = JSON.parse(localStorage.getItem('wh_matchHistory') || '[]');
+    return Array.isArray(local) ? local : [];
+  } catch {
+    return [];
+  }
+};
+
 const getProfileStats = state => {
-  const s = getSavedStats(state);
+  const stats = getSavedStats(state);
+  const history = getSavedHistory(state);
+  const p = summarizeProgress({ stats, history });
+
   return {
-    wins: state.result === 'win' ? 1 : 0,
-    losses: state.result === 'loss' ? 1 : 0,
-    rank: Number(s.playerHits || 0) >= 100 ? 'Меткий слушатель' : 'Без рейтинга'
+    wins: p.wins,
+    losses: p.losses,
+    rank: p.wins >= 10
+      ? 'Адмирал Сердец'
+      : p.hits >= 100
+        ? 'Меткий слушатель'
+        : p.matches >= 10
+          ? 'Игрок арены'
+          : 'Без рейтинга'
   };
 };
 
@@ -62,52 +85,97 @@ const renderMenuTabs = (state, actions) => {
 };
 
 const renderStats = state => {
-  const s = getSavedStats(state);
-  const shots = Number(s.playerShots || 0);
-  const hits = Number(s.playerHits || 0);
-  const misses = Number(s.playerMisses || 0);
-  const accuracy = shots ? Math.round((hits / shots) * 100) : 0;
+  const stats = getSavedStats(state);
+  const history = getSavedHistory(state);
+  const p = summarizeProgress({ stats, history });
+  const accuracy = p.shots ? Math.round((p.hits / p.shots) * 100) : 0;
 
   const el = document.createElement('div');
-  el.className = 'wh-stat-grid';
+  el.className = 'wh-stats-wrap';
   el.innerHTML = `
-    <div><span>Выстрелы</span><b>${shots}</b></div>
-    <div><span>Попадания</span><b>${hits}</b></div>
-    <div><span>Промахи</span><b>${misses}</b></div>
-    <div><span>Точность</span><b>${accuracy}%</b></div>
-    <div><span>Убито кораблей</span><b>${Number(s.playerSunk || 0)}</b></div>
-    <div><span>Лучший страйк</span><b>${Number(s.playerBestHitStreak || 0)}</b></div>
-    <div><span>Страйк соперника</span><b>${Number(s.opponentBestHitStreak || 0)}</b></div>
-    <div><span>Матч</span><b>${state.result ? (state.result === 'win' ? 'Победа' : 'Поражение') : 'Нет'}</b></div>
+    <div class="wh-stat-grid">
+      <div><span>Бои</span><b>${p.matches}</b></div>
+      <div><span>Победы</span><b>${p.wins}</b></div>
+      <div><span>Поражения</span><b>${p.losses}</b></div>
+      <div><span>Точность</span><b>${accuracy}%</b></div>
+      <div><span>Выстрелы</span><b>${p.shots}</b></div>
+      <div><span>Попадания</span><b>${p.hits}</b></div>
+      <div><span>Убито кораблей</span><b>${p.sunk}</b></div>
+      <div><span>Лучший страйк</span><b>${p.bestStreak}</b></div>
+    </div>
+  `;
+
+  el.append(renderHistory(history));
+  return el;
+};
+
+const renderHistory = history => {
+  const el = document.createElement('details');
+  el.className = 'wh-history';
+  el.innerHTML = `
+    <summary>
+      <span>История боёв</span>
+      <b>${history.length}</b>
+    </summary>
+    <div class="wh-history-list">
+      ${history.length ? history.slice(0, 50).map(renderHistoryRow).join('') : `
+        <div class="wh-history-empty">История появится после завершения первого боя.</div>
+      `}
+    </div>
   `;
   return el;
 };
 
-const renderAchievements = state => {
-  const s = getSavedStats(state);
-  const hits = Number(s.playerHits || 0);
-  const sunk = Number(s.playerSunk || 0);
-  const streak = Number(s.playerBestHitStreak || 0);
-  const shots = Number(s.playerShots || 0);
+const renderHistoryRow = row => {
+  const dt = formatDateTime(row.finishedAt);
+  const resultClass = row.result === 'win' ? 'is-win' : 'is-loss';
+  const resultText = row.result === 'win' ? 'ПБ' : 'ПР';
+  const balance = Number(row.balance || 0);
+  const balanceText = balance > 0 ? `+${balance}` : String(balance);
+  const opponent = row.opponentName || (row.opponentType === 'computer' ? 'Компьютер' : 'Соперник');
 
-  const items = [
-    { icon: '🎯', title: 'Первое попадание', ok: hits >= 1 },
-    { icon: '🔥', title: 'Страйк 3', ok: streak >= 3 },
-    { icon: '💥', title: '10 попаданий', ok: hits >= 10 },
-    { icon: '🚢', title: '5 кораблей', ok: sunk >= 5 },
-    { icon: '🏹', title: 'Снайпер', ok: hits >= 100 },
-    { icon: '🌊', title: '100 выстрелов', ok: shots >= 100 },
-    { icon: '👑', title: 'Победитель', ok: state.result === 'win' },
-    { icon: '💔', title: 'Не сдавайся', ok: state.result === 'loss' }
-  ];
+  return `
+    <div class="wh-history-row ${resultClass}">
+      <span class="wh-history-date">${escapeHtml(dt)}</span>
+      <span class="wh-history-vs">${escapeHtml(row.opponentIcon || '🎮')} ${escapeHtml(opponent)}</span>
+      <span class="wh-history-score">${Number(row.playerSunk || 0)}:${Number(row.opponentSunk || 0)}</span>
+      <span class="wh-history-acc">${Number(row.accuracy || 0)}%</span>
+      <span class="wh-history-bal">${escapeHtml(balanceText)}</span>
+      <b>${resultText}</b>
+    </div>
+  `;
+};
+
+const renderAchievements = state => {
+  const stats = getSavedStats(state);
+  const history = getSavedHistory(state);
+  const items = evaluateAchievements({ stats, history });
 
   const el = document.createElement('div');
   el.className = 'wh-ach-grid';
   el.innerHTML = items.map(item => `
-    <div class="wh-ach ${item.ok ? 'is-open' : ''}">
-      <span>${item.icon}</span>
-      <b>${item.title}</b>
+    <div class="wh-ach ${item.ok ? 'is-open' : ''}" title="${escapeHtml(item.desc)}">
+      <span>${escapeHtml(item.icon)}</span>
+      <b>${escapeHtml(item.title)}</b>
     </div>
   `).join('');
+
   return el;
 };
+
+const formatDateTime = value => {
+  const date = value ? new Date(value) : new Date();
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${dd}.${mm} ${hh}:${min}`;
+};
+
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;'
+})[ch]);
