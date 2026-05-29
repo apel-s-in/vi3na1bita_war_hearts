@@ -738,6 +738,11 @@ const actions = {
     setScreen('battle');
   },
 
+  setMenuTab(tab) {
+    state.menuTab = tab === 'achievements' ? 'achievements' : 'stats';
+    render();
+  },
+
   async createInvite() {
     try {
       const invite = await session.createInvite();
