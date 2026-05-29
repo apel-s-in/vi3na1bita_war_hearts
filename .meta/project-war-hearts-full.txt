@@ -99,7 +99,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 19:44:32 UTC
+Сгенерировано: 2026-05-29 19:45:03 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -730,6 +730,7 @@ const resetFairPlayForMatch = () => {
     myLayoutOk: null,
     enemyLayoutOk: null,
     enemyCommitOk: null,
+    enemyTranscriptOk: null,
     note: 'commit будет рассчитан перед сетевым матчем'
   };
 };
