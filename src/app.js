@@ -210,6 +210,8 @@ const revealFinalBoards = () => {
 };
 
 const finishMatch = (result, message) => {
+  if (state.phase === 'finished') return;
+
   state.result = result;
   state.phase = 'finished';
   state.autoBattle.player = false;
@@ -569,7 +571,44 @@ networkWatchdog = createNetworkWatchdog({
 });
 
 networkWatchdog.start();
+const startLocalPreparedBattle = ({
+  opponent = state.opponent,
+  message = 'Расстановка подтверждена. Разыгрываем первый ход.',
+  toastText = ''
+} = {}) => {
+  if (!opponent) {
+    setScreen('opponents');
+    return;
+  }
 
+  clearTimeout(computerTimer);
+  clearTimeout(playerAutoTimer);
+
+  state.opponent = opponent;
+  state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
+  state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
+  state.selectedTarget = null;
+  state.battleFx = null;
+  state.autoBattle.player = false;
+
+  resetMatchStats();
+  resetFairPlayForMatch();
+
+  state.result = '';
+  state.phase = 'rps';
+  state.chat = [
+    {
+      from: 'Система',
+      text: message,
+      at: Date.now()
+    }
+  ];
+
+  scheduleSaveMatchDraft();
+  if (toastText) toast(toastText);
+  setScreen('battle');
+  openTurnDuel();
+};
 const openShotConfirm = (x, y) => {
   const coord = formatCellName(x, y);
 
@@ -720,9 +759,9 @@ const setScreen = screen => {
   clearInterval(inviteTimer);
   inviteTimer = 0;
 
-  if (screen === 'invite') {
+  if (screen === 'invite' && !document.hidden) {
     inviteTimer = setInterval(() => {
-      if (state.screen === 'invite') render();
+      if (state.screen === 'invite' && !document.hidden) render();
     }, 1000);
   }
 
@@ -794,31 +833,9 @@ const actions = {
       return;
     }
 
-    clearTimeout(computerTimer);
-    clearTimeout(playerAutoTimer);
-
-    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
-    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
-    state.selectedTarget = null;
-    state.battleFx = null;
-    state.autoBattle.player = false;
-
-    resetMatchStats();
-    resetFairPlayForMatch();
-
-    state.result = '';
-    state.phase = 'rps';
-    state.chat = [
-      {
-        from: 'Система',
-        text: 'Расстановка подтверждена. Разыгрываем первый ход.',
-        at: Date.now()
-      }
-    ];
-
-    scheduleSaveMatchDraft();
-    setScreen('battle');
-    openTurnDuel();
+    startLocalPreparedBattle({
+      message: 'Расстановка подтверждена. Разыгрываем первый ход.'
+    });
   },
 
   async createInvite() {
@@ -865,67 +882,29 @@ const actions = {
   },
 
   acceptMockOpponent() {
-    clearTimeout(computerTimer);
-    state.opponent = {
-      id: 'friend_preview',
-      name: 'Друг рядом',
-      title: 'Гость арены',
-      type: 'computer'
-    };
-
-    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
-    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
-    state.selectedTarget = null;
-    state.battleFx = null;
-    state.autoBattle.player = false;
-    resetMatchStats();
-    resetFairPlayForMatch();
-    state.phase = 'rps';
-    state.result = '';
-    state.chat = [
-      {
-        from: 'Система',
-        text: 'Preview-соперник выбран. Сейчас разыграем первый ход.',
-        at: Date.now()
-      }
-    ];
-
-    scheduleSaveMatchDraft();
-    toast('Соперник выбран');
-    setScreen('battle');
-    openTurnDuel();
+    startLocalPreparedBattle({
+      opponent: {
+        id: 'friend_preview',
+        name: 'Друг рядом',
+        title: 'Гость арены',
+        type: 'computer'
+      },
+      message: 'Preview-соперник выбран. Сейчас разыграем первый ход.',
+      toastText: 'Соперник выбран'
+    });
   },
 
   startComputerGame() {
-    clearTimeout(computerTimer);
-    state.opponent = {
-      id: 'computer_preview',
-      name: 'Компьютер',
-      title: 'Случайный стрелок',
-      type: 'computer'
-    };
-
-    state.myBoard = syncFleetToBoard(state.fleet, createEmptyBoard());
-    state.enemyBoard = syncFleetToBoard(autoPlaceFleet(createFleet()), createEmptyBoard());
-    state.selectedTarget = null;
-    state.battleFx = null;
-    state.autoBattle.player = false;
-    resetMatchStats();
-    resetFairPlayForMatch();
-    state.phase = 'rps';
-    state.result = '';
-    state.chat = [
-      {
-        from: 'Система',
-        text: 'Новая тренировка началась. Сейчас разыграем первый ход.',
-        at: Date.now()
-      }
-    ];
-
-    scheduleSaveMatchDraft();
-    toast('Игра с компьютером');
-    setScreen('battle');
-    openTurnDuel();
+    startLocalPreparedBattle({
+      opponent: {
+        id: 'computer_preview',
+        name: 'Компьютер',
+        title: 'Случайный стрелок',
+        type: 'computer'
+      },
+      message: 'Новая тренировка началась. Сейчас разыграем первый ход.',
+      toastText: 'Игра с компьютером'
+    });
   },
 
   shootCell(x, y) {
@@ -1251,6 +1230,13 @@ const bind = () => {
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     networkWatchdog?.resume();
+
+    if (state.screen === 'invite' && !inviteTimer) {
+      inviteTimer = setInterval(() => {
+        if (state.screen === 'invite' && !document.hidden) render();
+      }, 1000);
+    }
+
     schedulePlayerAutoShot();
     return;
   }
@@ -1259,6 +1245,8 @@ document.addEventListener('visibilitychange', () => {
   saveMatchDraftNow();
   clearTimeout(playerAutoTimer);
   clearTimeout(computerTimer);
+  clearInterval(inviteTimer);
+  inviteTimer = 0;
 });
 
 bind();
