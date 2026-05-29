@@ -25,6 +25,7 @@ export const createInitialState = overrides => ({
     myLayoutOk: null,
     enemyLayoutOk: null,
     enemyCommitOk: null,
+    enemyTranscriptOk: null,
     note: ''
   },
   network: {
@@ -40,6 +41,7 @@ export const createInitialState = overrides => ({
     awaitingShotResult: false,
     awaitingReveal: false,
     myRevealSent: false,
+    rpsStarted: false,
     lastEventAt: 0
   },
   networkRps: {
@@ -47,6 +49,12 @@ export const createInitialState = overrides => ({
     myChoice: '',
     peerChoice: '',
     round: 0
+  },
+  networkShots: {
+    mine: [],
+    peer: [],
+    enemyTranscriptOk: null,
+    note: ''
   },
   rematchOffer: {
     active: false,
