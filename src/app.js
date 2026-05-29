@@ -19,6 +19,7 @@ import {
 import { createTranscript } from './game/transcript.js';
 import { createMatchPersistence } from './game/match-persistence.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
+import { createNetworkCombat } from './game/network-combat.js';
 import { renderMenu } from './screens/menu.js';
 import { renderOpponentSelect } from './screens/opponent-select.js';
 import { renderField } from './screens/field.js';
