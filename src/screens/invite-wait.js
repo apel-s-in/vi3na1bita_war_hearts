@@ -13,14 +13,14 @@ export const renderInviteWait = (root, state, actions) => {
     <div class="wh-card">
       <p><b>ID:</b> ${escapeHtml(state.invite?.id || 'preview')}</p>
       <p><b>Осталось:</b> ${left} сек.</p>
-      ${url ? `<p style="word-break:break-all;margin-top:8px"><b>Ссылка:</b><br>${escapeHtml(url)}</p>` : ''}
+      ${url ? `<p style="word-break:break-all;margin-top:8px"><b>Ссылка:</b><br>${escapeHtml(url)}</p>` : `<p style="margin-top:8px;color:var(--wh-muted)"><b>Ссылка:</b><br>Настоящая P2P-ссылка недоступна. Проверьте network bridge или запустите игру из Game Center.</p>`}
     </div>
 
     <div class="wh-actions">
       ${url ? `<button class="wh-btn" type="button" data-act="share">Поделиться ссылкой</button>` : ''}
       ${url ? `<button class="wh-btn secondary" type="button" data-act="copy">Скопировать</button>` : ''}
       <button class="wh-btn secondary" type="button" data-act="extend">Продлить на 2 минуты</button>
-      <button class="wh-btn secondary" type="button" data-act="accepted">Сымитировать принятие</button>
+      ${url ? '' : '<button class="wh-btn secondary" type="button" data-act="accepted">Preview-бой без сети</button>'}
       <button class="wh-btn secondary" type="button" data-act="menu">Назад</button>
     </div>
   `;
