@@ -93,7 +93,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-29 14:52:17 UTC
+Сгенерировано: 2026-05-29 14:52:40 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3355,11 +3355,14 @@ export const MessageType = Object.freeze({
   HELLO: 'HELLO',
   READY: 'READY',
   BOARD_COMMIT: 'BOARD_COMMIT',
+  BOARD_REVEAL: 'BOARD_REVEAL',
   SHOT: 'SHOT',
   SHOT_RESULT: 'SHOT_RESULT',
+  TURN_STATE: 'TURN_STATE',
   CHAT_MESSAGE: 'CHAT_MESSAGE',
   VOICE_STATE: 'VOICE_STATE',
   MATCH_FINISHED: 'MATCH_FINISHED',
+  MATCH_ABORTED: 'MATCH_ABORTED',
   PING: 'PING',
   PONG: 'PONG'
 });
