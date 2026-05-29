@@ -40,6 +40,7 @@ export const createMatchPersistence = ({
     network: state.network,
     networkRps: state.networkRps,
     networkShots: state.networkShots,
+    networkTurn: state.networkTurn,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -201,6 +202,14 @@ export const createMatchPersistence = ({
       ...(draft.networkShots || {}),
       mine: Array.isArray(draft.networkShots?.mine) ? draft.networkShots.mine : [],
       peer: Array.isArray(draft.networkShots?.peer) ? draft.networkShots.peer : []
+    };
+    state.networkTurn = {
+      ...state.networkTurn,
+      ...(draft.networkTurn || {}),
+      sentShotIds: Array.isArray(draft.networkTurn?.sentShotIds) ? draft.networkTurn.sentShotIds : [],
+      receivedShotIds: Array.isArray(draft.networkTurn?.receivedShotIds) ? draft.networkTurn.receivedShotIds : [],
+      resolvedShotIds: Array.isArray(draft.networkTurn?.resolvedShotIds) ? draft.networkTurn.resolvedShotIds : [],
+      violations: Array.isArray(draft.networkTurn?.violations) ? draft.networkTurn.violations : []
     };
     state.matchStats = {
       ...createMatchStats(),
