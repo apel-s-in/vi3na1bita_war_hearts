@@ -76,8 +76,11 @@ export class WarHeartsSession {
     if (!this.bridge) {
       const invite = {
         id: `mock_${Date.now().toString(36)}`,
-        url: window.location.href,
+        roomId: '',
+        roomSecret: '',
+        url: '',
         expiresAt: Date.now() + 120000,
+        preview: true,
         mock: true
       };
       this.room = invite;
@@ -189,6 +192,15 @@ export class WarHeartsSession {
   }
 
   async close() {
-    await this.bridge?.close?.();
+    try {
+      await this.bridge?.close?.();
+      await this.bridge?.disconnect?.();
+    } catch {
+      // ignore bridge close errors
+    }
+
+    this.ready = false;
+    this.room = null;
+    this.onStatus({ label: 'offline', online: false });
   }
 }
