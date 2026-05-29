@@ -775,6 +775,14 @@ const actions = {
         url: invite.url || '',
         expiresAt: Date.now() + INVITE_TTL_MS
       };
+      state.network.active = true;
+      state.network.connected = false;
+      state.network.status = invite.url ? 'waiting' : 'error';
+      state.network.peerName = 'Соперник';
+      state.network.text = invite.url
+        ? 'Ссылка создана. Ожидаем подключение второго устройства...'
+        : 'Network bridge недоступен. Это preview-приглашение без P2P.';
+      state.network.lastEventAt = Date.now();
       toast(invite.url ? 'Ссылка создана' : 'Preview-приглашение создано');
     } catch {
       state.invite = {
@@ -782,6 +790,12 @@ const actions = {
         url: '',
         expiresAt: Date.now() + INVITE_TTL_MS
       };
+      state.network.active = true;
+      state.network.connected = false;
+      state.network.status = 'error';
+      state.network.peerName = 'Соперник';
+      state.network.text = 'Сеть недоступна. Создан только preview-режим без соединения устройств.';
+      state.network.lastEventAt = Date.now();
       toast('Сеть недоступна, создан preview');
     }
     setScreen('invite');
@@ -867,12 +881,7 @@ const actions = {
     state.selectedTarget = { x, y };
     render();
 
-    if (state.opponent?.type === 'network') {
-      performPlayerShot(x, y);
-      return;
-    }
-
-    if (state.autoBattle.player) {
+    if (state.autoBattle.player && state.opponent?.type !== 'network') {
       performPlayerShot(x, y, { auto: true });
       return;
     }
