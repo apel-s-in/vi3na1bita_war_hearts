@@ -87,6 +87,7 @@ export const createNetworkCombat = ({
     state.network.peerCommitReceived = false;
     state.network.awaitingShotResult = false;
     state.network.awaitingReveal = false;
+    state.network.myRevealSent = false;
 
     state.networkRps = {
       active: false,
@@ -102,6 +103,10 @@ export const createNetworkCombat = ({
     resetNetworkRound();
     resetMatchStats();
     resetFairPlayForMatch();
+
+    state.myBoard.forEach(row => row.forEach(cell => {
+      cell.status = '';
+    }));
 
     state.enemyBoard = makeEmptyBoard();
     state.selectedTarget = null;
@@ -154,6 +159,11 @@ export const createNetworkCombat = ({
 
   const markReady = async () => {
     ensureNetworkOpponent();
+
+    if (state.network.myReady) {
+      setNetworkStatus('Готовность уже отправлена. Ожидаем соперника...', 'waiting');
+      return false;
+    }
 
     const myReveal = packBoardReveal(state.myBoard);
     const layoutCheck = validateRevealLayout(myReveal);
@@ -380,9 +390,7 @@ export const createNetworkCombat = ({
     addSystemMessage(`Соперник стреляет ${coord}: ${result === 'sunk' ? 'убил корабль' : result === 'hit' ? 'ранил корабль' : 'промахнулся'}.`);
 
     if (isBoardDefeated(state.myBoard)) {
-      sendMatchFinished('loss');
       finishMatch('loss', 'Матч завершён: поражение.');
-      sendBoardReveal();
       return;
     }
 
@@ -450,8 +458,13 @@ export const createNetworkCombat = ({
   };
 
   const sendBoardReveal = () => {
+    if (state.network.myRevealSent) return false;
+
     const reveal = packBoardReveal(state.myBoard);
+    const layoutCheck = validateRevealLayout(reveal);
+
     state.fairPlay.myReveal = reveal;
+    state.fairPlay.myLayoutOk = layoutCheck.ok;
 
     session.sendBoardReveal({
       matchId: state.matchStats.matchId,
@@ -459,9 +472,12 @@ export const createNetworkCombat = ({
       reveal
     });
 
+    state.network.myRevealSent = true;
     state.network.awaitingReveal = true;
     setNetworkStatus('Финал. Ваша доска раскрыта. Ожидаем reveal соперника...', 'waiting');
     scheduleSaveMatchDraft();
+
+    return true;
   };
 
   const receiveBoardReveal = async msg => {
@@ -509,12 +525,29 @@ export const createNetworkCombat = ({
 
   const receiveMatchFinished = msg => {
     const payload = msg.payload || {};
-    addSystemMessage(`Соперник сообщил финал матча: ${payload.result || 'unknown'}.`);
+    const peerResult = payload.result || 'unknown';
+
+    addSystemMessage(`Соперник сообщил финал матча: ${peerResult}.`);
 
     if (state.phase !== 'finished') {
-      state.result = payload.result === 'loss' ? 'win' : 'loss';
+      state.result = peerResult === 'loss' ? 'win' : 'loss';
       state.phase = 'finished';
+      state.autoBattle.player = false;
       state.matchStats.finishedAt = Date.now();
+
+      const myReveal = packBoardReveal(state.myBoard);
+      const myCheck = validateRevealLayout(myReveal);
+
+      state.fairPlay = {
+        ...state.fairPlay,
+        myReveal,
+        myLayoutOk: myCheck.ok,
+        revealed: !!state.fairPlay.enemyReveal,
+        note: state.fairPlay.enemyReveal
+          ? state.fairPlay.note
+          : 'матч завершён, ожидается BOARD_REVEAL соперника'
+      };
+
       sendBoardReveal();
       render();
       saveMatchDraftNow();
