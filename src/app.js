@@ -859,7 +859,7 @@ const actions = {
       state.network.peerName = 'Соперник';
       state.network.text = invite.url
         ? 'Ссылка создана. Ожидаем подключение второго устройства...'
-        : 'Network bridge недоступен. Это preview-приглашение без P2P.';
+        : 'Network bridge недоступен. Это preview-режим без соединения устройств.';
       state.network.lastEventAt = Date.now();
       toast(invite.url ? 'Ссылка создана' : 'Preview-приглашение создано');
     } catch {
@@ -881,9 +881,37 @@ const actions = {
 
   extendInvite() {
     if (!state.invite) return;
+
+    if (!state.invite.url || !state.invite.roomSecret) {
+      state.invite.expiresAt = Date.now() + INVITE_TTL_MS;
+      state.network.status = 'error';
+      state.network.text = 'Preview-приглашение продлено локально, но P2P-соединение недоступно.';
+      state.network.lastEventAt = Date.now();
+      toast('Preview продлён локально');
+      render();
+      return;
+    }
+
     state.invite.expiresAt = Math.max(Date.now(), state.invite.expiresAt || 0) + INVITE_TTL_MS;
     toast('Приглашение продлено');
     render();
+  },
+
+  cancelInvite() {
+    session.close?.();
+    state.invite = null;
+
+    if (state.opponent?.type !== 'network' || !state.network?.connected) {
+      state.network.active = false;
+      state.network.connected = false;
+      state.network.status = 'offline';
+      state.network.text = '';
+      state.network.peerName = '';
+      state.network.lastEventAt = Date.now();
+    }
+
+    toast('Приглашение отменено');
+    setScreen('opponents');
   },
 
   acceptMockOpponent() {
