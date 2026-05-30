@@ -1,5 +1,78 @@
+// src/screens/opponent-select.js
+let friendsCore = null;
+
+const loadRealFriends = async (container, state, actions) => {
+  if (!state.friendIdentity?.friendId) {
+    container.innerHTML = `
+      <div class="wh-friend-empty">
+        <span>🔒</span>
+        <b>Войдите через Яндекс</b>
+        <small>Список друзей доступен после входа в основном приложении.</small>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="wh-friend-empty">
+      <span>⏳</span>
+      <b>Загружаем друзей...</b>
+    </div>`;
+
+  try {
+    if (!friendsCore) {
+      const { FriendsCore } = await import('/Friends/friends-core.js');
+      friendsCore = new FriendsCore();
+    }
+
+    friendsCore.setIdentity(state.friendIdentity);
+    const list = await friendsCore.getFriendList();
+
+    if (!list.length) {
+      container.innerHTML = `
+        <div class="wh-friend-empty">
+          <span>👥</span>
+          <b>Друзей пока нет</b>
+          <small>Добавьте друга по ссылке, коду или QR в Зале Витрины.</small>
+        </div>`;
+      return;
+    }
+
+    const presence = await friendsCore.getPresence(list.map(f => f.friendId));
+
+    container.innerHTML = list.map(friend => {
+      const fid = escapeHtml(friend.friendId);
+      const name = escapeHtml(friend.profile?.displayName || 'Друг');
+      const avatar = friend.profile?.avatarUrl 
+        ? `<img src="${escapeHtml(friend.profile.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block">` 
+        : '👤';
+      const online = !!presence[friend.friendId]?.online;
+
+      return `
+        <button class="wh-friend-row" type="button" data-invite-friend="${fid}" data-fname="${name}">
+          <span style="display:flex;align-items:center;justify-content:center;overflow:hidden">${avatar}</span>
+          <b>${name}</b>
+          <small class="${online ? 'is-online' : ''}" style="${online ? 'color:#adffdf' : ''}">${online ? 'онлайн' : 'не в сети'}</small>
+        </button>
+      `;
+    }).join('');
+
+    container.querySelectorAll('[data-invite-friend]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        actions.toast(`Приглашение для ${btn.dataset.fname} появится в Фазе C`);
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = `
+      <div class="wh-friend-empty">
+        <span>⚠️</span>
+        <b>Ошибка загрузки</b>
+        <small>${escapeHtml(err.message)}</small>
+      </div>`;
+  }
+};
+
 export const renderOpponentSelect = (root, state, actions) => {
-  const friends = getFriends(state);
   const prepared = state.fleet?.every?.(ship => ship.placed);
   const fromSetup = state.phase === 'setup' || state.screen === 'opponents';
 
@@ -22,21 +95,9 @@ export const renderOpponentSelect = (root, state, actions) => {
 
     <div class="wh-opponent-block">
       <h3>Друзья</h3>
-      <p>${friends.length ? 'Друзья из Game Center.' : 'Список друзей появится здесь после подключения общего friend-модуля.'}</p>
-      <div class="wh-friends-list">
-        ${friends.length ? friends.map(friend => `
-          <button class="wh-friend-row" type="button" data-friend="${escapeHtml(friend.id)}">
-            <span>${escapeHtml(friend.avatar || '👤')}</span>
-            <b>${escapeHtml(friend.name || 'Друг')}</b>
-            <small>${friend.online ? 'онлайн' : 'не в сети'}</small>
-          </button>
-        `).join('') : `
-          <div class="wh-friend-empty">
-            <span>👥</span>
-            <b>Друзей пока нет</b>
-            <small>Позже сюда придёт единый список друзей из Башни и основного приложения.</small>
-          </div>
-        `}
+      <p>Ваши друзья из Зала Витрины.</p>
+      <div class="wh-friends-list" id="wh-friends-list-container">
+        <!-- Загружается асинхронно -->
       </div>
     </div>
   `;
@@ -46,12 +107,12 @@ export const renderOpponentSelect = (root, state, actions) => {
   el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
 
   root.append(el);
-};
 
-const getFriends = state => {
-  const data = state.snapshot || {};
-  const raw = data.friends || data.social?.friends || data.gameData?.friends || [];
-  return Array.isArray(raw) ? raw.slice(0, 30) : [];
+  // Запускаем асинхронную загрузку друзей, чтобы не блочить отрисовку интерфейса
+  const listContainer = el.querySelector('#wh-friends-list-container');
+  if (listContainer) {
+    loadRealFriends(listContainer, state, actions);
+  }
 };
 
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
