@@ -13,13 +13,14 @@ export class WarHeartsSession {
     this.onRoom = () => {};
     this.onConnect = () => {};
     this.onDisconnect = () => {};
+    this.lastError = '';
   }
 
   async init() {
     this.onStatus({ label: 'bridge...', online: false });
 
     try {
-      const url = new URL('/Games/common/network-bridge.js', window.location.origin).href;
+      const url = new URL('/Games/common/network-bridge.js', window.location.href).href;
       const mod = await import(url);
       const NetworkBridge = mod.NetworkBridge;
 
@@ -66,9 +67,14 @@ export class WarHeartsSession {
 
       const joined = await this.bridge.connectFromUrl();
       this.onStatus({ label: joined ? 'joining' : 'ready', online: false });
-    } catch {
+    } catch (err) {
       this.bridge = null;
-      this.onStatus({ label: 'mock', online: false });
+      this.lastError = err?.message || String(err || 'network_bridge_init_failed');
+      this.onStatus({
+        label: 'mock',
+        online: false,
+        error: this.lastError
+      });
     }
   }
 
