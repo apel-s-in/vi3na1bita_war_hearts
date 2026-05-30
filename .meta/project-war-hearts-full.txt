@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-30 17:51:58 UTC
+Сгенерировано: 2026-05-30 17:52:27 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5783,7 +5783,7 @@ const loadRealFriends = async (container, state, actions) => {
 
     container.querySelectorAll('[data-invite-friend]').forEach(btn => {
       btn.addEventListener('click', () => {
-        actions.toast(`Приглашение для ${btn.dataset.fname} появится в Фазе C`);
+        actions.inviteFriend(btn.dataset.inviteFriend, btn.dataset.fname);
       });
     });
 
