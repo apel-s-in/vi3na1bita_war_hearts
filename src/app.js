@@ -69,6 +69,7 @@ window.addEventListener('message', e => {
 
   if (d.type === 'GC_SNAPSHOT') {
     state.snapshot = d.payload || state.snapshot;
+    state.friendIdentity = d.payload?.friend || d.payload?.snapshot?.friend || null;
     if (d.payload?.user?.displayName) state.player.name = d.payload.user.displayName;
     if (d.payload?.user?.gcAccountId) state.player.id = d.payload.user.gcAccountId;
 
