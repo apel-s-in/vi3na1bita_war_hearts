@@ -872,7 +872,7 @@ const actions = {
       state.network.peerName = 'Соперник';
       state.network.text = invite.url
         ? 'Ссылка создана. Ожидаем подключение второго устройства...'
-        : 'Network bridge недоступен. Это preview-режим без соединения устройств.';
+        : `Network bridge недоступен. Preview без P2P${session.lastError ? `: ${session.lastError}` : '.'}`;
       state.network.lastEventAt = Date.now();
       toast(invite.url ? 'Ссылка создана' : 'Preview-приглашение создано');
     } catch {
@@ -885,7 +885,7 @@ const actions = {
       state.network.connected = false;
       state.network.status = 'error';
       state.network.peerName = 'Соперник';
-      state.network.text = 'Сеть недоступна. Создан только preview-режим без соединения устройств.';
+      state.network.text = `Сеть недоступна. Preview без P2P${session.lastError ? `: ${session.lastError}` : '.'}`;
       state.network.lastEventAt = Date.now();
       toast('Сеть недоступна, создан preview');
     }
