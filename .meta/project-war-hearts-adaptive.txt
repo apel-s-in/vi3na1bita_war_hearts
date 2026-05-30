@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-30 17:43:39 UTC
+Сгенерировано: 2026-05-30 17:44:03 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -659,6 +659,7 @@ window.addEventListener('message', e => {
 
   if (d.type === 'GC_SNAPSHOT') {
     state.snapshot = d.payload || state.snapshot;
+    state.friendIdentity = d.payload?.friend || d.payload?.snapshot?.friend || null;
     if (d.payload?.user?.displayName) state.player.name = d.payload.user.displayName;
     if (d.payload?.user?.gcAccountId) state.player.id = d.payload.user.gcAccountId;
 
