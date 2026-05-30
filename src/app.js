@@ -849,6 +849,50 @@ const actions = {
     });
   },
 
+  async inviteFriend(friendId, friendName) {
+    try {
+      toast(`Приглашаем ${friendName}...`);
+      
+      try {
+        await sessionReady;
+      } catch {}
+
+      const invite = await session.createInvite();
+      
+      const { FriendsCore } = await import('/Friends/friends-core.js');
+      const fc = new FriendsCore();
+      fc.setIdentity(state.friendIdentity);
+      
+      await fc.sendGameInvite({
+        toFriendId: friendId,
+        gameId: GAME_ID,
+        roomId: invite.roomId,
+        roomSecret: invite.roomSecret
+      });
+
+      state.invite = {
+        id: invite.id || invite.roomId || `invite_${Date.now().toString(36)}`,
+        roomId: invite.roomId || '',
+        roomSecret: invite.roomSecret || '',
+        url: invite.url || '',
+        expiresAt: Date.now() + INVITE_TTL_MS,
+        isDirectPush: true
+      };
+
+      state.network.active = true;
+      state.network.connected = false;
+      state.network.status = 'waiting';
+      state.network.peerName = friendName;
+      state.network.text = `Пуш-уведомление отправлено. Ожидаем подключение: ${friendName}...`;
+      state.network.lastEventAt = Date.now();
+      
+      toast('Приглашение отправлено');
+      setScreen('invite');
+    } catch (err) {
+      toast(`Ошибка: ${err.message}`);
+    }
+  },
+
   async createInvite() {
     try {
       toast('Проверяем сетевой bridge...');
