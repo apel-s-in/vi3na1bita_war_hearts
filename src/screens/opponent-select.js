@@ -58,7 +58,7 @@ const loadRealFriends = async (container, state, actions) => {
 
     container.querySelectorAll('[data-invite-friend]').forEach(btn => {
       btn.addEventListener('click', () => {
-        actions.toast(`Приглашение для ${btn.dataset.fname} появится в Фазе C`);
+        actions.inviteFriend(btn.dataset.inviteFriend, btn.dataset.fname);
       });
     });
 
