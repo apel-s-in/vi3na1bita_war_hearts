@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-30 13:38:37 UTC
+Сгенерировано: 2026-05-30 17:43:39 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4266,6 +4266,7 @@ export const createInitialState = overrides => ({
   screen: 'menu',
   phase: 'idle',
   menuTab: 'stats',
+  friendIdentity: null,
   player: {
     id: 'local',
     name: 'Слушатель',
