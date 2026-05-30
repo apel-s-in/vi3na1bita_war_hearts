@@ -104,6 +104,7 @@ let inviteTimer = 0;
 let matchPersistence = null;
 let networkCombat = null;
 let networkWatchdog = null;
+let sessionReady = Promise.resolve(false);
 
 const saveMatchDraftNow = () => matchPersistence?.saveMatchDraftNow();
 const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
@@ -849,6 +850,14 @@ const actions = {
 
   async createInvite() {
     try {
+      toast('Проверяем сетевой bridge...');
+
+      try {
+        await sessionReady;
+      } catch {
+        // session.createInvite ниже сам уйдёт в preview, если bridge недоступен
+      }
+
       const invite = await session.createInvite();
       state.invite = {
         id: invite.id || invite.roomId || `invite_${Date.now().toString(36)}`,
@@ -1290,11 +1299,15 @@ bind();
 setStatus('preview', false);
 render();
 
-session.init()
+sessionReady = session.init()
   .then(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('room') && (params.get('key') || params.get('secret'))) {
       setStatus('invite', false);
     }
+    return true;
   })
-  .catch(() => setStatus('mock', false));
+  .catch(() => {
+    setStatus('mock', false);
+    return false;
+  });
