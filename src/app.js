@@ -911,7 +911,7 @@ const actions = {
   },
 
   cancelInvite() {
-    session.close?.();
+    if (!state.network?.connected) session.close?.();
     state.invite = null;
 
     if (state.opponent?.type !== 'network' || !state.network?.connected) {
