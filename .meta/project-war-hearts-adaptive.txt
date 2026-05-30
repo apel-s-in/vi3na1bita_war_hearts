@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-30 13:34:53 UTC
+Сгенерировано: 2026-05-30 13:38:37 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1501,7 +1501,7 @@ const actions = {
   },
 
   cancelInvite() {
-    session.close?.();
+    if (!state.network?.connected) session.close?.();
     state.invite = null;
 
     if (state.opponent?.type !== 'network' || !state.network?.connected) {
