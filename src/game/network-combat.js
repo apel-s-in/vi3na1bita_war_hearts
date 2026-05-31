@@ -674,7 +674,12 @@ export const createNetworkCombat = ({
       setNetworkStatus('Reveal соперника проверен. Commit, поле и выстрелы OK.', 'ready');
 
       // Отправляем верифицированный результат на сервер для Зала Славы
-      if (session.bridge?.submitMatchResult) {
+      const isRealNetworkGame = state.opponent?.type === 'network' && 
+                                state.opponent?.id &&
+                                !state.opponent.id.includes('preview') && 
+                                state.opponent.id !== state.player.id;
+
+      if (isRealNetworkGame && session.bridge?.submitMatchResult) {
         session.bridge.submitMatchResult({
           matchId: state.matchStats.matchId,
           roomId: session.roomId,
