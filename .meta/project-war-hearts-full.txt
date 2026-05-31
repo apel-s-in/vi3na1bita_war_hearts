@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-31 08:15:05 UTC
+Сгенерировано: 2026-05-31 08:52:00 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3570,7 +3570,12 @@ export const createNetworkCombat = ({
       setNetworkStatus('Reveal соперника проверен. Commit, поле и выстрелы OK.', 'ready');
 
       // Отправляем верифицированный результат на сервер для Зала Славы
-      if (session.bridge?.submitMatchResult) {
+      const isRealNetworkGame = state.opponent?.type === 'network' && 
+                                state.opponent?.id &&
+                                !state.opponent.id.includes('preview') && 
+                                state.opponent.id !== state.player.id;
+
+      if (isRealNetworkGame && session.bridge?.submitMatchResult) {
         session.bridge.submitMatchResult({
           matchId: state.matchStats.matchId,
           roomId: session.roomId,
