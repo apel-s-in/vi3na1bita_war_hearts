@@ -672,6 +672,20 @@ export const createNetworkCombat = ({
       state.fairPlay.note = 'BOARD_REVEAL соперника проверен: commit совпал, расстановка корректна, ответы на выстрелы подтверждены.';
       addSystemMessage('Проверка соперника: честность OK, история выстрелов совпала.');
       setNetworkStatus('Reveal соперника проверен. Commit, поле и выстрелы OK.', 'ready');
+
+      // Отправляем верифицированный результат на сервер для Зала Славы
+      if (session.bridge?.submitMatchResult) {
+        session.bridge.submitMatchResult({
+          matchId: state.matchStats.matchId,
+          roomId: session.roomId,
+          result: {
+            status: state.result,
+            playerSunk: state.matchStats.playerSunk,
+            opponentSunk: state.matchStats.opponentSunk
+          },
+          resultHash: state.fairPlay.myCommitHash
+        }).catch(() => {});
+      }
     } else {
       state.fairPlay.note = `Проблема проверки: ${layoutCheck.reason || commitCheck.reason || transcriptCheck.reason}.`;
       addSystemMessage(`Проверка соперника не пройдена: ${state.fairPlay.note}`);
