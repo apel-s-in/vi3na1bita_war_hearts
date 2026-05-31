@@ -79,18 +79,15 @@ export const renderOpponentSelect = (root, state, actions) => {
   const el = document.createElement('section');
   el.className = 'wh-opponents-page';
   el.innerHTML = `
-    <div class="wh-opponent-head">
+    <div class="wh-opponent-head" style="margin-bottom: 4px;">
       <h2>Выбор соперника</h2>
       <p>Кого вызовем на дуэль сегодня?</p>
     </div>
 
-    <div class="wh-opponent-block">
-      <h3>Быстрый старт</h3>
-      <div class="wh-actions">
-        <button class="wh-btn" type="button" data-act="computer">${fromSetup ? 'Начать бой с компьютером' : 'Играть с компьютером'}</button>
-        <button class="wh-btn secondary" type="button" data-act="mock">Preview-бой с другом рядом</button>
-        <button class="wh-btn secondary" type="button" data-act="invite">Пригласить по ссылке</button>
-      </div>
+    <div class="wh-actions" style="margin-bottom: 20px;">
+      <button class="wh-btn" type="button" data-act="computer">${fromSetup ? 'Начать бой с компьютером' : 'Играть с компьютером'}</button>
+      <button class="wh-btn secondary" type="button" data-act="mock">Preview-бой с другом рядом</button>
+      <button class="wh-btn secondary" type="button" data-act="invite">Пригласить по ссылке</button>
     </div>
 
     <div class="wh-opponent-block">
