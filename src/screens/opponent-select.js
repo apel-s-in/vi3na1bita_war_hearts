@@ -80,8 +80,8 @@ export const renderOpponentSelect = (root, state, actions) => {
   el.className = 'wh-opponents-page';
   el.innerHTML = `
     <div class="wh-opponent-head">
-      <h2>Соперник</h2>
-      <p>${prepared ? 'Поле готово. Выбери формат боя.' : 'Сначала расставь все корабли на вкладке «Поле».'}</p>
+      <h2>Выбор соперника</h2>
+      <p>Кого вызовем на дуэль сегодня?</p>
     </div>
 
     <div class="wh-opponent-block">
