@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-31 08:52:00 UTC
+Сгенерировано: 2026-05-31 09:56:00 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4879,6 +4879,7 @@ export class WarHeartsSession {
       const joined = await this.bridge.connectFromUrl();
       this.onStatus({ label: joined ? 'joining' : 'ready', online: false });
     } catch (err) {
+      if (this.bridge) this.bridge.close().catch(() => {});
       this.bridge = null;
       this.lastError = err?.message || String(err || 'network_bridge_init_failed');
       this.onStatus({
