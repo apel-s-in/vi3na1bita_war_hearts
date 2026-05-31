@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-31 11:04:30 UTC
+Сгенерировано: 2026-05-31 11:54:04 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1934,6 +1934,11 @@ sessionReady = session.init()
       const u = new URL(window.location.href);
       u.searchParams.delete('inviteFriend');
       window.history.replaceState(null, '', u.toString());
+      try {
+        const pu = new URL(window.parent.location.href);
+        pu.searchParams.delete('inviteFriend');
+        window.parent.history.replaceState(null, '', pu.toString());
+      } catch {}
 
       try {
         const { FriendsCore } = await import('https://vi3na1bita.website.yandexcloud.net/Friends/friends-core.js');
