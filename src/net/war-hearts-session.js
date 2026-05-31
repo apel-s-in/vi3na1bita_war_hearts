@@ -68,6 +68,7 @@ export class WarHeartsSession {
       const joined = await this.bridge.connectFromUrl();
       this.onStatus({ label: joined ? 'joining' : 'ready', online: false });
     } catch (err) {
+      if (this.bridge) this.bridge.close().catch(() => {});
       this.bridge = null;
       this.lastError = err?.message || String(err || 'network_bridge_init_failed');
       this.onStatus({
