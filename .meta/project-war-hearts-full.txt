@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-31 11:03:31 UTC
+Сгенерировано: 2026-05-31 11:04:01 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5241,22 +5241,20 @@ export const renderField = (root, state, actions) => {
     const hasLocalPreparedOpponent = state.phase === 'setup' && state.opponent && state.opponent?.type !== 'network';
 
     topNav.innerHTML = `
-      <button class="wh-btn secondary mini" type="button" id="fn-menu">❮ Меню</button>
-      <button class="wh-btn mini" type="button" id="fn-next" style="background:${allPlaced ? 'var(--wh-green)' : 'rgba(255,255,255,0.08)'}; color:${allPlaced ? '#000' : 'var(--wh-muted)'}">${hasLocalPreparedOpponent ? 'Начать бой ❯' : 'Выбор соперника ❯'}</button>
+      <button class="wh-btn secondary mini" type="button" id="fn-menu">❮ Назад</button>
+      <button class="wh-btn mini" type="button" id="fn-next" style="background:${allPlaced ? 'var(--wh-green)' : 'rgba(255,255,255,0.08)'}; color:${allPlaced ? '#000' : 'var(--wh-muted)'}">В бой! ❯</button>
     `;
-    topNav.querySelector('#fn-menu').onclick = () => actions.openMenu();
+    topNav.querySelector('#fn-menu').onclick = () => actions.openOpponents();
     topNav.querySelector('#fn-next').onclick = () => {
       if (!allPlaced) {
         actions.toast('Сначала расставьте все корабли на поле!');
         return;
       }
-
-      if (hasLocalPreparedOpponent) {
-        actions.startPreparedBattle();
+      if (state.opponent?.type === 'network') {
+        actions.networkReady();
         return;
       }
-
-      actions.openOpponents();
+      actions.startPreparedBattle();
     };
 
     // 2. Доска превью (визуальная копия для редактора)
