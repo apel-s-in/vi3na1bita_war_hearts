@@ -756,9 +756,9 @@ const setScreen = screen => {
     return;
   }
 
-  // Запрещаем переходить к выбору соперника, если поле не готово
+  // Запрещаем переходить в БОЙ, если поле не готово
   const isFleetReady = state.fleet.every(s => s.placed);
-  if (screen === 'opponents' && !isFleetReady) {
+  if (screen === 'battle' && !isFleetReady) {
     toast('Сначала подготовьте поле к бою (расставьте все корабли)!');
     if (state.screen !== 'field') setScreen('field');
     return;
@@ -973,29 +973,17 @@ const actions = {
   },
 
   acceptMockOpponent() {
-    startLocalPreparedBattle({
-      opponent: {
-        id: 'friend_preview',
-        name: 'Друг рядом',
-        title: 'Гость арены',
-        type: 'computer'
-      },
-      message: 'Preview-соперник выбран. Сейчас разыграем первый ход.',
-      toastText: 'Соперник выбран'
-    });
+    state.opponent = { id: 'friend_preview', name: 'Друг рядом', title: 'Гость арены', type: 'computer' };
+    state.phase = 'setup';
+    setScreen('field');
+    toast('Preview-соперник выбран. Расставьте корабли.');
   },
 
   startComputerGame() {
-    startLocalPreparedBattle({
-      opponent: {
-        id: 'computer_preview',
-        name: 'Компьютер',
-        title: 'Случайный стрелок',
-        type: 'computer'
-      },
-      message: 'Новая тренировка началась. Сейчас разыграем первый ход.',
-      toastText: 'Игра с компьютером'
-    });
+    state.opponent = { id: 'computer_preview', name: 'Компьютер', title: 'Случайный стрелок', type: 'computer' };
+    state.phase = 'setup';
+    setScreen('field');
+    toast('Игра с компьютером. Расставьте корабли.');
   },
 
   shootCell(x, y) {
@@ -1345,10 +1333,27 @@ setStatus('preview', false);
 render();
 
 sessionReady = session.init()
-  .then(() => {
+  .then(async () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('room') && (params.get('key') || params.get('secret'))) {
       setStatus('invite', false);
+    }
+
+    const inviteFriendId = params.get('inviteFriend');
+    if (inviteFriendId) {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('inviteFriend');
+      window.history.replaceState(null, '', u.toString());
+
+      try {
+        const { FriendsCore } = await import('https://vi3na1bita.website.yandexcloud.net/Friends/friends-core.js');
+        const fc = new FriendsCore();
+        fc.setIdentity(state.friendIdentity || state.snapshot?.friend);
+        const prof = await fc.getProfile(inviteFriendId);
+        actions.inviteFriend(inviteFriendId, prof?.displayName || 'Друг');
+      } catch (e) {
+        console.error('[Auto-Invite Error]', e);
+      }
     }
     return true;
   })
