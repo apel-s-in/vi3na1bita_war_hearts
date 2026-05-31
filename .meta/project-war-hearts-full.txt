@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-05-31 13:36:52 UTC
+Сгенерировано: 2026-05-31 13:38:45 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2001,10 +2001,11 @@ sessionReady = session.init()
 //=================================================
 // FILE: /styles.css
 :root{--wh-bg:#050714;--wh-panel:#10142d;--wh-panel-2:#151a3a;--wh-line:rgba(132,145,255,.28);--wh-text:#fff;--wh-muted:#aeb5dc;--wh-red:#ff3159;--wh-pink:#ff6b95;--wh-cyan:#24e8ff;--wh-green:#46e6a5;--wh-yellow:#ffd45a}
-*{box-sizing:border-box} [hidden]{display:none !important}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none} [hidden]{display:none !important}
 html,body{width:100%;height:100%;margin:0;background:#02030a;color:var(--wh-text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
 body{position:fixed;inset:0}
 button,input,textarea{font:inherit} button{color:inherit;-webkit-tap-highlight-color:transparent}
+input,textarea{-webkit-user-select:auto;user-select:auto}
 .wh-app{position:fixed;inset:0;display:block;background:#02030a}
 .wh-phone{position:absolute;inset:0;width:100%;max-width:420px;height:100%;margin:0 auto;overflow:hidden;background:linear-gradient(180deg,rgba(10,13,38,.96),rgba(5,7,20,.98)),var(--wh-bg);border:none;box-shadow:none}
 .wh-topbar{position:absolute;left:0;right:0;top:0;z-index:10;min-height:76px;display:flex;align-items:center;gap:10px;padding:12px 12px 10px;padding-top:max(12px,env(safe-area-inset-top));background:linear-gradient(180deg,rgba(8,10,31,.98),rgba(8,10,31,.82));border-bottom:1px solid var(--wh-line)}
@@ -2018,7 +2019,7 @@ button,input,textarea{font:inherit} button{color:inherit;-webkit-tap-highlight-c
 .wh-title{min-width:0;flex:1} .wh-title h1{margin:0;font-size:24px;line-height:1;font-weight:950;letter-spacing:.01em} .wh-title p{margin:4px 0 0;color:var(--wh-muted);font-size:13px;line-height:1.15}
 .wh-status{min-width:62px;padding:6px 8px;border-radius:999px;background:rgba(255,49,89,.13);border:1px solid rgba(255,49,89,.28);color:#ffd7df;font-size:11px;font-weight:900;text-align:center;text-transform:uppercase}
 .wh-status.is-online{background:rgba(70,230,165,.12);border-color:rgba(70,230,165,.32);color:#adffdf}
-.wh-content{position:absolute;inset:76px 0 68px;overflow:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.wh-content{position:absolute;inset:76px 0 68px;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;padding:14px;-webkit-overflow-scrolling:touch}
 .wh-bottom{position:absolute;left:0;right:0;bottom:0;z-index:10;height:68px;display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom);background:rgba(8,10,31,.96);border-top:1px solid var(--wh-line)}
 .wh-tab{border:0;background:transparent;color:var(--wh-muted);font-size:13px;font-weight:900;cursor:pointer;transition:opacity .2s ease} .wh-tab:disabled{opacity:0.35;cursor:not-allowed} .wh-tab.is-active{color:#fff;background:linear-gradient(180deg,rgba(255,49,89,.22),rgba(255,49,89,.05))}
 .wh-card{border:1px solid var(--wh-line);border-radius:22px;background:linear-gradient(135deg,rgba(255,49,89,.12),rgba(36,232,255,.06)),rgba(16,20,45,.9);box-shadow:0 14px 36px rgba(0,0,0,.28);padding:14px;margin-bottom:12px}
@@ -2102,7 +2103,7 @@ button,input,textarea{font:inherit} button{color:inherit;-webkit-tap-highlight-c
 .wh-chat-form{display:grid;grid-template-columns:1fr auto;gap:8px} .wh-chat-form input{min-width:0;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.06);color:#fff;padding:0 12px}
 .wh-voice{width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--wh-cyan),#4267ff);font-size:24px;cursor:pointer}
 .wh-voice.is-active{background:linear-gradient(135deg,var(--wh-red),var(--wh-yellow));box-shadow:0 0 28px rgba(255,49,89,.38)}
-.wh-toast{position:absolute;left:50%;bottom:82px;z-index:50;transform:translateX(-50%);max-width:calc(100% - 24px);padding:10px 14px;border-radius:16px;background:rgba(6,8,24,.9);border:1px solid rgba(255,49,89,.35);font-size:13px;font-weight:900;text-align:center}
+.wh-toast{position:absolute;left:50%;bottom:82px;z-index:50;transform:translateX(-50%);max-width:calc(100% - 24px);padding:10px 14px;border-radius:16px;background:rgba(6,8,24,.9);border:1px solid rgba(255,49,89,.35);font-size:13px;font-weight:900;text-align:center;pointer-events:none}
 @media(max-width:430px){.wh-phone{border:0;box-shadow:none} .wh-title h1{font-size:22px} .wh-content{padding:12px}}
 .wh-shot-modal-overlay{position:fixed;inset:0;z-index:105;background:rgba(0,0,0,.18);backdrop-filter:none;-webkit-backdrop-filter:none;display:flex;align-items:flex-end;justify-content:center;padding:20px 20px max(96px,calc(76px + env(safe-area-inset-bottom)));animation:whFadeIn .2s ease-out;pointer-events:auto}
 .wh-shot-modal-box{width:100%;max-width:320px;padding:18px 16px;border-radius:24px;background:linear-gradient(180deg,rgba(16,20,45,.96),rgba(8,10,31,.98));border:1px solid rgba(255,49,89,.38);box-shadow:0 18px 46px rgba(0,0,0,.58),0 0 28px rgba(255,49,89,.18);text-align:center}
