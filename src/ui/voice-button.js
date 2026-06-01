@@ -8,6 +8,8 @@ export const renderVoiceButton = onToggle => {
   let active = false;
 
   const setActive = next => {
+    next = !!next;
+    if (active === next) return;
     active = next;
     btn.classList.toggle('is-active', active);
     onToggle(active);
