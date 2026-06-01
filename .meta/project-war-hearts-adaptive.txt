@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 13:37:28 UTC
+Сгенерировано: 2026-06-01 13:42:52 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5024,6 +5024,30 @@ export class WarHeartsSession {
         error: this.lastError
       });
     }
+  }
+
+  async createNearbyGameCode() {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+
+    if (!this.room) {
+      await this.createInvite();
+    }
+
+    return this.bridge.createNearbyGameCode();
+  }
+
+  async joinNearbyGameCode(code) {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+
+    const res = await this.bridge.getNearbyGame(code);
+    if (!res?.roomId || !res?.roomSecret) throw new Error('nearby_game_not_found');
+
+    await this.bridge.connectAsGuest({
+      roomId: res.roomId,
+      roomSecret: res.roomSecret
+    });
+
+    return res;
   }
 
   async createInvite() {
