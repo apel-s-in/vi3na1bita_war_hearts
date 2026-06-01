@@ -101,6 +101,7 @@ vi3na1bita_war_hearts/
 │   ├── ui/
 │   │   ├── board-view.js
 │   │   ├── chat-view.js
+│   │   ├── escape.js
 │   │   ├── network-indicator.js
 │   │   ├── profile-card.js
 │   │   └── voice-button.js
@@ -111,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 13:45:47 UTC
+Сгенерировано: 2026-06-01 14:36:57 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6256,6 +6257,16 @@ const formatTime = value => {
 };
 
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#039;'
+})[ch]);
+
+//=================================================
+// FILE: /src/ui/escape.js
+export const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
   '&': '&amp;',
   '<': '&lt;',
   '>': '&gt;',
