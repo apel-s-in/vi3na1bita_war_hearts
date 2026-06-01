@@ -44,7 +44,15 @@ export const createInitialState = overrides => ({
     myRevealSent: false,
     rpsStarted: false,
     rematchPending: false,
-    lastEventAt: 0
+    lastEventAt: 0,
+    ice: {
+      host: false,
+      srflx: false,
+      relay: false,
+      selected: '',
+      usesTurn: false,
+      updatedAt: 0
+    }
   },
   networkWatchdog: {
     active: false,
