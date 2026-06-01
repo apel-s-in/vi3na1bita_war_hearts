@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 13:42:52 UTC
+Сгенерировано: 2026-06-01 13:43:21 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1572,6 +1572,65 @@ const actions = {
       setScreen('invite');
     } catch (err) {
       toast(`Ошибка: ${err.message}`);
+    }
+  },
+
+  async createNearbyGame() {
+    try {
+      toast('Создаём код для друга рядом...');
+
+      try {
+        await sessionReady;
+      } catch {}
+
+      const near = await session.createNearbyGameCode();
+
+      state.invite = {
+        id: `near_${near.code}`,
+        roomId: near.roomId || '',
+        roomSecret: near.roomSecret || '',
+        url: near.joinUrl || '',
+        nearbyCode: near.code,
+        expiresAt: near.expiresAt || Date.now() + INVITE_TTL_MS
+      };
+
+      state.network.active = true;
+      state.network.connected = false;
+      state.network.status = 'waiting';
+      state.network.peerName = 'Друг рядом';
+      state.network.text = `Код для друга рядом: ${near.code}. Ждём подключение...`;
+      state.network.lastEventAt = Date.now();
+
+      toast(`Код: ${near.code}`);
+      setScreen('invite');
+    } catch (err) {
+      toast(`Ошибка: ${err.message}`);
+    }
+  },
+
+  async joinNearbyGame(code) {
+    try {
+      const clean = String(code || '').replace(/\D/g, '').slice(0, 6);
+      if (!clean) return toast('Введите код');
+
+      toast('Подключаемся по коду...');
+
+      try {
+        await sessionReady;
+      } catch {}
+
+      await session.joinNearbyGameCode(clean);
+
+      state.network.active = true;
+      state.network.connected = false;
+      state.network.status = 'waiting';
+      state.network.peerName = 'Друг рядом';
+      state.network.text = 'Код принят. Устанавливаем P2P-соединение...';
+      state.network.lastEventAt = Date.now();
+
+      setScreen('invite');
+    } catch (err) {
+      toast(err.message === 'nearby_game_not_found' ? 'Код не найден или устарел' : `Ошибка: ${err.message}`);
     }
   },
 
