@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 09:26:59 UTC
+Сгенерировано: 2026-06-01 09:27:33 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3131,7 +3131,6 @@ export const createNetworkCombat = ({
     );
 
     setScreen('field');
-    openReadyModal();
     scheduleSaveMatchDraft();
   };
 
