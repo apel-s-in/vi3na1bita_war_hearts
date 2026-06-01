@@ -22,6 +22,7 @@ export const renderNetworkIndicator = (state, {
     : net.text || fallbackText;
   const stage = getStageLabel(state, net);
   const link = getConnectionLabel(net);
+  const ice = getIceLabel(net.ice || {});
 
   el.innerHTML = `
     <span class="wh-network-dot" aria-hidden="true"></span>
@@ -29,10 +30,19 @@ export const renderNetworkIndicator = (state, {
       <b>${escapeHtml(peer)}</b>
       <em>${escapeHtml(text)}</em>
     </div>
-    <small>${escapeHtml(link)} · ${escapeHtml(stage)}</small>
+    <small>${escapeHtml(link)} · ${escapeHtml(stage)} · ${escapeHtml(ice)}</small>
   `;
 
   return el;
+};
+
+const getIceLabel = ice => {
+  const parts = [];
+  if (ice.host) parts.push('host');
+  if (ice.srflx) parts.push('srflx');
+  if (ice.relay) parts.push('relay');
+  const base = parts.length ? parts.join('/') : 'ice wait';
+  return `${base} · ${ice.usesTurn ? 'TURN используется' : 'TURN не используется'}`;
 };
 
 const getConnectionLabel = net => {
