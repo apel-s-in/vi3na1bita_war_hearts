@@ -1,3 +1,5 @@
+import { escapeHtml } from './escape.js';
+
 export const renderProfileCard = (player, stats = {}) => {
   const el = document.createElement('section');
   el.className = 'wh-card';
@@ -20,11 +22,3 @@ export const renderProfileCard = (player, stats = {}) => {
   `;
   return el;
 };
-
-const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#039;'
-})[ch]);
