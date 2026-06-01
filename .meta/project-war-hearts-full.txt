@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 14:37:52 UTC
+Сгенерировано: 2026-06-01 14:38:34 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6352,6 +6352,8 @@ const getStageLabel = (state, net) => {
 
 //=================================================
 // FILE: /src/ui/profile-card.js
+import { escapeHtml } from './escape.js';
+
 export const renderProfileCard = (player, stats = {}) => {
   const el = document.createElement('section');
   el.className = 'wh-card';
@@ -6374,14 +6376,6 @@ export const renderProfileCard = (player, stats = {}) => {
   `;
   return el;
 };
-
-const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#039;'
-})[ch]);
 
 //=================================================
 // FILE: /src/ui/voice-button.js
