@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 10:10:12 UTC
+Сгенерировано: 2026-06-01 13:34:43 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4474,7 +4474,15 @@ export const createInitialState = overrides => ({
     myRevealSent: false,
     rpsStarted: false,
     rematchPending: false,
-    lastEventAt: 0
+    lastEventAt: 0,
+    ice: {
+      host: false,
+      srflx: false,
+      relay: false,
+      selected: '',
+      usesTurn: false,
+      updatedAt: 0
+    }
   },
   networkWatchdog: {
     active: false,
