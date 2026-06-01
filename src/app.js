@@ -1369,11 +1369,6 @@ sessionReady = session.init()
       const u = new URL(window.location.href);
       u.searchParams.delete('inviteFriend');
       window.history.replaceState(null, '', u.toString());
-      try {
-        const pu = new URL(window.parent.location.href);
-        pu.searchParams.delete('inviteFriend');
-        window.parent.history.replaceState(null, '', pu.toString());
-      } catch {}
 
       try {
         const identity = await waitForFriendIdentity();
