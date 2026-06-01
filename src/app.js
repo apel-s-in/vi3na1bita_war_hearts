@@ -128,6 +128,32 @@ const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
 const restoreMatchDraft = () => matchPersistence?.restoreMatchDraft() || false;
 const clearMatchDraft = () => matchPersistence?.clearMatchDraft();
 
+const getLaunchCancelKey = () => {
+  const p = new URLSearchParams(window.location.search);
+  const raw = [
+    p.get('room') || '',
+    p.get('key') || p.get('secret') || '',
+    p.get('inviteFriend') || ''
+  ].filter(Boolean).join(':');
+  return raw ? `wh_cancelled_launch_${raw.slice(0, 160)}` : '';
+};
+
+const isLaunchCancelled = () => {
+  const key = getLaunchCancelKey();
+  try { return !!key && sessionStorage.getItem(key) === '1'; } catch { return false; }
+};
+
+const markLaunchCancelled = () => {
+  const key = getLaunchCancelKey();
+  try { if (key) sessionStorage.setItem(key, '1'); } catch {}
+};
+
+const stripLaunchParams = () => {
+  const u = new URL(window.location.href);
+  ['inviteFriend', 'room', 'key', 'secret'].forEach(k => u.searchParams.delete(k));
+  window.history.replaceState(null, '', u.toString());
+};
+
 const waitForFriendIdentity = async (timeoutMs = 3500) => {
   const started = Date.now();
   while (!state.friendIdentity?.friendId && Date.now() - started < timeoutMs) {
@@ -981,18 +1007,21 @@ const actions = {
   },
 
   cancelInvite() {
-    if (!state.network?.connected) session.close?.();
+    markLaunchCancelled();
+    stripLaunchParams();
+    session.close?.();
+
     state.invite = null;
+    state.opponent = null;
+    state.phase = 'idle';
+    state.network.active = false;
+    state.network.connected = false;
+    state.network.status = 'offline';
+    state.network.text = '';
+    state.network.peerName = '';
+    state.network.lastEventAt = Date.now();
 
-    if (state.opponent?.type !== 'network' || !state.network?.connected) {
-      state.network.active = false;
-      state.network.connected = false;
-      state.network.status = 'offline';
-      state.network.text = '';
-      state.network.peerName = '';
-      state.network.lastEventAt = Date.now();
-    }
-
+    clearMatchDraft();
     toast('Приглашение отменено');
     setScreen('opponents');
   },
@@ -1365,10 +1394,8 @@ sessionReady = session.init()
     }
 
     const inviteFriendId = params.get('inviteFriend');
-    if (inviteFriendId) {
-      const u = new URL(window.location.href);
-      u.searchParams.delete('inviteFriend');
-      window.history.replaceState(null, '', u.toString());
+    if (inviteFriendId && !isLaunchCancelled()) {
+      stripLaunchParams();
 
       try {
         const identity = await waitForFriendIdentity();
