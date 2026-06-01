@@ -1,3 +1,5 @@
+import { escapeHtml } from './escape.js';
+
 export const renderNetworkIndicator = (state, {
   fallbackText = 'Сетевой режим: синхронизация с соперником.'
 } = {}) => {
@@ -69,11 +71,3 @@ const getStageLabel = (state, net) => {
   if (state.phase === 'finished') return 'финал';
   return 'ожидание';
 };
-
-const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#039;'
-})[ch]);
