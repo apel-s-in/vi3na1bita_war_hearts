@@ -4,17 +4,19 @@ export const renderInviteWait = (root, state, actions) => {
   const left = Math.max(0, Math.ceil(((state.invite?.expiresAt || Date.now()) - Date.now()) / 1000));
   const url = String(state.invite?.url || '').trim();
   const isDirect = !!state.invite?.isDirectPush;
+  const nearbyCode = String(state.invite?.nearbyCode || '');
   const peerName = state.network?.peerName || 'Друга';
 
   const el = document.createElement('section');
   el.className = 'wh-card';
   el.innerHTML = `
     <h2>${isDirect ? 'Приглашение отправлено' : 'Приглашение создано'}</h2>
-    <p>${isDirect ? `Мы отправили пуш-уведомление для <b>${escapeHtml(peerName)}</b>.` : (url ? 'Отправь эту ссылку другу через мессенджер, SMS, почту или QR.' : 'Preview-режим без сетевой ссылки.')}</p>
+    <p>${nearbyCode ? 'Покажи этот код другу рядом.' : isDirect ? `Мы отправили пуш-уведомление для <b>${escapeHtml(peerName)}</b>.` : (url ? 'Отправь эту ссылку другу через мессенджер, SMS, почту или QR.' : 'Preview-режим без сетевой ссылки.')}</p>
 
     <div class="wh-card">
       <p><b>Осталось:</b> ${left} сек.</p>
-      ${isDirect ? '' : (url ? `<p style="word-break:break-all;margin-top:8px"><b>Ссылка:</b><br>${escapeHtml(url)}</p>` : `<p style="margin-top:8px;color:var(--wh-muted)"><b>Ссылка:</b><br>Настоящая P2P-ссылка недоступна. Проверьте network bridge или запустите игру из Game Center.</p>`)}
+      ${nearbyCode ? `<p style="margin-top:10px;text-align:center"><b style="font-size:34px;letter-spacing:.14em;color:var(--wh-cyan)">${escapeHtml(nearbyCode)}</b><br><span style="font-size:12px;color:var(--wh-muted)">Друг вводит этот код в «Друг рядом · код»</span></p>` : ''}
+      ${nearbyCode || isDirect ? '' : (url ? `<p style="word-break:break-all;margin-top:8px"><b>Ссылка:</b><br>${escapeHtml(url)}</p>` : `<p style="margin-top:8px;color:var(--wh-muted)"><b>Ссылка:</b><br>Настоящая P2P-ссылка недоступна. Проверьте network bridge или запустите игру из Game Center.</p>`)}
     </div>
 
     <div class="wh-actions">
