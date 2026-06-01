@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 13:35:28 UTC
+Сгенерировано: 2026-06-01 13:36:10 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1930,6 +1930,14 @@ const bind = () => {
     state.network.active = true;
     state.network.connected = false;
     state.network.peerName = name || state.network.peerName || 'Соперник';
+  };
+
+  session.onIceDiagnostics = info => {
+    state.network.ice = {
+      ...state.network.ice,
+      ...(info || {})
+    };
+    render();
   };
 
   session.onRoom = info => {
