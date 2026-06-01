@@ -45,7 +45,13 @@ export class WarHeartsSession {
         if (data?.type === MessageType.CHAT_MESSAGE || data?.type === 'CHAT_MESSAGE') return;
         this.handleData(data);
       };
-      this.bridge.onError = () => {
+      this.bridge.onError = info => {
+        const transient = !!info?.transient || /signal/i.test(String(info?.label || info?.message || ''));
+        if (transient && !this.ready) {
+          this.onStatus({ label: 'signal retry', online: false, transient: true });
+          return;
+        }
+
         this.ready = false;
         this.onStatus({ label: 'net err', online: false });
         this.onDisconnect({ reason: 'network_error' });
