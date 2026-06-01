@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 13:43:21 UTC
+Сгенерировано: 2026-06-01 13:44:29 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6049,7 +6049,8 @@ export const renderOpponentSelect = (root, state, actions) => {
 
     <div class="wh-actions" style="margin-bottom: 20px;">
       <button class="wh-btn" type="button" data-act="computer">${fromSetup ? 'Начать бой с компьютером' : 'Играть с компьютером'}</button>
-      <button class="wh-btn secondary" type="button" data-act="mock">Preview-бой с другом рядом</button>
+      <button class="wh-btn secondary" type="button" data-act="nearby">Друг рядом · код</button>
+      <button class="wh-btn secondary" type="button" data-act="mock">Preview-бой без сети</button>
       <button class="wh-btn secondary" type="button" data-act="invite">Пригласить по ссылке</button>
     </div>
 
@@ -6065,6 +6066,7 @@ export const renderOpponentSelect = (root, state, actions) => {
   el.querySelector('[data-act="computer"]')?.addEventListener('click', actions.startComputerGame);
   el.querySelector('[data-act="mock"]')?.addEventListener('click', actions.acceptMockOpponent);
   el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
+  el.querySelector('[data-act="nearby"]')?.addEventListener('click', () => openNearbyModal(actions));
 
   root.append(el);
 
@@ -6073,6 +6075,37 @@ export const renderOpponentSelect = (root, state, actions) => {
   if (listContainer) {
     loadRealFriends(listContainer, state, actions);
   }
+};
+
+const openNearbyModal = actions => {
+  const ov = document.createElement('div');
+  ov.className = 'wh-modal-overlay';
+  ov.innerHTML = `
+    <div class="wh-modal-box">
+      <h3 class="wh-modal-title">Друг рядом</h3>
+      <p class="wh-modal-text">Создайте 6-значный код или введите код друга. Работает на iPhone, Android и компьютере.</p>
+      <div class="wh-actions">
+        <button class="wh-btn" type="button" data-nearby-create>Создать код</button>
+        <div style="display:flex;gap:8px">
+          <input type="text" inputmode="numeric" maxlength="6" placeholder="Код друга" data-nearby-code style="flex:1;min-width:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:14px;padding:0 12px;outline:none">
+          <button class="wh-btn" type="button" data-nearby-join style="min-height:44px;padding:0 12px">ОК</button>
+        </div>
+        <button class="wh-btn secondary" type="button" data-nearby-close>Отмена</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(ov);
+
+  ov.querySelector('[data-nearby-close]')?.addEventListener('click', () => ov.remove());
+  ov.querySelector('[data-nearby-create]')?.addEventListener('click', () => {
+    ov.remove();
+    actions.createNearbyGame?.();
+  });
+  ov.querySelector('[data-nearby-join]')?.addEventListener('click', () => {
+    const code = ov.querySelector('[data-nearby-code]')?.value || '';
+    ov.remove();
+    actions.joinNearbyGame?.(code);
+  });
 };
 
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
