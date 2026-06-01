@@ -1301,6 +1301,14 @@ const bind = () => {
     state.network.peerName = name || state.network.peerName || 'Соперник';
   };
 
+  session.onIceDiagnostics = info => {
+    state.network.ice = {
+      ...state.network.ice,
+      ...(info || {})
+    };
+    render();
+  };
+
   session.onRoom = info => {
     if (info?.role === 'guest') {
       markNetworkPeerHint('Хост комнаты');
