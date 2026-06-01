@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 08:08:20 UTC
+Сгенерировано: 2026-06-01 08:26:33 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6207,6 +6207,8 @@ export const renderVoiceButton = onToggle => {
   let active = false;
 
   const setActive = next => {
+    next = !!next;
+    if (active === next) return;
     active = next;
     btn.classList.toggle('is-active', active);
     onToggle(active);
