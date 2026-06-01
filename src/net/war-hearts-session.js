@@ -243,7 +243,6 @@ export class WarHeartsSession {
   async close() {
     try {
       await this.bridge?.close?.();
-      await this.bridge?.disconnect?.();
     } catch {
       // ignore bridge close errors
     }
