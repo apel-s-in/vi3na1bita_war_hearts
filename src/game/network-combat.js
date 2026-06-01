@@ -154,7 +154,6 @@ export const createNetworkCombat = ({
     );
 
     setScreen('field');
-    openReadyModal();
     scheduleSaveMatchDraft();
   };
 
