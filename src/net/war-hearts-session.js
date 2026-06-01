@@ -13,6 +13,7 @@ export class WarHeartsSession {
     this.onRoom = () => {};
     this.onConnect = () => {};
     this.onDisconnect = () => {};
+    this.onIceDiagnostics = () => {};
     this.lastError = '';
   }
 
@@ -30,7 +31,11 @@ export class WarHeartsSession {
         displayName: this.player.name
       });
 
-      this.bridge.onStatus = info => this.onStatus(info);
+      this.bridge.onStatus = info => {
+        if (info?.ice) this.onIceDiagnostics(info.ice);
+        this.onStatus(info);
+      };
+      this.bridge.onIceDiagnostics = info => this.onIceDiagnostics(info);
       this.bridge.onRoom = info => {
         this.room = info;
         this.onRoom(info);
