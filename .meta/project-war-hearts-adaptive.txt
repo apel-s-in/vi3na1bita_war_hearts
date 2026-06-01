@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 09:27:33 UTC
+Сгенерировано: 2026-06-01 09:28:27 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2000,11 +2000,6 @@ sessionReady = session.init()
       const u = new URL(window.location.href);
       u.searchParams.delete('inviteFriend');
       window.history.replaceState(null, '', u.toString());
-      try {
-        const pu = new URL(window.parent.location.href);
-        pu.searchParams.delete('inviteFriend');
-        window.parent.history.replaceState(null, '', pu.toString());
-      } catch {}
 
       try {
         const identity = await waitForFriendIdentity();
