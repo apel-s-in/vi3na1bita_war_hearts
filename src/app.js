@@ -30,12 +30,14 @@ import { renderResult } from './screens/result.js';
 
 const $ = id => document.getElementById(id);
 const GAME_ID = 'war_hearts';
+let hostBridgeId = '';
 
 const postToHost = (type, payload = {}) => {
   if (window.parent === window) return false;
   try {
     window.parent.postMessage({
       kind: 'vitrina:game',
+      bridgeId: hostBridgeId,
       type,
       gameId: GAME_ID,
       payload: {
@@ -66,6 +68,20 @@ const state = createInitialState({
 window.addEventListener('message', e => {
   const d = e.data || {};
   if (d.kind !== 'vitrina:game-host') return;
+  if (d.bridgeId) hostBridgeId = d.bridgeId;
+
+  if (d.type === 'GC_INIT') {
+    const snap = d.payload?.snapshot || null;
+    if (snap) {
+      state.snapshot = snap;
+      state.friendIdentity = snap.friend || null;
+      if (snap.user?.displayName) state.player.name = snap.user.displayName;
+      if (snap.user?.gcAccountId) state.player.id = snap.user.gcAccountId;
+    }
+    postToHost('GC_REQUEST_SNAPSHOT');
+    render();
+    return;
+  }
 
   if (d.type === 'GC_SNAPSHOT') {
     state.snapshot = d.payload || state.snapshot;
@@ -111,6 +127,15 @@ const saveMatchDraftNow = () => matchPersistence?.saveMatchDraftNow();
 const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
 const restoreMatchDraft = () => matchPersistence?.restoreMatchDraft() || false;
 const clearMatchDraft = () => matchPersistence?.clearMatchDraft();
+
+const waitForFriendIdentity = async (timeoutMs = 3500) => {
+  const started = Date.now();
+  while (!state.friendIdentity?.friendId && Date.now() - started < timeoutMs) {
+    postToHost('GC_REQUEST_SNAPSHOT');
+    await new Promise(resolve => setTimeout(resolve, 120));
+  }
+  return state.friendIdentity || state.snapshot?.friend || null;
+};
 
 const makeEmptyBoard = () => Array.from({ length: 10 }, () =>
   Array.from({ length: 10 }, () => ({
@@ -1351,9 +1376,13 @@ sessionReady = session.init()
       } catch {}
 
       try {
+        const identity = await waitForFriendIdentity();
+        if (!identity?.friendId) throw new Error('friend_identity_not_ready');
+
         const { FriendsCore } = await import('https://vi3na1bita.website.yandexcloud.net/Friends/friends-core.js');
         const fc = new FriendsCore();
-        fc.setIdentity(state.friendIdentity || state.snapshot?.friend);
+        fc.setIdentity(identity);
+
         const prof = await fc.getProfile(inviteFriendId);
         actions.inviteFriend(inviteFriendId, prof?.displayName || 'Друг');
       } catch (e) {
