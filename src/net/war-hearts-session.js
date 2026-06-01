@@ -71,7 +71,14 @@ export class WarHeartsSession {
 
       await this.bridge.init();
 
-      const joined = await this.bridge.connectFromUrl();
+      const p = new URLSearchParams(window.location.search);
+      const roomId = p.get('room') || '';
+      let launchCancelled = false;
+      try {
+        launchCancelled = !!roomId && sessionStorage.getItem(`wh_cancelled_launch_${roomId}:${p.get('key') || p.get('secret') || ''}`.slice(0, 180)) === '1';
+      } catch {}
+
+      const joined = launchCancelled ? false : await this.bridge.connectFromUrl();
       this.onStatus({ label: joined ? 'joining' : 'ready', online: false });
     } catch (err) {
       if (this.bridge) this.bridge.close().catch(() => {});
