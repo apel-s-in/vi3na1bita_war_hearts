@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-01 14:36:57 UTC
+Сгенерировано: 2026-06-01 14:37:52 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6276,6 +6276,8 @@ export const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch =>
 
 //=================================================
 // FILE: /src/ui/network-indicator.js
+import { escapeHtml } from './escape.js';
+
 export const renderNetworkIndicator = (state, {
   fallbackText = 'Сетевой режим: синхронизация с соперником.'
 } = {}) => {
@@ -6347,14 +6349,6 @@ const getStageLabel = (state, net) => {
   if (state.phase === 'finished') return 'финал';
   return 'ожидание';
 };
-
-const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#039;'
-})[ch]);
 
 //=================================================
 // FILE: /src/ui/profile-card.js
