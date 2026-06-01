@@ -97,6 +97,30 @@ export class WarHeartsSession {
     }
   }
 
+  async createNearbyGameCode() {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+
+    if (!this.room) {
+      await this.createInvite();
+    }
+
+    return this.bridge.createNearbyGameCode();
+  }
+
+  async joinNearbyGameCode(code) {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+
+    const res = await this.bridge.getNearbyGame(code);
+    if (!res?.roomId || !res?.roomSecret) throw new Error('nearby_game_not_found');
+
+    await this.bridge.connectAsGuest({
+      roomId: res.roomId,
+      roomSecret: res.roomSecret
+    });
+
+    return res;
+  }
+
   async createInvite() {
     if (!this.bridge) {
       const invite = {
