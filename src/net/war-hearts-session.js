@@ -142,7 +142,7 @@ async createLanRoom({ ranked = false, forceLocalOnly = true } = {}) {
   };
 }
 
-async joinLanRoom(code, { forceLocalOnly = true } = {}) {
+async resolveLanRoom(code) {
   if (!this.bridge) throw new Error('network_bridge_unavailable');
 
   const cleanCode = String(code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
@@ -151,20 +151,34 @@ async joinLanRoom(code, { forceLocalOnly = true } = {}) {
   const roomInfo = await this.bridge.getLanRoomByCode?.(cleanCode);
   if (!roomInfo?.roomId || !roomInfo?.roomSecret) throw new Error('lan_room_not_found');
 
-  const ranked = !!roomInfo.ranked;
+  return {
+    ...roomInfo,
+    code: cleanCode,
+    ranked: !!roomInfo.ranked,
+    localOnly: roomInfo.localOnly !== false,
+    matchMode: roomInfo.ranked ? 'ranked' : 'casual'
+  };
+}
+
+async joinLanRoom(code, { forceLocalOnly = true, rankedOverride = null } = {}) {
+  if (!this.bridge) throw new Error('network_bridge_unavailable');
+
+  const roomInfo = await this.resolveLanRoom(code);
+  const ranked = rankedOverride === null ? !!roomInfo.ranked : !!rankedOverride;
   const localOnly = roomInfo.localOnly !== false && !!forceLocalOnly;
 
   await this.bridge.connectAsGuest({
     roomId: roomInfo.roomId,
     roomSecret: roomInfo.roomSecret,
     forceLocalOnly: localOnly,
-    ranked
+    ranked,
+    rankedOverride
   });
 
   this.room = {
     roomId: roomInfo.roomId,
     roomSecret: roomInfo.roomSecret,
-    code: cleanCode,
+    code: roomInfo.code,
     ranked,
     localOnly,
     matchMode: ranked ? 'ranked' : 'casual',
