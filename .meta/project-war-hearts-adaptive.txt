@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 17:33:52 UTC
+Сгенерировано: 2026-06-05 19:01:47 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4729,6 +4729,8 @@ status: 'offline',
 text: '',
 peerName: '',
 ranked: false,
+localOnly: false,
+matchMode: 'casual',
 pendingLanCode: '',
 myReady: false,
 peerReady: false,
