@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 17:24:23 UTC
+Сгенерировано: 2026-06-05 17:25:18 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3935,7 +3935,7 @@ export const createNetworkCombat = ({
       if (isRealNetworkGame && session.bridge?.submitMatchResult) {
         session.bridge.submitMatchResult({
           matchId: state.matchStats.matchId,
-          roomId: session.roomId,
+          roomId: session.room?.roomId || state.invite?.roomId || '',
           result: {
             status: state.result,
             playerSunk: state.matchStats.playerSunk,
