@@ -153,3 +153,6 @@ input,textarea{-webkit-user-select:auto;user-select:auto}
 @keyframes whNetworkPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.72);opacity:.58}}
 .wh-network-ready-box{display:grid;gap:10px;margin:12px 0;padding:12px;border-radius:18px;background:rgba(255,212,90,.08);border:1px solid rgba(255,212,90,.28)}
 .wh-network-ready-box p{margin:0;color:#ffe7a3;font-size:13px;line-height:1.35}
+/* LAN Wi-Fi modal enhancements */
+#lan-code-input::placeholder{color:rgba(255,255,255,.25);letter-spacing:2px}
+#lan-code-input:focus{border-color:rgba(76,175,80,.5)!important;box-shadow:0 0 0 3px rgba(76,175,80,.15)}
