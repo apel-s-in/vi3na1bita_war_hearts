@@ -29,31 +29,33 @@ export const createInitialState = overrides => ({
     enemyTranscriptOk: null,
     note: ''
   },
-  network: {
-    active: false,
-    connected: false,
-    status: 'offline',
-    text: '',
-    peerName: '',
-    myReady: false,
-    peerReady: false,
-    myCommitSent: false,
-    peerCommitReceived: false,
-    awaitingShotResult: false,
-    awaitingReveal: false,
-    myRevealSent: false,
-    rpsStarted: false,
-    rematchPending: false,
-    lastEventAt: 0,
-    ice: {
-      host: false,
-      srflx: false,
-      relay: false,
-      selected: '',
-      usesTurn: false,
-      updatedAt: 0
-    }
-  },
+network: {
+active: false,
+connected: false,
+status: 'offline',
+text: '',
+peerName: '',
+ranked: false,
+pendingLanCode: '',
+myReady: false,
+peerReady: false,
+myCommitSent: false,
+peerCommitReceived: false,
+awaitingShotResult: false,
+awaitingReveal: false,
+myRevealSent: false,
+rpsStarted: false,
+rematchPending: false,
+lastEventAt: 0,
+ice: {
+host: false,
+srflx: false,
+relay: false,
+selected: '',
+usesTurn: false,
+updatedAt: 0
+}
+},
   networkWatchdog: {
     active: false,
     lastPeerAt: 0,
