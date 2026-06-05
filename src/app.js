@@ -1690,7 +1690,8 @@ const bind = () => {
     const canStartPreparation = !['setup', 'rps', 'player', 'computer'].includes(state.phase);
     if (canStartPreparation) {
       networkCombat?.startNetworkPreparation({
-        initiator: session.room?.role !== 'guest'
+        initiator: session.room?.role !== 'guest',
+        ranked: !!state.network.ranked
       });
       return;
     }
