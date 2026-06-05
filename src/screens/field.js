@@ -258,25 +258,47 @@ export const renderField = (root, state, actions) => {
       presetsWrap.append(card);
     });
 
-    const networkReadyBox = document.createElement('section');
-    networkReadyBox.className = 'wh-network-ready-box';
-    networkReadyBox.hidden = state.opponent?.type !== 'network';
-    networkReadyBox.innerHTML = `
-      <p>${state.network?.text || 'Расставьте корабли и подтвердите готовность к сетевому бою.'}</p>
-      <button class="wh-btn" type="button" ${state.network?.myReady ? 'disabled' : ''}>
-        ${state.network?.myReady ? 'Готовность отправлена' : 'Готов к сетевому бою'}
-      </button>
-    `;
-
-    networkReadyBox.querySelector('button')?.addEventListener('click', () => {
-      if (!state.fleet.every(s => s.placed)) {
-        actions.toast('Сначала расставьте все корабли!');
-        return;
-      }
-
-      syncFleetToBoard(state.fleet, state.myBoard);
-      actions.networkReady();
-    });
+const networkReadyBox = document.createElement('section');
+networkReadyBox.className = 'wh-network-ready-box';
+networkReadyBox.hidden = state.opponent?.type !== 'network';
+const isRanked = !!state.network?.ranked;
+const rankBadge = isRanked
+? '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:11px;font-weight:900;margin-left:8px">🏆 РЕЙТИНГОВЫЙ</span>'
+: '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:11px;font-weight:900;margin-left:8px">👤 ГОСТЕВОЙ</span>';
+const allPlaced = state.fleet.every(s => s.placed);
+const peerReady = !!state.network?.peerReady;
+networkReadyBox.innerHTML = `
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+<p style="margin:0;flex:1">${state.network?.text || 'Расставьте корабли и подтвердите готовность.'}</p>
+${rankBadge}
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+<div style="padding:10px;border-radius:12px;background:${state.network?.myReady ? 'rgba(76,175,80,.15)' : 'rgba(255,255,255,.05)'};border:1px solid ${state.network?.myReady ? 'rgba(76,175,80,.3)' : 'rgba(255,255,255,.1)'};text-align:center">
+<div style="font-size:20px">${state.network?.myReady ? '✅' : '⏳'}</div>
+<div style="font-size:11px;font-weight:900;color:${state.network?.myReady ? '#81c784' : '#9db7dd'}">ВЫ</div>
+<div style="font-size:10px;color:#888">${state.network?.myReady ? 'Готов' : (allPlaced ? 'Расставлено' : 'Расставьте')}</div>
+</div>
+<div style="padding:10px;border-radius:12px;background:${peerReady ? 'rgba(76,175,80,.15)' : 'rgba(255,255,255,.05)'};border:1px solid ${peerReady ? 'rgba(76,175,80,.3)' : 'rgba(255,255,255,.1)'};text-align:center">
+<div style="font-size:20px">${peerReady ? '✅' : '⏳'}</div>
+<div style="font-size:11px;font-weight:900;color:${peerReady ? '#81c784' : '#9db7dd'}">СОПЕРНИК</div>
+<div style="font-size:10px;color:#888">${peerReady ? 'Готов' : 'Ожидание...'}</div>
+</div>
+</div>
+<button class="wh-btn" type="button" id="wh-ready-btn"
+${(!allPlaced || state.network?.myReady) ? 'disabled' : ''}
+style="${state.network?.myReady ? 'background:rgba(76,175,80,.3);color:#81c784' : (allPlaced ? 'background:linear-gradient(135deg,#4caf50,#2e7d32)' : '')}">
+${state.network?.myReady ? '✅ Готовность отправлена' : (allPlaced ? '⚔️ ГОТОВ К БОЮ' : '🚢 Расставьте все корабли')}
+</button>
+${(state.network?.myReady && peerReady) ? '<div style="text-align:center;margin-top:10px;font-size:12px;color:#81c784;font-weight:900">✨ Оба готовы! Переход к розыгрышу...</div>' : ''}
+`;
+networkReadyBox.querySelector('#wh-ready-btn')?.addEventListener('click', () => {
+if (!allPlaced) {
+actions.toast('Сначала расставьте все корабли!');
+return;
+}
+syncFleetToBoard(state.fleet, state.myBoard);
+actions.networkReady();
+});
 
     const localReadyBox = document.createElement('section');
     localReadyBox.className = 'wh-network-ready-box';
