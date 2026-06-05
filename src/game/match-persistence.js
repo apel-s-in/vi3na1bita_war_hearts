@@ -107,6 +107,9 @@ export const createMatchPersistence = ({
   const saveMatchStats = () => {
     if (!state.matchStats?.matchId) return;
 
+    const isCasualNetwork = state.opponent?.type === 'network' && state.network?.ranked !== true;
+    if (isCasualNetwork) return;
+
     const latest = {
       gameId,
       savedAt: Date.now(),
