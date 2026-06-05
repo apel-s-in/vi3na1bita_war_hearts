@@ -115,7 +115,7 @@ export const createNetworkCombat = ({
     };
   };
 
-  const startNetworkPreparation = ({ initiator = false } = {}) => {
+  const startNetworkPreparation = ({ initiator = false, ranked = state.network?.ranked } = {}) => {
     ensureNetworkOpponent();
 
     if (!state.network.connected) {
@@ -125,6 +125,8 @@ export const createNetworkCombat = ({
 
     clearTimers?.();
     resetNetworkRound();
+    state.network.ranked = !!ranked;
+    state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
     resetMatchStats();
     resetFairPlayForMatch();
 
@@ -256,8 +258,15 @@ export const createNetworkCombat = ({
     state.phase = 'rps';
     setScreen('battle');
 
-    setNetworkStatus('Оба игрока готовы. Розыгрыш первого хода.', 'ready');
-    addSystemMessage('Оба игрока готовы. Начинается сетевой розыгрыш первого хода.');
+    setNetworkStatus(
+      state.network.ranked
+        ? 'Оба игрока готовы. Рейтинговый бой зафиксирован. Розыгрыш первого хода.'
+        : 'Оба игрока готовы. Гостевой бой зафиксирован. Розыгрыш первого хода.',
+      'ready'
+    );
+    addSystemMessage(state.network.ranked
+      ? 'Оба игрока готовы. Рейтинговый статус боя зафиксирован для этого сражения.'
+      : 'Оба игрока готовы. Гостевой статус боя зафиксирован для этого сражения.');
 
     openNetworkRpsModal();
     scheduleSaveMatchDraft();
@@ -751,7 +760,7 @@ export const createNetworkCombat = ({
     }
   };
 
-const requestRematch = () => {
+const sendRematchRequest = ranked => {
 if (state.opponent?.type !== 'network') return false;
 if (state.network.rematchPending) {
 setNetworkStatus('Предложение реванша уже отправлено. Ждём ответ соперника...', 'waiting');
@@ -760,7 +769,7 @@ return true;
 }
 const sent = session.sendGame(MessageType.REMATCH_REQUEST, {
 matchId: state.matchStats.matchId,
-ranked: !!state.network?.ranked,
+ranked: !!ranked,
 at: Date.now()
 });
 
@@ -771,14 +780,66 @@ at: Date.now()
     }
 
     state.network.rematchPending = true;
+    state.network.ranked = !!ranked;
+    state.network.matchMode = ranked ? 'ranked' : 'casual';
 
-    setNetworkStatus('Предложение реванша отправлено. Ждём ответ соперника...', 'waiting');
-    addSystemMessage('Вы предложили сопернику реванш.');
+    setNetworkStatus(ranked
+      ? 'Предложение рейтингового реванша отправлено. Ждём ответ соперника...'
+      : 'Предложение гостевого реванша отправлено. Ждём ответ соперника...', 'waiting');
+    addSystemMessage(ranked
+      ? 'Вы предложили сопернику рейтинговый реванш.'
+      : 'Вы предложили сопернику гостевой реванш.');
     toast?.('Предложение реванша отправлено');
     scheduleSaveMatchDraft();
 
     return true;
   };
+
+const requestRematch = () => {
+if (state.opponent?.type !== 'network') return false;
+
+const isAuthed = !!state.snapshot?.user?.yandexLinked;
+
+if (state.network?.ranked) {
+return sendRematchRequest(true);
+}
+
+const overlay = document.createElement('div');
+overlay.className = 'wh-modal-overlay';
+overlay.innerHTML = `
+<div class="wh-modal-box">
+<h3 class="wh-modal-title">Реванш?</h3>
+<p class="wh-modal-text">
+Можно сыграть снова гостевой бой или предложить рейтинговый реванш.
+${isAuthed ? 'Рейтинговый реванш потребует авторизацию соперника.' : 'Для рейтингового реванша нужно войти через Яндекс.'}
+</p>
+<div class="wh-modal-actions" style="flex-direction:column;gap:10px">
+<button class="wh-btn" type="button" id="wh-rematch-ranked" style="background:linear-gradient(135deg,#ff9800,#f57c00)">🏆 ${isAuthed ? 'Предложить рейтинговый реванш' : 'Войти и предложить рейтинговый реванш'}</button>
+<button class="wh-btn secondary" type="button" id="wh-rematch-casual">👤 Сыграть гостевой реванш</button>
+<button class="wh-btn secondary" type="button" id="wh-rematch-cancel" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Отмена</button>
+</div>
+</div>
+`;
+
+document.body.appendChild(overlay);
+
+overlay.querySelector('#wh-rematch-cancel')?.addEventListener('click', () => overlay.remove());
+overlay.querySelector('#wh-rematch-casual')?.addEventListener('click', () => {
+overlay.remove();
+sendRematchRequest(false);
+});
+overlay.querySelector('#wh-rematch-ranked')?.addEventListener('click', () => {
+overlay.remove();
+if (!isAuthed) {
+window.parent?.postMessage?.({ kind: 'vitrina:game', type: 'GC_AUTH_LOGIN', gameId: 'war_hearts', payload: { reason: 'ranked_rematch' } }, '*');
+toast?.('Войдите через Яндекс и нажмите реванш ещё раз');
+return;
+}
+sendRematchRequest(true);
+});
+
+return true;
+};
 
 const receiveRematchRequest = msg => {
 state.network.rematchPending = false;
@@ -801,7 +862,7 @@ const rankBadge = isRanked
 ? '<div style="padding:4px 12px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">🏆 Рейтинговый</div>'
 : '<div style="padding:4px 12px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">👤 Гостевой</div>';
 const authWarning = !isAuthed && isRanked
-? '<div style="padding:10px;border-radius:10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);margin-bottom:10px;font-size:11px;color:#ffb74d">⚠️ Для рейтингового реванша нужен вход через Яндекс. Принять такой реванш нельзя.</div>'
+? '<div style="padding:10px;border-radius:10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);margin-bottom:10px;font-size:11px;color:#ffb74d">🏆 Соперник зовёт в рейтинговый реванш. Войдите через Яндекс, чтобы принять его рейтингово, или предложите гостевой реванш.</div>'
 : '';
 const overlay = document.createElement('div');
 overlay.className = 'wh-modal-overlay wh-rematch-offer-overlay';
@@ -814,9 +875,9 @@ ${authWarning}
 ${state.rematchOffer.from || 'Соперник'} предлагает сыграть ещё раз.
 Если принять, вы перейдёте к новой расстановке кораблей.
 </p>
-<div class="wh-modal-actions">
+<div class="wh-modal-actions" style="flex-direction:${isRanked && !isAuthed ? 'column' : 'row'};gap:10px">
 <button class="wh-btn secondary" type="button" id="wh-rematch-reject">Отклонить</button>
-<button class="wh-btn" type="button" id="wh-rematch-accept" ${isRanked && !isAuthed ? 'disabled' : ''}>Принять</button>
+${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-login" style="background:linear-gradient(135deg,#ff9800,#f57c00)">🏆 Войти и принять рейтингово</button><button class="wh-btn secondary" type="button" id="wh-rematch-casual">👤 Предложить гостевой реванш</button>' : '<button class="wh-btn" type="button" id="wh-rematch-accept">Принять</button>'}
 </div>
 </div>
 `;
@@ -838,26 +899,77 @@ ${state.rematchOffer.from || 'Соперник'} предлагает сыгра
       scheduleSaveMatchDraft();
     });
 
-    overlay.querySelector('#wh-rematch-accept')?.addEventListener('click', () => {
+    overlay.querySelector('#wh-rematch-login')?.addEventListener('click', () => {
+      window.parent?.postMessage?.({ kind: 'vitrina:game', type: 'GC_AUTH_LOGIN', gameId: 'war_hearts', payload: { reason: 'ranked_rematch_accept' } }, '*');
+      toast?.('Войдите через Яндекс и примите реванш снова');
+    });
+
+    overlay.querySelector('#wh-rematch-casual')?.addEventListener('click', () => {
       overlay.remove();
 
+      state.rematchOffer.ranked = false;
       session.sendGame(MessageType.REMATCH_ACCEPT, {
         matchId: state.rematchOffer.matchId,
+        ranked: false,
+        at: Date.now()
+      });
+
+      session.sendGame(MessageType.MATCH_MODE, {
+        matchId: state.rematchOffer.matchId,
+        ranked: false,
+        matchMode: 'casual',
         at: Date.now()
       });
 
       state.rematchOffer.active = false;
       state.network.rematchPending = false;
-      addSystemMessage('Реванш принят. Переходим к расстановке.');
-      startNetworkPreparation({ initiator: false });
+      state.network.ranked = false;
+      state.network.matchMode = 'casual';
+      addSystemMessage('Вы предложили продолжить реванш как гостевой.');
+      startNetworkPreparation({ initiator: false, ranked: false });
+    });
+
+    overlay.querySelector('#wh-rematch-accept')?.addEventListener('click', () => {
+      overlay.remove();
+
+      const ranked = !!state.rematchOffer.ranked;
+
+      session.sendGame(MessageType.REMATCH_ACCEPT, {
+        matchId: state.rematchOffer.matchId,
+        ranked,
+        at: Date.now()
+      });
+
+      session.sendGame(MessageType.MATCH_MODE, {
+        matchId: state.rematchOffer.matchId,
+        ranked,
+        matchMode: ranked ? 'ranked' : 'casual',
+        at: Date.now()
+      });
+
+      state.rematchOffer.active = false;
+      state.network.rematchPending = false;
+      state.network.ranked = ranked;
+      state.network.matchMode = ranked ? 'ranked' : 'casual';
+      addSystemMessage(ranked
+        ? 'Рейтинговый реванш принят. Переходим к расстановке.'
+        : 'Гостевой реванш принят. Переходим к расстановке.');
+      startNetworkPreparation({ initiator: false, ranked });
     });
   };
 
-  const receiveRematchAccept = () => {
+  const receiveRematchAccept = msg => {
+    const ranked = msg?.payload?.ranked === true;
     state.network.rematchPending = false;
-    addSystemMessage('Соперник принял реванш. Переходим к расстановке.');
-    setNetworkStatus('Реванш принят. Расставьте корабли.', 'setup');
-    startNetworkPreparation({ initiator: true });
+    state.network.ranked = ranked;
+    state.network.matchMode = ranked ? 'ranked' : 'casual';
+    addSystemMessage(ranked
+      ? 'Соперник принял рейтинговый реванш. Переходим к расстановке.'
+      : 'Соперник принял гостевой реванш. Переходим к расстановке.');
+    setNetworkStatus(ranked
+      ? 'Рейтинговый реванш принят. Расставьте корабли.'
+      : 'Гостевой реванш принят. Расставьте корабли.', 'setup');
+    startNetworkPreparation({ initiator: true, ranked });
   };
 
   const receiveRematchReject = () => {
@@ -948,6 +1060,18 @@ ${state.rematchOffer.from || 'Соперник'} предлагает сыгра
       case MessageType.MATCH_ABORTED:
         addSystemMessage('Соперник прервал матч.');
         setNetworkStatus('Соперник прервал матч или отключился.', 'error');
+        break;
+
+      case MessageType.MATCH_MODE:
+        state.network.ranked = msg.payload?.ranked === true;
+        state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
+        addSystemMessage(state.network.ranked
+          ? 'Режим боя обновлён: рейтинговый.'
+          : 'Режим боя обновлён: гостевой без статистики.');
+        setNetworkStatus(state.network.ranked
+          ? 'Режим боя: рейтинговый.'
+          : 'Режим боя: гостевой без статистики.', 'setup');
+        scheduleSaveMatchDraft();
         break;
 
       default:
