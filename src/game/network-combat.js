@@ -681,7 +681,7 @@ export const createNetworkCombat = ({
       if (isRealNetworkGame && session.bridge?.submitMatchResult) {
         session.bridge.submitMatchResult({
           matchId: state.matchStats.matchId,
-          roomId: session.roomId,
+          roomId: session.room?.roomId || state.invite?.roomId || '',
           result: {
             status: state.result,
             playerSunk: state.matchStats.playerSunk,
