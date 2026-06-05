@@ -97,15 +97,61 @@ export class WarHeartsSession {
     }
   }
 
-  async createNearbyGameCode() {
-    if (!this.bridge) throw new Error('network_bridge_unavailable');
+async createNearbyGameCode() {
+if (!this.bridge) throw new Error('network_bridge_unavailable');
+if (!this.room) {
+await this.createInvite();
+}
+return this.bridge.createNearbyGameCode();
+}
 
-    if (!this.room) {
-      await this.createInvite();
-    }
+// ─── LAN Wi-Fi: создание и подключение к комнате ──────────────────────────────
+async createLanRoom({ ranked = false, forceLocalOnly = true } = {}) {
+if (!this.bridge) throw new Error('network_bridge_unavailable');
+const room = await this.bridge.connectAsHost({ forceLocalOnly, ranked });
+const code = this.bridge.generateLanCode?.() || this.bridge.nearbyCode?.() ||
+Math.random().toString(36).slice(2, 8).toUpperCase();
+this.room = {
+roomId: room.roomId,
+roomSecret: room.roomSecret,
+code,
+ranked,
+joinUrl: room.joinUrl
+};
+// Регистрируем LAN-код на сервере сигналинга для обнаружения
+try {
+await this.bridge.registerLanCode?.(code, room.roomId, room.roomSecret, ranked);
+} catch {}
+return {
+roomId: room.roomId,
+roomSecret: room.roomSecret,
+code,
+ranked,
+joinUrl: room.joinUrl
+};
+}
 
-    return this.bridge.createNearbyGameCode();
-  }
+async joinLanRoom(code, { ranked = false, forceLocalOnly = true } = {}) {
+if (!this.bridge) throw new Error('network_bridge_unavailable');
+const cleanCode = String(code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+if (!cleanCode) throw new Error('lan_code_required');
+// Получаем данные комнаты по LAN-коду
+const roomInfo = await this.bridge.getLanRoomByCode?.(cleanCode);
+if (!roomInfo?.roomId || !roomInfo?.roomSecret) throw new Error('lan_room_not_found');
+await this.bridge.connectAsGuest({
+roomId: roomInfo.roomId,
+roomSecret: roomInfo.roomSecret,
+forceLocalOnly,
+ranked
+});
+this.room = {
+roomId: roomInfo.roomId,
+roomSecret: roomInfo.roomSecret,
+code: cleanCode,
+ranked: roomInfo.ranked ?? ranked
+};
+return this.room;
+}
 
   async joinNearbyGameCode(code) {
     if (!this.bridge) throw new Error('network_bridge_unavailable');
