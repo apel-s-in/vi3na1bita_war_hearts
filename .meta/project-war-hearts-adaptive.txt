@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 15:51:41 UTC
+Сгенерировано: 2026-06-05 15:52:57 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5980,16 +5980,51 @@ actions.networkReady();
 import { renderNetworkIndicator } from '../ui/network-indicator.js';
 
 export const renderInviteWait = (root, state, actions) => {
-  const left = Math.max(0, Math.ceil(((state.invite?.expiresAt || Date.now()) - Date.now()) / 1000));
-  const url = String(state.invite?.url || '').trim();
-  const isDirect = !!state.invite?.isDirectPush;
-  const nearbyCode = String(state.invite?.nearbyCode || '');
-  const peerName = state.network?.peerName || 'Друга';
+const left = Math.max(0, Math.ceil(((state.invite?.expiresAt || Date.now()) - Date.now()) / 1000));
+const url = String(state.invite?.url || '').trim();
+const isDirect = !!state.invite?.isDirectPush;
+const nearbyCode = String(state.invite?.nearbyCode || '');
+const lanCode = String(state.invite?.code || state.lanCode || '');
+const isLan = !!state.invite?.isLan;
+const isRanked = !!state.invite?.ranked;
+const peerName = state.network?.peerName || 'Друга';
+const el = document.createElement('section');
+el.className = 'wh-card';
 
-  const el = document.createElement('section');
-  el.className = 'wh-card';
-  el.innerHTML = `
-    <h2>${isDirect ? 'Приглашение отправлено' : 'Приглашение создано'}</h2>
+// LAN Wi-Fi режим — показываем код и бейдж рейтинга
+if (isLan && lanCode) {
+const rankBadge = isRanked
+? '<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:12px;font-weight:900;margin-bottom:12px">🏆 РЕЙТИНГОВЫЙ БОЙ · +осколки</div>'
+: '<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:12px;font-weight:900;margin-bottom:12px">👤 ГОСТЕВОЙ БОЙ · без рейтинга</div>';
+el.innerHTML = `
+<h2>📶 Игра по Wi-Fi</h2>
+${rankBadge}
+<div style="text-align:center;margin:16px 0">
+<div style="font-size:12px;color:#9db7dd;margin-bottom:8px">Код комнаты:</div>
+<div style="font-size:48px;font-weight:900;color:#4caf50;letter-spacing:6px;font-family:monospace;text-shadow:0 0 20px rgba(76,175,80,.3)">${lanCode}</div>
+<div style="font-size:11px;color:#888;margin-top:8px">Назовите этот код другу</div>
+</div>
+<div style="padding:12px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);margin-bottom:12px">
+<div style="font-size:11px;color:#9db7dd;text-align:center">
+⏳ Ожидание подключения... <span style="color:#ffb74d">${left}с</span>
+</div>
+</div>
+<div class="wh-actions">
+<button class="wh-btn secondary" type="button" data-act="menu">Отменить</button>
+</div>
+`;
+el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.cancelInvite || actions.openMenu);
+if (state.network?.active) {
+el.prepend(renderNetworkIndicator(state, {
+fallbackText: `Ожидание подключения по Wi-Fi${isRanked ? ' (рейтинг)' : ' (гость)'}`
+}));
+}
+root.append(el);
+return;
+}
+
+el.innerHTML = `
+<h2>${isDirect ? 'Приглашение отправлено' : 'Приглашение создано'}</h2>
     <p>${nearbyCode ? 'Покажи этот код другу рядом.' : isDirect ? `Мы отправили пуш-уведомление для <b>${escapeHtml(peerName)}</b>.` : (url ? 'Отправь эту ссылку другу через мессенджер, SMS, почту или QR.' : 'Preview-режим без сетевой ссылки.')}</p>
 
     <div class="wh-card">
