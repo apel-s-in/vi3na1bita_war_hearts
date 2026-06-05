@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 19:13:37 UTC
+Сгенерировано: 2026-06-05 19:24:58 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5982,7 +5982,7 @@ networkReadyBox.hidden = state.opponent?.type !== 'network';
 const isRanked = !!state.network?.ranked;
 const rankBadge = isRanked
 ? '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:11px;font-weight:900;margin-left:8px">🏆 РЕЙТИНГОВЫЙ</span>'
-: '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:11px;font-weight:900;margin-left:8px">👤 ГОСТЕВОЙ</span>';
+: '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:11px;font-weight:900;margin-left:8px">👤 ГОСТЕВОЙ · БЕЗ СТАТИСТИКИ</span>';
 const peerReady = !!state.network?.peerReady;
 networkReadyBox.innerHTML = `
 <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
