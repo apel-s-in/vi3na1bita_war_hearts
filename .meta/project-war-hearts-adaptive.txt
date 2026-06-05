@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 19:12:26 UTC
+Сгенерировано: 2026-06-05 19:13:37 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2131,9 +2131,9 @@ const bind = () => {
     if (state.phase === 'player' || state.phase === 'computer') {
       msg = 'Вы находитесь в бою! Если выйдете сейчас, прогресс за текущий бой не будет сохранен. Точно выйти?';
     } else {
-      // Имитация будущего подсчета осколков
-      const earnedShards = state.result === 'win' ? 100 : (state.result === 'loss' ? 10 : 0);
-      msg = `Вы получили ${earnedShards} осколков за бой, они добавятся на ваш счет. Выйти из игры?`;
+      msg = state.result
+        ? 'Бой завершён. Можно выйти из игры или вернуться позже.'
+        : 'Выйти из игры?';
     }
 
     // Создаем кастомную красивую модалку вместо системного window.confirm
@@ -2168,7 +2168,7 @@ const bind = () => {
     overlay.innerHTML = `
       <div class="wh-modal-box">
         <h3 class="wh-modal-title">Сдаться?</h3>
-        <p class="wh-modal-text">Бой будет завершён. Соперник получит победу, а вы останетесь без награды. Точно сдаться?</p>
+        <p class="wh-modal-text">Бой будет завершён. Соперник получит победу. В рейтинговом бою результат пойдёт на проверку. Точно сдаться?</p>
         <div class="wh-modal-actions">
           <button class="wh-btn secondary" type="button" id="wh-surrender-cancel">Отмена</button>
           <button class="wh-btn" type="button" id="wh-surrender-confirm" style="background:var(--wh-red)">Сдаться</button>
