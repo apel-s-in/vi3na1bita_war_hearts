@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 19:11:48 UTC
+Сгенерировано: 2026-06-05 19:12:26 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6485,13 +6485,10 @@ export const renderResult = (root, state, actions) => {
 const isNetwork = state.opponent?.type === 'network';
 const isRanked = !!state.network?.ranked;
 const isWin = state.result === 'win';
-const shardsEarned = isRanked && isNetwork && isWin ? 100 : (isRanked && isNetwork ? 10 : 0);
 const rankBadge = isRanked
-? (shardsEarned > 0
-? `<div style="padding:6px 16px;border-radius:999px;background:rgba(76,175,80,.2);border:1px solid rgba(76,175,80,.4);color:#81c784;font-size:13px;font-weight:900;display:inline-block;margin-bottom:10px">🏆 +${shardsEarned} осколков</div>`
-: `<div style="padding:6px 16px;border-radius:999px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ffb74d;font-size:13px;font-weight:900;display:inline-block;margin-bottom:10px">🏆 Рейтинговый бой</div>`)
+? '<div style="padding:6px 16px;border-radius:999px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.3);color:#ffb74d;font-size:13px;font-weight:900;display:inline-block;margin-bottom:10px">🏆 Рейтинговый бой · результат будет проверен</div>'
 : (isNetwork
-? '<div style="padding:6px 16px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:13px;font-weight:900;display:inline-block;margin-bottom:10px">👤 Гостевой бой · без осколков</div>'
+? '<div style="padding:6px 16px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:13px;font-weight:900;display:inline-block;margin-bottom:10px">👤 Гостевой бой · без статистики</div>'
 : '');
 const el = document.createElement('section');
 el.className = 'wh-card wh-hero';
