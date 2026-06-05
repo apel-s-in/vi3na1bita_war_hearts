@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 20:39:35 UTC
+Сгенерировано: 2026-06-05 20:40:12 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2322,7 +2322,8 @@ const bind = () => {
     const canStartPreparation = !['setup', 'rps', 'player', 'computer'].includes(state.phase);
     if (canStartPreparation) {
       networkCombat?.startNetworkPreparation({
-        initiator: session.room?.role !== 'guest'
+        initiator: session.room?.role !== 'guest',
+        ranked: !!state.network.ranked
       });
       return;
     }
