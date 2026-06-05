@@ -873,10 +873,6 @@ showLanJoinCodeInput();
 };
 },
 
-openBattle() {
-setScreen('battle');
-},
-
   openMenu() {
     clearTimeout(computerTimer);
     clearTimeout(playerAutoTimer);
@@ -1337,7 +1333,7 @@ const createLanRoom = async (ranked) => {
 toast('Создаём LAN-комнату...');
 try {
 await sessionReady;
-const res = await session.createLanRoom({ ranked, forceLocalOnly: true });
+const res = await session.createLanRoom({ ranked, forceLocalOnly: false });
 state.lanCode = res.code;
 state.invite = {
 id: res.roomId,
@@ -1364,7 +1360,7 @@ const joinLanByCode = async (code, ranked) => {
 toast('Подключаемся по коду...');
 try {
 await sessionReady;
-const res = await session.joinLanRoom(code, { ranked, forceLocalOnly: true });
+const res = await session.joinLanRoom(code, { ranked, forceLocalOnly: false });
 state.invite = {
 id: res.roomId,
 roomId: res.roomId,
