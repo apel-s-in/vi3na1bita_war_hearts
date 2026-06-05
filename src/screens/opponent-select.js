@@ -83,14 +83,13 @@ export const renderOpponentSelect = (root, state, actions) => {
       <h2>Выбор соперника</h2>
       <p>Кого вызовем на дуэль сегодня?</p>
     </div>
-
     <div class="wh-actions" style="margin-bottom: 20px;">
       <button class="wh-btn" type="button" data-act="computer">${fromSetup ? 'Начать бой с компьютером' : 'Играть с компьютером'}</button>
+      <button class="wh-btn" type="button" data-act="lan" style="background:linear-gradient(135deg,#4caf50,#2e7d32)">📶 Друг в одной Wi-Fi</button>
       <button class="wh-btn secondary" type="button" data-act="nearby">Друг рядом · код</button>
       <button class="wh-btn secondary" type="button" data-act="mock">Preview-бой без сети</button>
       <button class="wh-btn secondary" type="button" data-act="invite">Пригласить по ссылке</button>
     </div>
-
     <div class="wh-opponent-block">
       <h3>Друзья</h3>
       <p>Ваши друзья из Зала Витрины.</p>
@@ -104,6 +103,7 @@ export const renderOpponentSelect = (root, state, actions) => {
   el.querySelector('[data-act="mock"]')?.addEventListener('click', actions.acceptMockOpponent);
   el.querySelector('[data-act="invite"]')?.addEventListener('click', actions.createInvite);
   el.querySelector('[data-act="nearby"]')?.addEventListener('click', () => openNearbyModal(actions));
+  el.querySelector('[data-act="lan"]')?.addEventListener('click', () => actions.startLanGameFlow());
 
   root.append(el);
 
