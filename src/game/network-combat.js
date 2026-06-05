@@ -672,18 +672,19 @@ export const createNetworkCombat = ({
       addSystemMessage('Проверка соперника: честность OK, история выстрелов совпала.');
       setNetworkStatus('Reveal соперника проверен. Commit, поле и выстрелы OK.', 'ready');
 
-      // Отправляем верифицированный результат на сервер для Зала Славы
-      const isRealNetworkGame = state.opponent?.type === 'network' && 
-                                state.opponent?.id &&
-                                !state.opponent.id.includes('preview') && 
-                                state.opponent.id !== state.player.id;
+      const isRatedNetworkGame = state.opponent?.type === 'network'
+        && state.network?.ranked === true
+        && session.room?.roomId
+        && state.opponent?.id !== state.player.id;
 
-      if (isRealNetworkGame && session.bridge?.submitMatchResult) {
+      if (isRatedNetworkGame && session.bridge?.submitMatchResult) {
         session.bridge.submitMatchResult({
           matchId: state.matchStats.matchId,
           roomId: session.room?.roomId || state.invite?.roomId || '',
+          ranked: true,
           result: {
             status: state.result,
+            ranked: true,
             playerSunk: state.matchStats.playerSunk,
             opponentSunk: state.matchStats.opponentSunk
           },
@@ -800,7 +801,7 @@ const rankBadge = isRanked
 ? '<div style="padding:4px 12px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">🏆 Рейтинговый</div>'
 : '<div style="padding:4px 12px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">👤 Гостевой</div>';
 const authWarning = !isAuthed && isRanked
-? '<div style="padding:10px;border-radius:10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);margin-bottom:10px;font-size:11px;color:#ffb74d">⚠️ Вы не авторизованы. Бой будет гостевым, осколки не начисляются.</div>'
+? '<div style="padding:10px;border-radius:10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);margin-bottom:10px;font-size:11px;color:#ffb74d">⚠️ Для рейтингового реванша нужен вход через Яндекс. Принять такой реванш нельзя.</div>'
 : '';
 const overlay = document.createElement('div');
 overlay.className = 'wh-modal-overlay wh-rematch-offer-overlay';
@@ -815,7 +816,7 @@ ${state.rematchOffer.from || 'Соперник'} предлагает сыгра
 </p>
 <div class="wh-modal-actions">
 <button class="wh-btn secondary" type="button" id="wh-rematch-reject">Отклонить</button>
-<button class="wh-btn" type="button" id="wh-rematch-accept">Принять</button>
+<button class="wh-btn" type="button" id="wh-rematch-accept" ${isRanked && !isAuthed ? 'disabled' : ''}>Принять</button>
 </div>
 </div>
 `;
