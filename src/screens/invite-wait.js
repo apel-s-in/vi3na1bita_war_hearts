@@ -15,8 +15,8 @@ el.className = 'wh-card';
 // LAN Wi-Fi режим — показываем код и бейдж рейтинга
 if (isLan && lanCode) {
 const rankBadge = isRanked
-? '<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:12px;font-weight:900;margin-bottom:12px">🏆 РЕЙТИНГОВЫЙ БОЙ · +осколки</div>'
-: '<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:12px;font-weight:900;margin-bottom:12px">👤 ГОСТЕВОЙ БОЙ · без рейтинга</div>';
+? '<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:12px;font-weight:900;margin-bottom:12px">🏆 РЕЙТИНГОВЫЙ БОЙ · в таблицу лидеров</div>'
+: '<div style="display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:12px;font-weight:900;margin-bottom:12px">👤 ГОСТЕВОЙ БОЙ · без статистики</div>';
 el.innerHTML = `
 <h2>📶 Игра по Wi-Fi</h2>
 ${rankBadge}
@@ -26,8 +26,9 @@ ${rankBadge}
 <div style="font-size:11px;color:#888;margin-top:8px">Назовите этот код другу</div>
 </div>
 <div style="padding:12px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);margin-bottom:12px">
-<div style="font-size:11px;color:#9db7dd;text-align:center">
-⏳ Ожидание подключения... <span style="color:#ffb74d">${left}с</span>
+<div style="font-size:11px;color:#9db7dd;text-align:center;line-height:1.4">
+⏳ Ждём гостя в этой же Wi‑Fi сети · <span style="color:#ffb74d">${left}с</span><br>
+<span style="color:#7f8fb5">Если не подключается — проверьте, что оба устройства в одной сети и Wi‑Fi не запрещает локальные соединения.</span>
 </div>
 </div>
 <div class="wh-actions">
