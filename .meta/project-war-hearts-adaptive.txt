@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-05 19:03:15 UTC
+Сгенерировано: 2026-06-05 19:05:57 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1476,33 +1476,33 @@ setScreen('field');
 // LAN Wi-Fi сценарий: выбор режима (рейтинговый / гостевой)
 // ═══════════════════════════════════════════════════════════════
 startLanGameFlow() {
-const isAuthed = !!state.snapshot?.user?.yandexLinked;
-const overlay = document.createElement('div');
-overlay.className = 'wh-modal-overlay';
-overlay.innerHTML = `
-<div class="wh-modal-box">
-<h3 class="wh-modal-title">📶 Игра по одной Wi-Fi</h3>
-<p class="wh-modal-text" style="margin-bottom:16px">
-Прямое P2P-соединение с минимальной задержкой.<br>
-Убедитесь, что оба устройства подключены к одной сети.
-</p>
-<div class="wh-modal-actions" style="flex-direction:column;gap:10px">
-<button class="wh-btn" type="button" id="lan-host-btn" style="background:linear-gradient(135deg,#4caf50,#2e7d32)">📡 Создать комнату</button>
-<button class="wh-btn secondary" type="button" id="lan-join-btn">🔗 Ввести код друга</button>
-<button class="wh-btn secondary" type="button" id="lan-cancel-btn" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Отмена</button>
-</div>
-</div>
-`;
-document.body.appendChild(overlay);
-overlay.querySelector('#lan-cancel-btn').onclick = () => overlay.remove();
-overlay.querySelector('#lan-host-btn').onclick = () => {
-overlay.remove();
-showLanModeChoice('host');
-};
-overlay.querySelector('#lan-join-btn').onclick = () => {
-overlay.remove();
-showLanJoinCodeInput();
-};
+  const overlay = document.createElement('div');
+  overlay.className = 'wh-modal-overlay';
+  overlay.innerHTML = `
+    <div class="wh-modal-box">
+      <h3 class="wh-modal-title">📶 Друг в одной Wi‑Fi</h3>
+      <p class="wh-modal-text" style="margin-bottom:16px">
+        Это отдельный LAN-only режим: игра ищет прямое соединение только внутри вашей сети.
+        Если устройства не в одной Wi‑Fi или роутер блокирует локальные соединения — код не подключится.
+      </p>
+      <div class="wh-modal-actions" style="flex-direction:column;gap:10px">
+        <button class="wh-btn" type="button" id="lan-host-btn" style="background:linear-gradient(135deg,#4caf50,#2e7d32)">📡 Создать комнату</button>
+        <button class="wh-btn secondary" type="button" id="lan-join-btn">🔗 Ввести код друга</button>
+        <button class="wh-btn secondary" type="button" id="lan-cancel-btn" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Отмена</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.querySelector('#lan-cancel-btn').onclick = () => overlay.remove();
+  overlay.querySelector('#lan-host-btn').onclick = () => {
+    overlay.remove();
+    showLanModeChoice('host');
+  };
+  overlay.querySelector('#lan-join-btn').onclick = () => {
+    overlay.remove();
+    showLanJoinCodeInput();
+  };
 },
 
   openMenu() {
@@ -1864,55 +1864,47 @@ showLanJoinCodeInput();
 // ═══════════════════════════════════════════════════════════════
 // LAN Wi-Fi: модалка выбора режима (рейтинговый / гостевой)
 // ═══════════════════════════════════════════════════════════════
-const showLanModeChoice = (role) => {
-const isAuthed = !!state.snapshot?.user?.yandexLinked;
-const overlay = document.createElement('div');
-overlay.className = 'wh-modal-overlay';
-overlay.innerHTML = `
-<div class="wh-modal-box">
-<h3 class="wh-modal-title">${role === 'host' ? '📡 Создание комнаты' : '🔗 Подключение'}</h3>
-<p class="wh-modal-text" style="margin-bottom:16px">
-Выберите тип боя:
-</p>
-<div class="wh-modal-actions" style="flex-direction:column;gap:10px">
-<button class="wh-btn" type="button" id="lan-ranked-btn" style="background:linear-gradient(135deg,#ff9800,#f57c00)" ${!isAuthed ? 'disabled style="opacity:.5"' : ''}>
-🏆 Рейтинговый бой
-${!isAuthed ? '<br><small style="font-size:10px;opacity:.7">Требуется авторизация Яндекса</small>' : '<br><small style="font-size:10px;opacity:.8">+осколки за победу, в таблицу лидеров</small>'}
-</button>
-<button class="wh-btn secondary" type="button" id="lan-casual-btn" style="background:linear-gradient(135deg,#7c4dff,#4daaff)">
-👤 Гостевой бой
-<br><small style="font-size:10px;opacity:.8">Без рейтинга и осколков, для удовольствия</small>
-</button>
-<button class="wh-btn secondary" type="button" id="lan-back-btn" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Назад</button>
-</div>
-</div>
-`;
-document.body.appendChild(overlay);
-overlay.querySelector('#lan-back-btn').onclick = () => {
-overlay.remove();
-actions.startLanGameFlow();
-};
-overlay.querySelector('#lan-casual-btn').onclick = () => {
-overlay.remove();
-state.network.ranked = false;
-if (role === 'host') {
-createLanRoom(false);
-} else {
-joinLanByCode(state.network.pendingLanCode, false);
-}
-};
-const rankedBtn = overlay.querySelector('#lan-ranked-btn');
-if (rankedBtn && !rankedBtn.disabled) {
-rankedBtn.onclick = () => {
-overlay.remove();
-state.network.ranked = true;
-if (role === 'host') {
-createLanRoom(true);
-} else {
-joinLanByCode(state.network.pendingLanCode, true);
-}
-};
-}
+const showLanModeChoice = () => {
+  const isAuthed = !!state.snapshot?.user?.yandexLinked;
+  const overlay = document.createElement('div');
+  overlay.className = 'wh-modal-overlay';
+  overlay.innerHTML = `
+    <div class="wh-modal-box">
+      <h3 class="wh-modal-title">📡 Создание LAN-комнаты</h3>
+      <p class="wh-modal-text" style="margin-bottom:16px">
+        Выберите тип боя. Гость получит этот тип автоматически по коду.
+      </p>
+      <div class="wh-modal-actions" style="flex-direction:column;gap:10px">
+        <button class="wh-btn" type="button" id="lan-ranked-btn" ${!isAuthed ? 'disabled' : ''} style="background:linear-gradient(135deg,#ff9800,#f57c00);${!isAuthed ? 'opacity:.5' : ''}">
+          🏆 Рейтинговый бой
+          <br><small style="font-size:10px;opacity:.8">${isAuthed ? 'учитывается в таблице лидеров' : 'требуется вход через Яндекс'}</small>
+        </button>
+        <button class="wh-btn secondary" type="button" id="lan-casual-btn" style="background:linear-gradient(135deg,#7c4dff,#4daaff)">
+          👤 Гостевой бой
+          <br><small style="font-size:10px;opacity:.8">без рейтинга и статистики</small>
+        </button>
+        <button class="wh-btn secondary" type="button" id="lan-back-btn" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Назад</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.querySelector('#lan-back-btn').onclick = () => {
+    overlay.remove();
+    actions.startLanGameFlow();
+  };
+  overlay.querySelector('#lan-casual-btn').onclick = () => {
+    overlay.remove();
+    createLanRoom(false);
+  };
+
+  const rankedBtn = overlay.querySelector('#lan-ranked-btn');
+  if (rankedBtn && !rankedBtn.disabled) {
+    rankedBtn.onclick = () => {
+      overlay.remove();
+      createLanRoom(true);
+    };
+  }
 };
 
 const showLanJoinCodeInput = () => {
@@ -1956,61 +1948,98 @@ return;
 errEl.style.display = 'none';
 state.network.pendingLanCode = code;
 overlay.remove();
-showLanModeChoice('guest');
+joinLanByCode(code);
 };
 };
 
 // Создание LAN-комнаты
-const createLanRoom = async (ranked) => {
-toast('Создаём LAN-комнату...');
-try {
-await sessionReady;
-const res = await session.createLanRoom({ ranked, forceLocalOnly: false });
-state.lanCode = res.code;
-state.invite = {
-id: res.roomId,
-roomId: res.roomId,
-roomSecret: res.roomSecret,
-isLan: true,
-ranked: ranked,
-expiresAt: Date.now() + 300000
-};
-state.network.active = true;
-state.network.connected = false;
-state.network.status = 'waiting';
-state.network.peerName = 'Ожидание гостя...';
-state.network.text = 'Комната создана. Ожидаем подключения...';
-state.network.ranked = ranked;
-setScreen('invite');
-} catch (e) {
-toast(`Ошибка: ${e.message}`);
-}
+const createLanRoom = async ranked => {
+  toast('Создаём LAN-only комнату...');
+
+  try {
+    await sessionReady;
+
+    const res = await session.createLanRoom({ ranked, forceLocalOnly: true });
+
+    state.lanCode = res.code;
+    state.invite = {
+      id: res.roomId,
+      roomId: res.roomId,
+      roomSecret: res.roomSecret,
+      code: res.code,
+      isLan: true,
+      localOnly: true,
+      ranked: !!ranked,
+      matchMode: ranked ? 'ranked' : 'casual',
+      expiresAt: res.expiresAt || Date.now() + 300000
+    };
+
+    state.network.active = true;
+    state.network.connected = false;
+    state.network.status = 'waiting';
+    state.network.peerName = 'Гость по Wi‑Fi';
+    state.network.text = ranked
+      ? 'LAN-only рейтинговая комната создана. Назовите код другу.'
+      : 'LAN-only гостевая комната создана. Назовите код другу.';
+    state.network.ranked = !!ranked;
+    state.network.localOnly = true;
+    state.network.matchMode = ranked ? 'ranked' : 'casual';
+    state.network.lastEventAt = Date.now();
+
+    addSystemMessage(ranked
+      ? 'Создана LAN-only рейтинговая комната. Результат будет учтён после fair-play проверки.'
+      : 'Создана LAN-only гостевая комната. Результат не попадёт в статистику.');
+
+    setScreen('invite');
+  } catch (e) {
+    toast(e.message === 'lan_code_register_failed'
+      ? 'Не удалось зарегистрировать LAN-код'
+      : `Ошибка: ${e.message}`);
+  }
 };
 
 // Подключение по LAN-коду
-const joinLanByCode = async (code, ranked) => {
-toast('Подключаемся по коду...');
-try {
-await sessionReady;
-const res = await session.joinLanRoom(code, { ranked, forceLocalOnly: false });
-state.invite = {
-id: res.roomId,
-roomId: res.roomId,
-roomSecret: res.roomSecret,
-isLan: true,
-ranked: ranked,
-expiresAt: Date.now() + 300000
-};
-state.network.active = true;
-state.network.connected = false;
-state.network.status = 'connecting';
-state.network.peerName = 'Хост комнаты';
-state.network.text = 'Устанавливаем P2P-соединение...';
-state.network.ranked = ranked;
-setScreen('invite');
-} catch (e) {
-toast(e.message === 'lan_room_not_found' ? 'Комната не найдена или истекла' : `Ошибка: ${e.message}`);
-}
+const joinLanByCode = async code => {
+  toast('Подключаемся по LAN-коду...');
+
+  try {
+    await sessionReady;
+
+    const res = await session.joinLanRoom(code, { forceLocalOnly: true });
+    const ranked = !!res.ranked;
+
+    state.invite = {
+      id: res.roomId,
+      roomId: res.roomId,
+      roomSecret: res.roomSecret,
+      code: res.code || code,
+      isLan: true,
+      localOnly: true,
+      ranked,
+      matchMode: ranked ? 'ranked' : 'casual',
+      expiresAt: res.expiresAt || Date.now() + 300000
+    };
+
+    state.network.active = true;
+    state.network.connected = false;
+    state.network.status = 'connecting';
+    state.network.peerName = 'Хост комнаты';
+    state.network.text = ranked
+      ? 'Код принят: LAN-only рейтинговый бой. Устанавливаем прямое соединение...'
+      : 'Код принят: LAN-only гостевой бой. Устанавливаем прямое соединение...';
+    state.network.ranked = ranked;
+    state.network.localOnly = true;
+    state.network.matchMode = ranked ? 'ranked' : 'casual';
+    state.network.lastEventAt = Date.now();
+
+    addSystemMessage(ranked
+      ? 'Подключение к LAN-only рейтинговому бою. Результат будет учтён после проверки.'
+      : 'Подключение к LAN-only гостевому бою. Результат не попадёт в статистику.');
+
+    setScreen('invite');
+  } catch (e) {
+    toast(e.message === 'lan_room_not_found' ? 'Комната не найдена или код истёк' : `Ошибка: ${e.message}`);
+  }
 };
 
 const render = () => {
@@ -2199,13 +2228,18 @@ const bind = () => {
     state.opponent = {
       id: peer?.id || 'network-peer',
       name: peer?.name || 'Соперник',
-      title: 'Сетевая дуэль',
+      title: session.room?.localOnly
+        ? (session.room?.ranked ? 'LAN-only · рейтинг' : 'LAN-only · гость')
+        : 'Сетевая дуэль',
       type: 'network'
     };
 
     state.network.active = true;
     state.network.connected = true;
     state.network.peerName = state.opponent.name;
+    state.network.ranked = !!session.room?.ranked;
+    state.network.localOnly = !!session.room?.localOnly;
+    state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
 
     networkCombat?.onConnected(state.opponent.name);
     networkWatchdog?.touchPeer();
