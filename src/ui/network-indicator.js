@@ -48,12 +48,16 @@ const getIceLabel = ice => {
 };
 
 const getConnectionLabel = net => {
-  if (net.status === 'error') return 'связь потеряна';
-  if (net.status === 'offline') return 'не подключено';
-  if (net.connected) return 'P2P online';
-  if (net.status === 'waiting') return 'ожидание';
-  if (net.status === 'setup') return 'подготовка';
-  return 'сеть';
+if (net.status === 'error') return 'связь потеряна';
+if (net.status === 'offline') return 'не подключено';
+if (net.connected) {
+if (net.ranked === false) return 'P2P · гостевой';
+if (net.ranked === true) return 'P2P · рейтинговый';
+return 'P2P online';
+}
+if (net.status === 'waiting') return 'ожидание';
+if (net.status === 'setup') return 'подготовка';
+return 'сеть';
 };
 
 const getStageLabel = (state, net) => {
