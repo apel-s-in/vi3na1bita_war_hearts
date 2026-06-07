@@ -106,7 +106,7 @@ return this.bridge.createNearbyGameCode();
 }
 
 // ─── LAN Wi-Fi: создание и подключение к комнате ──────────────────────────────
-async createLanRoom({ ranked = false, forceLocalOnly = true } = {}) {
+async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
   if (!this.bridge) throw new Error('network_bridge_unavailable');
 
   const room = await this.bridge.connectAsHost({ forceLocalOnly, ranked });
@@ -160,7 +160,7 @@ async resolveLanRoom(code) {
   };
 }
 
-async joinLanRoom(code, { forceLocalOnly = true, rankedOverride = null } = {}) {
+async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) {
   if (!this.bridge) throw new Error('network_bridge_unavailable');
 
   const roomInfo = await this.resolveLanRoom(code);
