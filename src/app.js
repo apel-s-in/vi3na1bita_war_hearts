@@ -1375,7 +1375,7 @@ const createLanRoom = async ranked => {
   try {
     await sessionReady;
 
-    const res = await session.createLanRoom({ ranked, forceLocalOnly: true });
+    const res = await session.createLanRoom({ ranked, forceLocalOnly: false });
 
     state.lanCode = res.code;
     state.invite = {
@@ -1384,7 +1384,7 @@ const createLanRoom = async ranked => {
       roomSecret: res.roomSecret,
       code: res.code,
       isLan: true,
-      localOnly: true,
+      localOnly: false,
       ranked: !!ranked,
       matchMode: ranked ? 'ranked' : 'casual',
       expiresAt: res.expiresAt || Date.now() + 300000
@@ -1395,16 +1395,16 @@ const createLanRoom = async ranked => {
     state.network.status = 'waiting';
     state.network.peerName = 'Гость по Wi‑Fi';
     state.network.text = ranked
-      ? 'LAN-only рейтинговая комната создана. Назовите код другу.'
-      : 'LAN-only гостевая комната создана. Назовите код другу.';
+      ? 'P2P-комната создана. Назовите код другу.'
+      : 'Гостевая P2P-комната создана. Назовите код другу.';
     state.network.ranked = !!ranked;
-    state.network.localOnly = true;
+    state.network.localOnly = false;
     state.network.matchMode = ranked ? 'ranked' : 'casual';
     state.network.lastEventAt = Date.now();
 
     addSystemMessage(ranked
-      ? 'Создана LAN-only рейтинговая комната. Результат будет учтён после fair-play проверки.'
-      : 'Создана LAN-only гостевая комната. Результат не попадёт в статистику.');
+      ? 'Создана рейтинговая P2P-комната. Результат будет учтён после fair-play проверки.'
+      : 'Создана гостевая P2P-комната. Результат не попадёт в статистику.');
 
     setScreen('invite');
   } catch (e) {
@@ -1446,7 +1446,7 @@ const connectLanRoom = async (code, rankedOverride = null) => {
   toast('Подключаемся по LAN-коду...');
 
   const res = await session.joinLanRoom(code, {
-    forceLocalOnly: true,
+    forceLocalOnly: false,
     rankedOverride
   });
 
@@ -1458,7 +1458,7 @@ const connectLanRoom = async (code, rankedOverride = null) => {
     roomSecret: res.roomSecret,
     code: res.code || code,
     isLan: true,
-    localOnly: true,
+    localOnly: false,
     ranked,
     matchMode: ranked ? 'ranked' : 'casual',
     expiresAt: res.expiresAt || Date.now() + 300000
@@ -1469,16 +1469,16 @@ const connectLanRoom = async (code, rankedOverride = null) => {
   state.network.status = 'connecting';
   state.network.peerName = 'Хост комнаты';
   state.network.text = ranked
-    ? 'Код принят: LAN-only рейтинговый бой. Устанавливаем прямое соединение...'
-    : 'Код принят: LAN-only гостевой бой. Устанавливаем прямое соединение...';
+    ? 'Код принят: рейтинговый P2P-бой. Устанавливаем соединение...'
+    : 'Код принят: гостевой P2P-бой. Устанавливаем соединение...';
   state.network.ranked = ranked;
-  state.network.localOnly = true;
+  state.network.localOnly = false;
   state.network.matchMode = ranked ? 'ranked' : 'casual';
   state.network.lastEventAt = Date.now();
 
   addSystemMessage(ranked
-    ? 'Подключение к LAN-only рейтинговому бою. Результат будет учтён после проверки.'
-    : 'Подключение к LAN-only гостевому бою. Результат не попадёт в статистику.');
+    ? 'Подключение к рейтинговому P2P-бою. Результат будет учтён после проверки.'
+    : 'Подключение к гостевому P2P-бою. Результат не попадёт в статистику.');
 
   setScreen('invite');
 };
