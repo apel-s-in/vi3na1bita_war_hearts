@@ -1638,6 +1638,28 @@ const bind = () => {
 
   session.onStatus = info => {
     setStatus(info.label, info.online);
+
+    if (state.network?.active) {
+      const label = String(info?.label || '');
+      state.network.status = info?.online ? 'ready' : (label.includes('err') || label.includes('failed') ? 'error' : state.network.status || 'waiting');
+      state.network.text = ({
+        'waiting': 'Host ждёт offer от guest...',
+        'connecting': 'Guest отправляет offer...',
+        'send offer': 'Отправляем offer через signaling...',
+        'offer sent': 'Offer отправлен. Ждём answer...',
+        'offer received': 'Offer получен. Отправляем answer...',
+        'send answer': 'Отправляем answer через signaling...',
+        'answer sent': 'Answer отправлен. Ждём ICE...',
+        'answer received': 'Answer получен. Собираем ICE...',
+        'send ice': 'Отправляем ICE candidate...',
+        'ice sent': 'ICE candidate отправлен.',
+        'ice received': 'ICE candidate получен.',
+        'online': 'P2P-соединение установлено.'
+      })[label] || state.network.text || label || 'Синхронизация сети...';
+      state.network.lastEventAt = Date.now();
+      if (info?.ice) state.network.ice = { ...state.network.ice, ...info.ice };
+      render();
+    }
   };
 
   const markNetworkPeerHint = name => {
