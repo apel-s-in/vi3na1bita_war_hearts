@@ -114,7 +114,7 @@ async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
   let code = '';
 
   for (let i = 0; i < 3 && !registered; i++) {
-    code = this.bridge.generateLanCode?.() || Math.random().toString(36).slice(2, 8).toUpperCase();
+    code = this.bridge.generateLanCode?.() || String(Math.floor(100000 + Math.random() * 900000));
     registered = await this.bridge.registerLanCode?.(code, room.roomId, room.roomSecret, ranked).catch(() => null);
   }
 
@@ -145,7 +145,7 @@ async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
 async resolveLanRoom(code) {
   if (!this.bridge) throw new Error('network_bridge_unavailable');
 
-  const cleanCode = String(code || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+  const cleanCode = String(code || '').replace(/\D/g, '').slice(0, 6);
   if (!cleanCode) throw new Error('lan_code_required');
 
   const roomInfo = await this.bridge.getLanRoomByCode?.(cleanCode);
