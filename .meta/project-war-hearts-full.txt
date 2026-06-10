@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-06-07 18:26:07 UTC
+Сгенерировано: 2026-06-10 19:00:19 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1962,9 +1962,9 @@ overlay.innerHTML = `
 <div class="wh-modal-box">
 <h3 class="wh-modal-title">🔗 Введите код комнаты</h3>
 <p class="wh-modal-text">Попросите друга создать комнату и назвать вам 6-значный код.</p>
-<input type="text" id="lan-code-input" maxlength="6" placeholder="A7B9C2"
-style="width:100%;padding:14px;font-size:24px;text-align:center;font-weight:900;letter-spacing:4px;text-transform:uppercase;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;outline:none;margin-bottom:16px"
-autocomplete="off" inputmode="text">
+<input type="text" id="lan-code-input" maxlength="6" placeholder="123456"
+style="width:100%;padding:14px;font-size:24px;text-align:center;font-weight:900;letter-spacing:4px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;outline:none;margin-bottom:16px"
+autocomplete="off" inputmode="numeric" pattern="[0-9]*">
 <div class="wh-modal-actions" style="flex-direction:column;gap:10px">
 <button class="wh-btn" type="button" id="lan-join-go-btn">Подключиться</button>
 <button class="wh-btn secondary" type="button" id="lan-join-back-btn" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Назад</button>
@@ -1977,7 +1977,7 @@ const inp = overlay.querySelector('#lan-code-input');
 const errEl = overlay.querySelector('#lan-join-error');
 inp.focus();
 inp.addEventListener('input', e => {
-e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
 });
 inp.addEventListener('keydown', e => {
 if (e.key === 'Enter') overlay.querySelector('#lan-join-go-btn').click();
@@ -1987,9 +1987,9 @@ overlay.remove();
 actions.startLanGameFlow();
 };
 overlay.querySelector('#lan-join-go-btn').onclick = async () => {
-const code = inp.value.trim();
-if (code.length < 4) {
-errEl.textContent = 'Код слишком короткий';
+const code = inp.value.replace(/\D/g, '');
+if (code.length < 6) {
+errEl.textContent = 'Введите 6 цифр кода';
 errEl.style.display = 'block';
 return;
 }
