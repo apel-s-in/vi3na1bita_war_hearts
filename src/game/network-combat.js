@@ -681,24 +681,10 @@ export const createNetworkCombat = ({
       addSystemMessage('Проверка соперника: честность OK, история выстрелов совпала.');
       setNetworkStatus('Reveal соперника проверен. Commit, поле и выстрелы OK.', 'ready');
 
-      const isRatedNetworkGame = state.opponent?.type === 'network'
-        && state.network?.ranked === true
-        && session.room?.roomId
-        && state.opponent?.id !== state.player.id;
-
-      if (isRatedNetworkGame && session.bridge?.submitMatchResult) {
-        session.bridge.submitMatchResult({
-          matchId: state.matchStats.matchId,
-          roomId: session.room?.roomId || state.invite?.roomId || '',
-          ranked: true,
-          result: {
-            status: state.result,
-            ranked: true,
-            playerSunk: state.matchStats.playerSunk,
-            opponentSunk: state.matchStats.opponentSunk
-          },
-          resultHash: state.fairPlay.myCommitHash
-        }).catch(() => {});
+      if (state.network?.ranked === true) {
+        addSystemMessage(
+          'Рейтинговый результат локально подтверждён, но начисление временно заморожено до запуска серверной проверки V2.'
+        );
       }
     } else {
       state.fairPlay.note = `Проблема проверки: ${layoutCheck.reason || commitCheck.reason || transcriptCheck.reason}.`;
