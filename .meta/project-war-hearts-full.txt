@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-20 23:03:02 UTC
+Сгенерировано: 2026-07-20 23:03:47 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6033,19 +6033,42 @@ import { renderNetworkIndicator } from '../ui/network-indicator.js';
 import { createEmptyBoard, syncFleetToBoard, placeShipRandomly, autoPlaceFleet, canPlaceShip } from '../game/board.js';
 
 let activeShipId = null;
-let memoryFallbackPresets = null;
+let memoryPresets = [];
 
-const loadPresets = (state) => {
-  if (state.snapshot?.gameData?.war_hearts_presets) return state.snapshot.gameData.war_hearts_presets;
-  if (memoryFallbackPresets) return memoryFallbackPresets;
-  try { return JSON.parse(localStorage.getItem('wh_presets') || '[]'); } catch { return (memoryFallbackPresets = []); }
+const loadPresets = state => {
+  const saved =
+    state.snapshot?.gameData?.war_hearts_presets ||
+    state.snapshot?.gameData?.presets;
+
+  return Array.isArray(saved)
+    ? saved
+    : memoryPresets;
 };
 
 const savePresets = (list, state) => {
-  memoryFallbackPresets = list;
-  if (state.snapshot) state.snapshot.gameData = { ...state.snapshot.gameData, war_hearts_presets: list };
-  try { localStorage.setItem('wh_presets', JSON.stringify(list)); } catch {}
-  if (window.parent !== window) window.parent.postMessage({ kind: 'vitrina:game', type: 'GC_SAVE_DATA', payload: { gameId: 'war_hearts', key: 'presets', data: list } }, '*');
+  memoryPresets = Array.isArray(list)
+    ? list.slice(0, 4)
+    : [];
+
+  if (state.snapshot) {
+    state.snapshot.gameData = {
+      ...(state.snapshot.gameData || {}),
+      war_hearts_presets: memoryPresets
+    };
+  }
+
+  if (window.parent !== window) {
+    window.parent.postMessage({
+      kind: 'vitrina:game',
+      bridgeId: window.__GC_BRIDGE_ID || '',
+      type: 'GC_SAVE_DATA',
+      payload: {
+        gameId: 'war_hearts',
+        key: 'presets',
+        data: memoryPresets
+      }
+    }, '*');
+  }
 };
 
 export const renderField = (root, state, actions) => {
