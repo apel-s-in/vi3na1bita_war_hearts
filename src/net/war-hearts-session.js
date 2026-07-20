@@ -315,6 +315,31 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
     return this.sendGame(MessageType.MATCH_FINISHED, payload);
   }
 
+  async getProfile(friendId) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.getProfile(friendId);
+  }
+
+  async sendGameInvite({
+    toFriendId,
+    roomId,
+    roomSecret
+  } = {}) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.sendGameInvite({
+      toFriendId,
+      gameId: this.gameId,
+      roomId,
+      roomSecret
+    });
+  }
+
   async toggleVoice(active) {
     if (!this.bridge) return false;
     await this.bridge.toggleVoice(active);
