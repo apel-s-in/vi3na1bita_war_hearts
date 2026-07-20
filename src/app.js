@@ -908,6 +908,7 @@ async openFriends() {
   );
 
   if (old) {
+    old._friendsEmbed?.destroy?.();
     old.remove();
     return;
   }
@@ -934,7 +935,7 @@ async openFriends() {
 
   try {
     const module = await import(
-      '/Games/common/friends-embed.js?v=8.9.2'
+      '/Games/common/friends-embed.js?v=8.9.3'
     );
 
     overlay._friendsEmbed =
