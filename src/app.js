@@ -68,7 +68,10 @@ const state = createInitialState({
 window.addEventListener('message', e => {
   const d = e.data || {};
   if (d.kind !== 'vitrina:game-host') return;
-  if (d.bridgeId) hostBridgeId = d.bridgeId;
+  if (d.bridgeId) {
+    hostBridgeId = d.bridgeId;
+    window.__GC_BRIDGE_ID = hostBridgeId;
+  }
 
   if (d.type === 'GC_INIT') {
     const snap = d.payload?.snapshot || null;
@@ -898,6 +901,15 @@ const setScreen = screen => {
 
 const actions = {
 toast,
+
+openFriends() {
+  postToHost('GC_COLLAPSE_GAME', {
+    gameId: GAME_ID,
+    targetAlbum: '__friends__',
+    reason: 'war_hearts_open_canonical_friends'
+  });
+},
+
 openField() {
 setScreen('field');
 },
