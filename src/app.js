@@ -947,7 +947,7 @@ async openFriends() {
           state.snapshot?.friend ||
           state.friendIdentity ||
           {},
-        build: '8.9.2',
+        build: '8.9.3',
         onGameInvite: async ({
           friendId,
           gameId
