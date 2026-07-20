@@ -1028,14 +1028,9 @@ startLanGameFlow() {
       } catch {}
 
       const invite = await session.createInvite();
-      
-      const { FriendsCore } = await import('/Friends/friends-core.js');
-      const fc = new FriendsCore();
-      fc.setIdentity(state.friendIdentity);
-      
-      await fc.sendGameInvite({
+
+      await session.sendGameInvite({
         toFriendId: friendId,
-        gameId: GAME_ID,
         roomId: invite.roomId,
         roomSecret: invite.roomSecret
       });
@@ -1792,14 +1787,18 @@ sessionReady = session.init()
 
       try {
         const identity = await waitForFriendIdentity();
-        if (!identity?.friendId) throw new Error('friend_identity_not_ready');
+        if (!identity?.friendId) {
+          throw new Error('friend_identity_not_ready');
+        }
 
-        const { FriendsCore } = await import('https://vi3na1bita.website.yandexcloud.net/Friends/friends-core.js');
-        const fc = new FriendsCore();
-        fc.setIdentity(identity);
+        const profile = await session
+          .getProfile(inviteFriendId)
+          .catch(() => null);
 
-        const prof = await fc.getProfile(inviteFriendId);
-        actions.inviteFriend(inviteFriendId, prof?.displayName || 'Друг');
+        actions.inviteFriend(
+          inviteFriendId,
+          profile?.displayName || 'Друг'
+        );
       } catch (e) {
         console.error('[Auto-Invite Error]', e);
       }
