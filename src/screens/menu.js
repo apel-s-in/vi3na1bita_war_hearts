@@ -26,22 +26,16 @@ const hero = () => {
   return el;
 };
 
-const getSavedStats = state => {
-  const data = state.snapshot?.gameData || {};
-  return data.war_hearts_matchStats?.stats || data.matchStats?.stats || state.matchStats || {};
-};
+const getSavedStats = state =>
+  state.matchStats || {};
 
 const getSavedHistory = state => {
   const data = state.snapshot?.gameData || {};
-  const cloud = data.war_hearts_matchHistory || data.matchHistory;
-  if (Array.isArray(cloud)) return cloud;
+  const saved =
+    data.war_hearts_matchHistory ||
+    data.matchHistory;
 
-  try {
-    const local = JSON.parse(localStorage.getItem('wh_matchHistory') || '[]');
-    return Array.isArray(local) ? local : [];
-  } catch {
-    return [];
-  }
+  return Array.isArray(saved) ? saved : [];
 };
 
 const getProfileStats = state => {
