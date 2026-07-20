@@ -131,24 +131,13 @@ const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
 const restoreMatchDraft = () => matchPersistence?.restoreMatchDraft() || false;
 const clearMatchDraft = () => matchPersistence?.clearMatchDraft();
 
-const getLaunchCancelKey = () => {
-  const p = new URLSearchParams(window.location.search);
-  const raw = [
-    p.get('room') || '',
-    p.get('key') || p.get('secret') || '',
-    p.get('inviteFriend') || ''
-  ].filter(Boolean).join(':');
-  return raw ? `wh_cancelled_launch_${raw.slice(0, 160)}` : '';
-};
+let launchCancelled = false;
 
-const isLaunchCancelled = () => {
-  const key = getLaunchCancelKey();
-  try { return !!key && sessionStorage.getItem(key) === '1'; } catch { return false; }
-};
+const isLaunchCancelled = () =>
+  launchCancelled;
 
 const markLaunchCancelled = () => {
-  const key = getLaunchCancelKey();
-  try { if (key) sessionStorage.setItem(key, '1'); } catch {}
+  launchCancelled = true;
 };
 
 const stripLaunchParams = () => {
