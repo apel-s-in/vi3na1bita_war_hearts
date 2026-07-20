@@ -51,14 +51,7 @@ export const createMatchPersistence = ({
 
   const readMatchHistory = () => {
     const saved = getSavedGameData('matchHistory');
-    if (Array.isArray(saved)) return saved;
-
-    try {
-      const local = JSON.parse(localStorage.getItem('wh_matchHistory') || '[]');
-      return Array.isArray(local) ? local : [];
-    } catch {
-      return [];
-    }
+    return Array.isArray(saved) ? saved : [];
   };
 
   const makeHistoryItem = () => {
@@ -110,13 +103,6 @@ export const createMatchPersistence = ({
     const isCasualNetwork = state.opponent?.type === 'network' && state.network?.ranked !== true;
     if (isCasualNetwork) return;
 
-    const latest = {
-      gameId,
-      savedAt: Date.now(),
-      result: state.result,
-      stats: state.matchStats
-    };
-
     const item = makeHistoryItem();
     const history = readMatchHistory()
       .filter(row => row?.matchId && row.matchId !== item.matchId);
@@ -124,15 +110,6 @@ export const createMatchPersistence = ({
     const nextHistory = [item, ...history]
       .sort((a, b) => Number(b.finishedAt || 0) - Number(a.finishedAt || 0))
       .slice(0, 50);
-
-    try {
-      localStorage.setItem('wh_matchHistory', JSON.stringify(nextHistory));
-    } catch {}
-
-    postToHost('GC_SAVE_DATA', {
-      key: 'matchStats',
-      data: latest
-    });
 
     postToHost('GC_SAVE_DATA', {
       key: 'matchHistory',
@@ -147,10 +124,6 @@ export const createMatchPersistence = ({
     if (!active || !state.matchStats?.matchId) return;
 
     const draft = makeMatchDraft();
-
-    try {
-      localStorage.setItem('wh_matchDraft', JSON.stringify(draft));
-    } catch {}
 
     postToHost('GC_SAVE_DATA', {
       key: 'matchDraft',
@@ -168,12 +141,7 @@ export const createMatchPersistence = ({
   const restoreMatchDraft = () => {
     if (draftRestored) return false;
 
-    let draft = getSavedGameData('matchDraft');
-    if (!draft) {
-      try {
-        draft = JSON.parse(localStorage.getItem('wh_matchDraft') || 'null');
-      } catch {}
-    }
+    const draft = getSavedGameData('matchDraft');
 
     if (!draft || draft.gameId !== gameId || !draft.matchStats?.matchId) return false;
     if (!['setup', 'rps', 'player', 'computer', 'finished'].includes(draft.phase)) return false;
@@ -246,9 +214,7 @@ export const createMatchPersistence = ({
 
   const clearMatchDraft = () => {
     clearTimeout(saveDraftTimer);
-    try {
-      localStorage.removeItem('wh_matchDraft');
-    } catch {}
+
     postToHost('GC_SAVE_DATA', {
       key: 'matchDraft',
       data: null
