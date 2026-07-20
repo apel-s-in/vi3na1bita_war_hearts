@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-20 21:34:30 UTC
+Сгенерировано: 2026-07-20 21:34:49 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2683,6 +2683,13 @@ input,textarea{-webkit-user-select:auto;user-select:auto}
 /* LAN Wi-Fi modal enhancements */
 #lan-code-input::placeholder{color:rgba(255,255,255,.25);letter-spacing:2px}
 #lan-code-input:focus{border-color:rgba(76,175,80,.5)!important;box-shadow:0 0 0 3px rgba(76,175,80,.15)}
+.wh-friends-embed-overlay{position:fixed;inset:0;z-index:130;display:flex;flex-direction:column;background:#07091a;color:#fff}
+.wh-friends-embed-head{height:60px;flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:rgba(8,10,31,.98);border-bottom:1px solid var(--wh-line)}
+.wh-friends-embed-head b{font-size:18px;font-weight:950}
+.wh-friends-embed-head button{width:40px;height:40px;border:1px solid rgba(255,255,255,.12);border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:22px;cursor:pointer}
+.wh-friends-embed-host{flex:1;min-height:0;overflow:auto}
+.wh-friends-embed-host.vf-app{height:100%;max-width:none;padding:12px;background:linear-gradient(180deg,rgba(10,13,38,.98),rgba(5,7,20,.99))}
+.wh-friends-embed-error{padding:24px;color:var(--wh-muted);font-size:13px;line-height:1.45;text-align:center}
 
 //=================================================
 // FILE: /src/game/achievements.js
