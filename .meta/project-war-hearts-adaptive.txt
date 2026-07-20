@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-20 20:58:42 UTC
+Сгенерировано: 2026-07-20 21:34:30 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1534,12 +1534,93 @@ const setScreen = screen => {
 const actions = {
 toast,
 
-openFriends() {
-  postToHost('GC_COLLAPSE_GAME', {
-    gameId: GAME_ID,
-    targetAlbum: '__friends__',
-    reason: 'war_hearts_open_canonical_friends'
-  });
+async openFriends() {
+  const old = document.querySelector(
+    '.wh-friends-embed-overlay'
+  );
+
+  if (old) {
+    old.remove();
+    return;
+  }
+
+  const overlay = document.createElement('section');
+  overlay.className = 'wh-friends-embed-overlay';
+  overlay.innerHTML = `
+    <header class="wh-friends-embed-head">
+      <b>Друзья</b>
+      <button type="button" data-friends-close>✕</button>
+    </header>
+    <div class="wh-friends-embed-host"></div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    overlay._friendsEmbed?.destroy?.();
+    overlay.remove();
+  };
+
+  overlay.querySelector('[data-friends-close]')
+    ?.addEventListener('click', close);
+
+  try {
+    const module = await import(
+      '/Games/common/friends-embed.js?v=8.9.2'
+    );
+
+    overlay._friendsEmbed =
+      await module.mountCanonicalFriends({
+        root: overlay.querySelector(
+          '.wh-friends-embed-host'
+        ),
+        identity:
+          state.snapshot?.friend ||
+          state.friendIdentity ||
+          {},
+        build: '8.9.2',
+        onGameInvite: async ({
+          friendId,
+          gameId
+        }) => {
+          close();
+
+          if (
+            !gameId ||
+            gameId === GAME_ID
+          ) {
+            let name = 'Друг';
+
+            try {
+              const profile = await session.getProfile(
+                friendId
+              );
+              name =
+                profile?.displayName ||
+                name;
+            } catch {}
+
+            await actions.inviteFriend(
+              friendId,
+              name
+            );
+          }
+        }
+      });
+  } catch (error) {
+    const host = overlay.querySelector(
+      '.wh-friends-embed-host'
+    );
+
+    if (host) {
+      host.innerHTML = `
+        <div class="wh-friends-embed-error">
+          Не удалось загрузить Друзья:
+          ${String(error?.message || 'unknown_error')}
+        </div>
+      `;
+    }
+  }
 },
 
 openField() {
