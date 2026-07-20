@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-20 22:22:36 UTC
+Сгенерировано: 2026-07-20 22:23:34 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1579,7 +1579,7 @@ async openFriends() {
           state.snapshot?.friend ||
           state.friendIdentity ||
           {},
-        build: '8.9.2',
+        build: '8.9.3',
         onGameInvite: async ({
           friendId,
           gameId
