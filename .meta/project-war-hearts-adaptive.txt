@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-20 21:40:35 UTC
+Сгенерировано: 2026-07-20 22:22:36 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1540,6 +1540,7 @@ async openFriends() {
   );
 
   if (old) {
+    old._friendsEmbed?.destroy?.();
     old.remove();
     return;
   }
@@ -1566,7 +1567,7 @@ async openFriends() {
 
   try {
     const module = await import(
-      '/Games/common/friends-embed.js?v=8.9.2'
+      '/Games/common/friends-embed.js?v=8.9.3'
     );
 
     overlay._friendsEmbed =
