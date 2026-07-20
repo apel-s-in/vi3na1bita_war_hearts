@@ -72,7 +72,8 @@ vi3na1bita_war_hearts/
 ├── .github/
 │   └── workflows/
 │       ├── deploy.yml
-│       └── generate-context.yml
+│       ├── generate-context.yml
+│       └── validate.yml
 ├── .meta/
 ├── src/
 │   ├── game/
@@ -112,7 +113,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-20 23:05:45 UTC
+Сгенерировано: 2026-07-20 23:06:53 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2680,6 +2681,50 @@ input,textarea{-webkit-user-select:auto;user-select:auto}
 .wh-friends-embed-host{flex:1;min-height:0;overflow:auto}
 .wh-friends-embed-host.vf-app{height:100%;max-width:none;padding:12px;background:linear-gradient(180deg,rgba(10,13,38,.98),rgba(5,7,20,.99))}
 .wh-friends-embed-error{padding:24px;color:var(--wh-muted);font-size:13px;line-height:1.45;text-align:center}
+
+//=================================================
+// FILE: /.github/workflows/validate.yml
+name: Validate War Hearts
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate ESM syntax
+        run: |
+          while IFS= read -r file; do
+            echo "CHECK $file"
+            node --input-type=module --check < "$file"
+          done < <(find src -type f -name '*.js' | sort)
+
+      - name: Validate sandbox storage boundary
+        run: |
+          if grep -REn "localStorage|sessionStorage|indexedDB" src; then
+            echo "Persistent browser storage found inside War Hearts"
+            exit 2
+          fi
+
+      - name: Validate parent-mediated transport
+        run: |
+          if grep -REn "X-Vi3-Session|X-Yandex-OAuth|clientSecret|FriendsCore" src; then
+            echo "Private parent authentication or direct FriendsCore access found"
+            exit 2
+          fi
+
+          grep -q "GC_SAVE_DATA" src/game/match-persistence.js
+          grep -q "GC_SAVE_DATA" src/screens/field.js
 
 //=================================================
 // FILE: /src/game/achievements.js
