@@ -43,13 +43,13 @@ jobs:
           grep -q "ranked_match_prepare" ../vi3na1bita-games/common/network-bridge.js 2>/dev/null || true
           grep -q "prepareRankedMatch" src/game/ranked-v2.js
           grep -q "prepareRankedStake" src/net/war-hearts-session.js
-          grep -q "economyPaid" src/game/match-persistence.js
+          grep -q "isRankedTerminal" src/game/match-persistence.js
+          grep -q "isRankedEconomyFinal" src/game/match-persistence.js
           grep -q "transcriptHash" src/game/ranked-v2.js
           grep -q "waitForRankedSettlement" src/game/ranked-v2.js
           grep -q "getRankedMatchStatus" src/game/ranked-v2.js
           grep -q "recordRankedShot" src/game/network-combat.js
           grep -q "crypto.randomUUID" src/game/network-combat.js
-          grep -q "serverStatus !== 'settled'" src/game/match-persistence.js
 
           if grep -REn "createTranscript|TURN_STATE|RPS_CHOICE" src; then
             echo "Legacy transcript or open P2P RPS found"
