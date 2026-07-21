@@ -21,6 +21,7 @@ import {
 } from './fair-play.js';
 import {
   abortRankedMatch,
+  playRankedRps,
   prepareRankedMatch,
   recordRankedShot,
   resetRankedState,
@@ -33,20 +34,6 @@ const RPS_CHOICES = [
   { id: 'scissors', icon: '✌️', label: 'Ножницы' },
   { id: 'paper', icon: '✋', label: 'Бумага' }
 ];
-
-const compareRps = (mine, peer) => {
-  if (mine === peer) return 'draw';
-
-  if (
-    (mine === 'rock' && peer === 'scissors') ||
-    (mine === 'scissors' && peer === 'paper') ||
-    (mine === 'paper' && peer === 'rock')
-  ) {
-    return 'mine';
-  }
-
-  return 'peer';
-};
 
 const getChoiceLabel = id => RPS_CHOICES.find(item => item.id === id)?.label || id;
 
@@ -265,8 +252,82 @@ export const createNetworkCombat = ({
       ? 'Оба игрока готовы. Рейтинговый статус боя зафиксирован для этого сражения.'
       : 'Оба игрока готовы. Гостевой статус боя зафиксирован для этого сражения.');
 
-    openNetworkRpsModal();
+    if (state.network.ranked) {
+      openNetworkRpsModal();
+    } else {
+      resolveCasualCommitLottery();
+    }
+
     scheduleSaveMatchDraft();
+  };
+
+  const applyFirstTurn = firstPlayerId => {
+    if (state.network.ranked === true) {
+      setRankedFirstPlayer(
+        state,
+        firstPlayerId
+      );
+    }
+
+    const mine =
+      firstPlayerId === state.ranked?.playerId ||
+      (
+        state.network.ranked !== true &&
+        firstPlayerId === 'mine'
+      );
+
+    state.networkRps.active = false;
+    clearModal('.wh-rps-modal-overlay');
+
+    if (mine) {
+      state.phase = 'player';
+      addSystemMessage(
+        'Розыгрыш завершён. Первый ход ваш.'
+      );
+      setNetworkStatus(
+        'Ваш ход. Выберите клетку для выстрела.',
+        'your-turn'
+      );
+    } else {
+      state.phase = 'computer';
+      addSystemMessage(
+        'Розыгрыш завершён. Первым ходит соперник.'
+      );
+      setNetworkStatus(
+        'Ход соперника. Ожидаем выстрел...',
+        'peer-turn'
+      );
+    }
+
+    render();
+    scheduleSaveMatchDraft();
+  };
+
+  const resolveCasualCommitLottery = () => {
+    const mine = String(
+      state.fairPlay?.myCommitHash || ''
+    );
+    const peer = String(
+      state.fairPlay?.enemyCommitHash || ''
+    );
+
+    if (!mine || !peer) {
+      setNetworkStatus(
+        'Не удалось провести жеребьёвку по commit.',
+        'error'
+      );
+      return;
+    }
+
+    const mineFirst = mine.localeCompare(peer) < 0;
+
+    addSystemMessage(
+      'Гостевой первый ход определён по двум скрытым board commits.'
+    );
+
+    applyFirstTurn(
+      mineFirst ? 'mine' : 'peer'
+    );
   };
 
   const openNetworkRpsModal = () => {
@@ -275,20 +336,31 @@ export const createNetworkCombat = ({
     state.networkRps.active = true;
     state.networkRps.myChoice = '';
     state.networkRps.peerChoice = '';
-    state.networkRps.round++;
+    state.networkRps.round = Math.max(
+      1,
+      Number(state.ranked?.rps?.round || 1)
+    );
 
     const overlay = document.createElement('div');
     overlay.className = 'wh-rps-modal-overlay';
     overlay.innerHTML = `
       <div class="wh-rps-modal-box">
-        <div class="wh-rps-kicker">Сетевой розыгрыш первого хода</div>
-        <h2 class="wh-rps-title">Камень · Ножницы · Бумага</h2>
+        <div class="wh-rps-kicker">
+          Серверный розыгрыш первого хода
+        </div>
+        <h2 class="wh-rps-title">
+          Камень · Ножницы · Бумага
+        </h2>
         <p class="wh-rps-text" id="wh-net-rps-text">
-          Выберите знак. Ждём выбор соперника.
+          Выбор будет скрыт commit до выбора соперника.
         </p>
         <div class="wh-rps-choices">
           ${RPS_CHOICES.map(choice => `
-            <button class="wh-rps-choice" type="button" data-choice="${choice.id}">
+            <button
+              class="wh-rps-choice"
+              type="button"
+              data-choice="${choice.id}"
+            >
               <span>${choice.icon}</span>
               <b>${choice.label}</b>
             </button>
@@ -299,76 +371,92 @@ export const createNetworkCombat = ({
 
     document.body.appendChild(overlay);
 
-    overlay.querySelectorAll('[data-choice]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const choice = btn.dataset.choice;
-        state.networkRps.myChoice = choice;
+    overlay.querySelectorAll('[data-choice]')
+      .forEach(button => {
+        button.addEventListener('click', async () => {
+          const choice = button.dataset.choice;
+          const text = overlay.querySelector(
+            '#wh-net-rps-text'
+          );
 
-        session.sendGame(MessageType.RPS_CHOICE, {
-          matchId: state.matchStats.matchId,
-          round: state.networkRps.round,
-          choice
+          state.networkRps.myChoice = choice;
+
+          overlay.querySelectorAll('[data-choice]')
+            .forEach(item => {
+              item.disabled = true;
+            });
+
+          if (text) {
+            text.textContent =
+              `Вы выбрали: ${getChoiceLabel(choice)}. ` +
+              'Commit отправляется серверу...';
+          }
+
+          setNetworkStatus(
+            'Отправляем скрытый RPS commit серверу...',
+            'waiting'
+          );
+
+          try {
+            const ranked = await playRankedRps({
+              state,
+              session,
+              choice
+            });
+
+            if (ranked.firstPlayerId) {
+              if (text) {
+                text.textContent =
+                  'Сервер проверил оба reveal.';
+              }
+
+              applyFirstTurn(
+                ranked.firstPlayerId
+              );
+              return;
+            }
+
+            if (ranked.rps?.roundStatus === 'draw') {
+              if (text) {
+                text.textContent =
+                  'Ничья. Сервер открыл следующий раунд.';
+              }
+
+              setNetworkStatus(
+                'Ничья в серверном RPS. Повторяем.',
+                'waiting'
+              );
+
+              setTimeout(
+                openNetworkRpsModal,
+                900
+              );
+              return;
+            }
+
+            throw new Error(
+              'ranked_rps_result_timeout'
+            );
+          } catch (error) {
+            if (text) {
+              text.textContent =
+                `Ошибка серверного RPS: ${error.message}`;
+            }
+
+            setNetworkStatus(
+              'Серверный розыгрыш не завершён.',
+              'error'
+            );
+
+            overlay.querySelectorAll('[data-choice]')
+              .forEach(item => {
+                item.disabled = false;
+              });
+          }
+
+          scheduleSaveMatchDraft();
         });
-
-        overlay.querySelectorAll('[data-choice]').forEach(item => item.disabled = true);
-
-        const text = overlay.querySelector('#wh-net-rps-text');
-        if (text) text.textContent = `Вы выбрали: ${getChoiceLabel(choice)}. Ждём соперника...`;
-
-        setNetworkStatus('Ваш выбор отправлен. Ждём выбор соперника...', 'waiting');
-        maybeResolveRps();
       });
-    });
-  };
-
-  const maybeResolveRps = () => {
-    if (!state.networkRps.myChoice || !state.networkRps.peerChoice) return;
-
-    const result = compareRps(state.networkRps.myChoice, state.networkRps.peerChoice);
-    const overlay = document.querySelector('.wh-rps-modal-overlay');
-    const text = overlay?.querySelector('#wh-net-rps-text');
-
-    if (result === 'draw') {
-      if (text) {
-        text.textContent = `Ничья: ${getChoiceLabel(state.networkRps.myChoice)} против ${getChoiceLabel(state.networkRps.peerChoice)}. Повторяем.`;
-      }
-
-      setNetworkStatus('Ничья в розыгрыше. Повторите выбор.', 'waiting');
-
-      setTimeout(() => {
-        state.networkRps.myChoice = '';
-        state.networkRps.peerChoice = '';
-        openNetworkRpsModal();
-      }, 900);
-
-      return;
-    }
-
-    clearModal('.wh-rps-modal-overlay');
-
-    state.networkRps.active = false;
-
-    if (state.network.ranked === true) {
-      setRankedFirstPlayer(
-        state,
-        result === 'mine'
-          ? state.ranked?.playerId
-          : state.ranked?.peerPlayerId
-      );
-    }
-
-    if (result === 'mine') {
-      state.phase = 'player';
-      addSystemMessage('Розыгрыш завершён. Первый ход ваш.');
-      setNetworkStatus('Ваш ход. Выберите клетку для выстрела.', 'your-turn');
-    } else {
-      state.phase = 'computer';
-      addSystemMessage('Розыгрыш завершён. Первым ходит соперник.');
-      setNetworkStatus('Ход соперника. Ожидаем выстрел...', 'peer-turn');
-    }
-
-    render();
-    scheduleSaveMatchDraft();
   };
 
   const shoot = (x, y) => {
@@ -1124,12 +1212,6 @@ ${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-l
         setNetworkStatus('Соперник готов. Синхронизация боя...', 'waiting');
         maybeStartRps();
         scheduleSaveMatchDraft();
-        break;
-
-      case MessageType.RPS_CHOICE:
-        state.networkRps.peerChoice = msg.payload?.choice || '';
-        setNetworkStatus('Выбор соперника в розыгрыше получен.', 'waiting');
-        maybeResolveRps();
         break;
 
       case MessageType.SHOT:
