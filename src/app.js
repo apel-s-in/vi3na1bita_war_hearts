@@ -16,7 +16,6 @@ import {
   packBoardReveal,
   validateRevealLayout
 } from './game/fair-play.js';
-import { createTranscript } from './game/transcript.js';
 import { createMatchPersistence } from './game/match-persistence.js';
 import { WarHeartsSession } from './net/war-hearts-session.js';
 import { createNetworkCombat } from './game/network-combat.js';
@@ -123,7 +122,6 @@ window.addEventListener('message', e => {
 
 postToHost('GC_READY');
 
-const transcript = createTranscript();
 const session = new WarHeartsSession({
   gameId: 'war_hearts',
   player: state.player
@@ -441,14 +439,6 @@ const computerShoot = () => {
 
   registerShotStats('opponent', fxKind);
   showBattleFx('mine', fxKind);
-
-  transcript.add({
-    type: 'COMPUTER_SHOT',
-    x: target.x,
-    y: target.y,
-    result: fxKind,
-    at: Date.now()
-  });
 
   addSystemMessage(`Компьютер стреляет ${coord}: ${resultText}.`);
 
@@ -815,14 +805,6 @@ const performPlayerShot = (x, y, { auto = false } = {}) => {
 
   registerShotStats('player', fxKind);
   showBattleFx('enemy', fxKind);
-
-  transcript.add({
-    type: auto ? 'AUTO_SHOT' : 'SHOT',
-    x,
-    y,
-    result: fxKind,
-    at: Date.now()
-  });
 
   addSystemMessage(`${auto ? 'Автобой' : state.player.name} стреляет ${coord}: ${resultText}.`);
   toast(sunk ? 'Корабль уничтожен!' : hit ? 'Попадание!' : 'Мимо');
