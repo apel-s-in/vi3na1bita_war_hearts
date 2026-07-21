@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 19:17:28 UTC
+Сгенерировано: 2026-07-21 19:17:59 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2697,10 +2697,14 @@ jobs:
           grep -q "crypto.randomUUID" src/game/network-combat.js
           grep -q "serverStatus !== 'settled'" src/game/match-persistence.js
 
-          if grep -REn "createTranscript|TURN_STATE" src; then
-            echo "Legacy or dead transcript code found"
+          if grep -REn "createTranscript|TURN_STATE|RPS_CHOICE" src; then
+            echo "Legacy transcript or open P2P RPS found"
             exit 2
           fi
+
+          grep -q "playRankedRps" src/game/ranked-v2.js
+          grep -q "commitRankedRps" src/net/war-hearts-session.js
+          grep -q "revealRankedRps" src/net/war-hearts-session.js
 
 //=================================================
 // FILE: /src/game/achievements.js
