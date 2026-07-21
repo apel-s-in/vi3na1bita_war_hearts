@@ -91,6 +91,18 @@ updatedAt: 0
     violations: [],
     note: ''
   },
+  ranked: {
+    version: 2,
+    matchId: '',
+    playerId: '',
+    peerPlayerId: '',
+    firstPlayerId: '',
+    transcript: [],
+    submitStatus: '',
+    serverStatus: '',
+    settlement: null,
+    error: ''
+  },
   rematchOffer: {
     active: false,
     from: '',
