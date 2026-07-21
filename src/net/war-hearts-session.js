@@ -333,6 +333,14 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
     return result;
   }
 
+  async prepareRankedStake(matchId) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.prepareRankedStake(matchId);
+  }
+
   async commitRankedRps({
     matchId,
     round,
