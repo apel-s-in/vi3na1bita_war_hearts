@@ -1313,10 +1313,6 @@ startLanGameFlow() {
     openShotConfirm(x, y);
   },
 
-  confirmShot(x, y) {
-    performPlayerShot(x, y);
-  },
-
   toggleAutoBattle() {
     state.autoBattle.player = !state.autoBattle.player;
     toast(state.autoBattle.player ? 'Автобой включён' : 'Автобой выключен');
@@ -1392,25 +1388,6 @@ startLanGameFlow() {
     toast('Реванш: подготовьте поле');
     setScreen('field');
   }
-};
-
-// ═══════════════════════════════════════════════════════════════
-// LAN Wi-Fi: модалка выбора режима (рейтинговый / гостевой)
-// ═══════════════════════════════════════════════════════════════
-const showLanModeChoice = () => {
-  if (isYandexAuthed()) {
-    createLanRoom(true);
-    return;
-  }
-
-  openRankedAuthGate({
-    title: '📡 Создать Wi‑Fi дуэль',
-    text: 'Войдите через Яндекс, чтобы создать рейтинговый бой. Или создайте гостевую комнату без статистики.',
-    loginText: 'Войти и создать рейтинговый бой',
-    guestText: 'Создать гостевую комнату',
-    onAuthed: () => createLanRoom(true),
-    onGuest: () => createLanRoom(false)
-  });
 };
 
 const showLanJoinCodeInput = () => {
