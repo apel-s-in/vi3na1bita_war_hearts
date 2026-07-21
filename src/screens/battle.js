@@ -107,6 +107,12 @@ const renderFairPlay = state => {
   const enemyOk = fp.enemyLayoutOk === true && fp.enemyCommitOk !== false && !transcriptBad && !turnBad;
   const transcriptOk = fp.enemyTranscriptOk === true || shots.enemyTranscriptOk === true;
 
+  const ranked = state.ranked || {};
+  const rankedBad =
+    ranked.serverStatus === 'disputed' ||
+    ranked.submitStatus === 'failed';
+  const rankedOk = ranked.serverStatus === 'settled';
+
   return `
     <div class="wh-fairplay">
       <div class="${myOk ? 'is-ok' : 'is-warn'}">
@@ -125,7 +131,24 @@ const renderFairPlay = state => {
         <span>Очередность ходов</span>
         <b>${turnBad ? 'нарушена' : 'порядок OK'}</b>
       </div>
-      <p>${turnBad ? `Turn guard: ${turn.note || 'есть нарушение очередности.'}` : fp.note || shots.note || 'После финала обе расстановки и результаты выстрелов сверяются.'}</p>
+      ${state.network?.ranked ? `
+        <div class="${rankedOk ? 'is-ok' : rankedBad ? 'is-bad' : 'is-warn'}">
+          <span>Ranked V2</span>
+          <b>${rankedOk
+            ? 'server settled'
+            : rankedBad
+              ? 'server rejected'
+              : ranked.submitStatus === 'submitted'
+                ? 'ждём соперника'
+                : 'подготовка'}</b>
+        </div>
+      ` : ''}
+      <p>${turnBad
+        ? `Turn guard: ${turn.note || 'есть нарушение очередности.'}`
+        : ranked.error ||
+          fp.note ||
+          shots.note ||
+          'После финала обе расстановки и результаты выстрелов сверяются.'}</p>
     </div>
   `;
 };
