@@ -461,14 +461,6 @@ const computerShoot = () => {
   computerTimer = setTimeout(computerShoot, 720);
 };
 
-const setStatus = (text, online = false) => {
-  const el = $('net-status');
-  if (!el) return;
-  // Показываем имя вместо технического статуса
-  el.textContent = state.player.name || 'Гость';
-  el.classList.toggle('is-online', !!online);
-};
-
 const toast = text => {
   const el = $('toast');
   if (!el) return;
@@ -1681,8 +1673,6 @@ const bind = () => {
   });
 
   session.onStatus = info => {
-    setStatus(info.label, info.online);
-
     if (state.network?.active) {
       const label = String(info?.label || '');
       state.network.status = info?.online ? 'ready' : (label.includes('err') || label.includes('failed') ? 'error' : state.network.status || 'waiting');
@@ -1808,14 +1798,13 @@ document.addEventListener('visibilitychange', () => {
 });
 
 bind();
-setStatus('preview', false);
 render();
 
 sessionReady = session.init()
   .then(async () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('join')) {
-      setStatus('invite', false);
+      state.network.status = 'connecting';
     }
 
     const inviteFriendId = params.get('inviteFriend');
