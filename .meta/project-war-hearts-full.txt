@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 20:54:27 UTC
+Сгенерировано: 2026-07-21 20:55:54 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2697,6 +2697,8 @@ jobs:
 
           grep -q "ranked_match_prepare" ../vi3na1bita-games/common/network-bridge.js 2>/dev/null || true
           grep -q "prepareRankedMatch" src/game/ranked-v2.js
+          grep -q "prepareRankedStake" src/net/war-hearts-session.js
+          grep -q "economyPaid" src/game/match-persistence.js
           grep -q "transcriptHash" src/game/ranked-v2.js
           grep -q "waitForRankedSettlement" src/game/ranked-v2.js
           grep -q "getRankedMatchStatus" src/game/ranked-v2.js
