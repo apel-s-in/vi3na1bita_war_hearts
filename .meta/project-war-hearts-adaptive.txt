@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 20:52:09 UTC
+Сгенерировано: 2026-07-21 20:52:43 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3345,10 +3345,20 @@ export const createMatchPersistence = ({
       isNetwork &&
       state.network?.ranked !== true;
 
+    const rankedTerminal = [
+      'settled',
+      'forfeited'
+    ].includes(state.ranked?.serverStatus);
+
+    const economyPaid = [
+      'paid',
+      'not_required'
+    ].includes(state.ranked?.economy?.status);
+
     const isUnsettledRanked =
       isNetwork &&
       state.network?.ranked === true &&
-      state.ranked?.serverStatus !== 'settled';
+      (!rankedTerminal || !economyPaid);
 
     if (isCasualNetwork || isUnsettledRanked) return;
 
