@@ -38,6 +38,9 @@ const postToHost = (type, payload = {}) => {
     window.parent.postMessage({
       kind: 'vitrina:game',
       bridgeId: hostBridgeId,
+      capabilityToken: String(
+        window.__GC_CAPABILITY_TOKEN || ''
+      ),
       type,
       gameId: GAME_ID,
       payload: {
@@ -66,6 +69,11 @@ const state = createInitialState({
 });
 
 window.addEventListener('message', e => {
+  if (
+    window.parent !== window &&
+    e.source !== window.parent
+  ) return;
+
   const d = e.data || {};
   if (d.kind !== 'vitrina:game-host') return;
   if (d.bridgeId) {
@@ -74,6 +82,10 @@ window.addEventListener('message', e => {
   }
 
   if (d.type === 'GC_INIT') {
+    window.__GC_CAPABILITY_TOKEN = String(
+      d.payload?.capabilityToken || ''
+    );
+
     const snap = d.payload?.snapshot || null;
     if (snap) {
       state.snapshot = snap;
