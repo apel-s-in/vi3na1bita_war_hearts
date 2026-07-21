@@ -116,6 +116,44 @@ export const setRankedFirstPlayer = (
   return ranked.firstPlayerId;
 };
 
+export const abortRankedMatch = async ({
+  state,
+  session,
+  reason = 'disconnect'
+} = {}) => {
+  const ranked = ensureRankedState(state);
+
+  if (
+    state.network?.ranked !== true ||
+    !ranked.matchId ||
+    [
+      'settled',
+      'forfeited',
+      'disputed',
+      'aborted',
+      'refunded'
+    ].includes(ranked.serverStatus)
+  ) {
+    return ranked;
+  }
+
+  const response = await session.abortRankedMatch({
+    matchId: ranked.matchId,
+    reason
+  });
+
+  const match = response?.match || {};
+  ranked.serverStatus = String(match.status || '');
+  ranked.settlement = match.settlement || null;
+  ranked.error = '';
+
+  if (match.terminal) {
+    ranked.submitStatus = match.status;
+  }
+
+  return ranked;
+};
+
 export const refreshRankedMatchStatus = async ({
   state,
   session
@@ -131,10 +169,16 @@ export const refreshRankedMatchStatus = async ({
   ranked.serverStatus = String(match.status || '');
   ranked.settlement = match.settlement || null;
 
-  if (match.status === 'settled') {
-    ranked.submitStatus = 'settled';
-  } else if (match.status === 'disputed') {
-    ranked.submitStatus = 'disputed';
+  if (
+    [
+      'settled',
+      'forfeited',
+      'disputed',
+      'aborted',
+      'refunded'
+    ].includes(match.status)
+  ) {
+    ranked.submitStatus = match.status;
   } else if (ranked.submitStatus !== 'submitting') {
     ranked.submitStatus = 'submitted';
   }
@@ -152,8 +196,13 @@ export const waitForRankedSettlement = async ({
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     if (
-      ranked.serverStatus === 'settled' ||
-      ranked.serverStatus === 'disputed'
+      [
+        'settled',
+        'forfeited',
+        'disputed',
+        'aborted',
+        'refunded'
+      ].includes(ranked.serverStatus)
     ) {
       break;
     }
@@ -254,6 +303,7 @@ export default {
   resetRankedState,
   ensureRankedState,
   prepareRankedMatch,
+  abortRankedMatch,
   recordRankedShot,
   setRankedFirstPlayer,
   refreshRankedMatchStatus,
