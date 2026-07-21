@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 19:17:59 UTC
+Сгенерировано: 2026-07-21 20:48:23 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -6518,6 +6518,14 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
     };
 
     return result;
+  }
+
+  async prepareRankedStake(matchId) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.prepareRankedStake(matchId);
   }
 
   async commitRankedRps({
