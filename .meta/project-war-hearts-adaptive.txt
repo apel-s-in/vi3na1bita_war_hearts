@@ -113,7 +113,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 11:18:34 UTC
+Сгенерировано: 2026-07-21 11:19:02 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5384,6 +5384,18 @@ updatedAt: 0
     resolvedShotIds: [],
     violations: [],
     note: ''
+  },
+  ranked: {
+    version: 2,
+    matchId: '',
+    playerId: '',
+    peerPlayerId: '',
+    firstPlayerId: '',
+    transcript: [],
+    submitStatus: '',
+    serverStatus: '',
+    settlement: null,
+    error: ''
   },
   rematchOffer: {
     active: false,
