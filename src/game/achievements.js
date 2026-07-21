@@ -23,8 +23,7 @@ export const summarizeProgress = ({ stats = {}, history = [] } = {}) => {
       bestAccuracy: calcAccuracy(hits, shots),
       bestBalance: num(stats.playerSunk) - num(stats.opponentSunk),
       comebackWins: 0,
-      cleanWins: 0,
-      perfectPressure: 0
+      cleanWins: 0
     };
   }
 
@@ -50,8 +49,7 @@ export const summarizeProgress = ({ stats = {}, history = [] } = {}) => {
     bestAccuracy: Math.max(0, ...rows.map(row => num(row.accuracy))),
     bestBalance: Math.max(-10, ...rows.map(row => num(row.balance))),
     comebackWins: rows.filter(row => row.result === 'win' && num(row.balance) <= 0).length,
-    cleanWins: rows.filter(row => row.result === 'win' && num(row.opponentSunk) <= 3).length,
-    perfectPressure: rows.filter(row => row.result === 'win' && num(row.playerSunk) >= 10).length
+    cleanWins: rows.filter(row => row.result === 'win' && num(row.opponentSunk) <= 3).length
   };
 };
 
