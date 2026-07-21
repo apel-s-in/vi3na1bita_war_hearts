@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 15:04:07 UTC
+Сгенерировано: 2026-07-21 15:05:16 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2296,10 +2296,17 @@ const bind = () => {
     document.body.appendChild(overlay);
 
     overlay.querySelector('#wh-surrender-cancel').onclick = () => overlay.remove();
-    overlay.querySelector('#wh-surrender-confirm').onclick = () => {
+    overlay.querySelector('#wh-surrender-confirm').onclick = async () => {
       overlay.remove();
-      // Выставляем поражение, но оставляем поле, чат и голосовую кнопку на экране боя.
-      finishMatch('loss', 'Игрок сдался. Матч завершён.');
+
+      if (state.network?.ranked === true) {
+        await networkCombat?.abortRanked?.('surrender');
+      }
+
+      finishMatch(
+        'loss',
+        'Игрок сдался. Матч завершён.'
+      );
     };
   });
 
