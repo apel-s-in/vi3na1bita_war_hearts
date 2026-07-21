@@ -1557,8 +1557,7 @@ if (!root || !subtitle) return;
       state.phase === 'player' ||
       state.phase === 'computer'
     ) &&
-    state.screen === 'battle' &&
-    state.network?.ranked !== true;
+    state.screen === 'battle';
 
   if (surrenderBtn) {
     surrenderBtn.hidden = !canSurrender;
@@ -1639,8 +1638,16 @@ const bind = () => {
     document.body.appendChild(overlay);
 
     overlay.querySelector('#wh-modal-cancel').onclick = () => overlay.remove();
-    overlay.querySelector('#wh-modal-confirm').onclick = () => {
+    overlay.querySelector('#wh-modal-confirm').onclick = async () => {
       overlay.remove();
+
+      if (
+        state.network?.ranked === true &&
+        ['rps', 'player', 'computer'].includes(state.phase)
+      ) {
+        await networkCombat?.abortRanked?.('user_exit');
+      }
+
       if (!postToHost('GC_CLOSE', { reason: 'war_hearts_exit' })) {
         window.location.href = new URL('../', window.location.href).toString();
       }
