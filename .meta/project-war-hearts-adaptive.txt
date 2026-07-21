@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 21:37:53 UTC
+Сгенерировано: 2026-07-21 21:40:24 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
