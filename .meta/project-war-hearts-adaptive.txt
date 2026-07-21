@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 12:36:45 UTC
+Сгенерировано: 2026-07-21 12:43:00 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4907,6 +4907,9 @@ const sortObject = value => {
 const stableStringify = value =>
   JSON.stringify(sortObject(value));
 
+const wait = ms =>
+  new Promise(resolve => setTimeout(resolve, ms));
+
 const sha256Hex = async value => {
   const data = new TextEncoder().encode(String(value || ''));
   const digest = await crypto.subtle.digest('SHA-256', data);
@@ -5005,6 +5008,63 @@ export const setRankedFirstPlayer = (
   return ranked.firstPlayerId;
 };
 
+export const refreshRankedMatchStatus = async ({
+  state,
+  session
+} = {}) => {
+  const ranked = ensureRankedState(state);
+  if (!ranked.matchId) return ranked;
+
+  const response = await session.getRankedMatchStatus(
+    ranked.matchId
+  );
+
+  const match = response?.match || {};
+  ranked.serverStatus = String(match.status || '');
+  ranked.settlement = match.settlement || null;
+
+  if (match.status === 'settled') {
+    ranked.submitStatus = 'settled';
+  } else if (match.status === 'disputed') {
+    ranked.submitStatus = 'disputed';
+  } else if (ranked.submitStatus !== 'submitting') {
+    ranked.submitStatus = 'submitted';
+  }
+
+  return ranked;
+};
+
+export const waitForRankedSettlement = async ({
+  state,
+  session,
+  attempts = 12,
+  intervalMs = 1250
+} = {}) => {
+  const ranked = ensureRankedState(state);
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (
+      ranked.serverStatus === 'settled' ||
+      ranked.serverStatus === 'disputed'
+    ) {
+      break;
+    }
+
+    if (document.hidden) {
+      await wait(Math.max(intervalMs, 2500));
+      continue;
+    }
+
+    await wait(intervalMs);
+    await refreshRankedMatchStatus({
+      state,
+      session
+    });
+  }
+
+  return ranked;
+};
+
 export const buildRankedSubmission = async state => {
   const ranked = ensureRankedState(state);
   const transcript = ranked.transcript
@@ -5065,6 +5125,13 @@ export const submitRankedMatch = async ({
           ? 'disputed'
           : 'submitted';
 
+    if (ranked.submitStatus === 'submitted') {
+      await waitForRankedSettlement({
+        state,
+        session
+      });
+    }
+
     return ranked;
   } catch (error) {
     ranked.submitStatus = 'failed';
@@ -5081,6 +5148,8 @@ export default {
   prepareRankedMatch,
   recordRankedShot,
   setRankedFirstPlayer,
+  refreshRankedMatchStatus,
+  waitForRankedSettlement,
   buildRankedSubmission,
   submitRankedMatch
 };
