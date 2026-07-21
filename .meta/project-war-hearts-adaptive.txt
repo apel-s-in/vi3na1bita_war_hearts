@@ -113,7 +113,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 11:19:02 UTC
+Сгенерировано: 2026-07-21 11:19:50 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3278,6 +3278,7 @@ export const createMatchPersistence = ({
     networkShots: state.networkShots,
     networkTurn: state.networkTurn,
     networkWatchdog: state.networkWatchdog,
+    ranked: state.ranked,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -3424,6 +3425,13 @@ export const createMatchPersistence = ({
       ...(draft.networkWatchdog || {}),
       warning: false,
       note: ''
+    };
+    state.ranked = {
+      ...state.ranked,
+      ...(draft.ranked || {}),
+      transcript: Array.isArray(draft.ranked?.transcript)
+        ? draft.ranked.transcript
+        : []
     };
     state.matchStats = {
       ...createMatchStats(),
