@@ -26,7 +26,6 @@ import { renderOpponentSelect } from './screens/opponent-select.js';
 import { renderField } from './screens/field.js';
 import { renderInviteWait } from './screens/invite-wait.js';
 import { renderBattle } from './screens/battle.js';
-import { renderResult } from './screens/result.js';
 
 const $ = id => document.getElementById(id);
 const GAME_ID = 'war_hearts';
@@ -1644,11 +1643,6 @@ if (!root || !subtitle) return;
     subtitle.textContent = 'Боевая сессия';
     renderBattle(root, state, actions);
     return;
-  }
-
-  if (state.screen === 'result') {
-    subtitle.textContent = 'Итог матча';
-    renderResult(root, state, actions);
   }
 };
 
