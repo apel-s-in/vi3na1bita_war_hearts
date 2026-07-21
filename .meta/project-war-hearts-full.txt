@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 09:36:23 UTC
+Сгенерировано: 2026-07-21 09:37:24 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3629,38 +3629,6 @@ export const createNetworkCombat = ({
     scheduleSaveMatchDraft();
   };
 
-  const openReadyModal = () => {
-    clearModal('.wh-network-ready-overlay');
-
-    const overlay = document.createElement('div');
-    overlay.className = 'wh-modal-overlay wh-network-ready-overlay';
-    overlay.innerHTML = `
-      <div class="wh-modal-box">
-        <h3 class="wh-modal-title">Сетевой бой</h3>
-        <p class="wh-modal-text">
-          Расставьте корабли на поле. Когда будете готовы — нажмите кнопку.
-          После готовности начнётся синхронизация с соперником.
-        </p>
-        <div class="wh-modal-actions">
-          <button class="wh-btn secondary" type="button" id="wh-network-ready-later">Позже</button>
-          <button class="wh-btn" type="button" id="wh-network-ready-now">Готов к бою</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#wh-network-ready-later')?.addEventListener('click', () => {
-      overlay.remove();
-      setNetworkStatus('Расставьте корабли. Когда будете готовы — подтвердите готовность.', 'setup');
-    });
-
-    overlay.querySelector('#wh-network-ready-now')?.addEventListener('click', async () => {
-      overlay.remove();
-      await markReady();
-    });
-  };
-
   const markReady = async () => {
     ensureNetworkOpponent();
 
@@ -4553,7 +4521,6 @@ ${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-l
   return {
     setNetworkStatus,
     startNetworkPreparation,
-    openReadyModal,
     markReady,
     shoot,
     requestRematch,
