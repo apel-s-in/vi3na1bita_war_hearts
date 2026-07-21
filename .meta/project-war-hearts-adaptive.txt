@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 20:50:33 UTC
+Сгенерировано: 2026-07-21 20:51:16 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3900,7 +3900,11 @@ export const createNetworkCombat = ({
               return;
             }
 
-            if (ranked.rps?.roundStatus === 'draw') {
+            if (
+              ranked.rps?.roundStatus === 'draw' ||
+              Number(ranked.rps?.round || 1) >
+                Number(state.networkRps?.round || 1)
+            ) {
               if (text) {
                 text.textContent =
                   'Ничья. Сервер открыл следующий раунд.';
