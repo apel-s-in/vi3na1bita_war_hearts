@@ -44,6 +44,10 @@ const applyRankedMatch = (state, match = {}) => {
     match.rps && typeof match.rps === 'object'
       ? { ...match.rps }
       : ranked.rps || null;
+  ranked.economy =
+    match.economy && typeof match.economy === 'object'
+      ? { ...match.economy }
+      : ranked.economy || null;
 
   if (ranked.rps?.firstPlayerId) {
     ranked.firstPlayerId = String(
@@ -90,6 +94,7 @@ export const resetRankedState = state => {
     peerPlayerId: '',
     firstPlayerId: '',
     rps: null,
+    economy: null,
     transcript: [],
     submitStatus: '',
     serverStatus: '',
@@ -122,9 +127,28 @@ export const prepareRankedMatch = async ({
   ranked.playerId = String(response.playerId);
   ranked.peerPlayerId = String(response.peerPlayerId || '');
   ranked.serverStatus = String(match.status || 'pending');
+  ranked.economy = match.economy || null;
   ranked.error = '';
 
   state.matchStats.matchId = ranked.matchId;
+
+  const stakeResponse = await session.prepareRankedStake(
+    ranked.matchId
+  );
+
+  applyRankedMatch(
+    state,
+    stakeResponse?.match || {}
+  );
+
+  if (
+    !['locking', 'funded'].includes(
+      ranked.economy?.status
+    )
+  ) {
+    throw new Error('ranked_stake_prepare_failed');
+  }
+
   return ranked;
 };
 
@@ -212,7 +236,8 @@ export const playRankedRps = async ({
   for (let attempt = 0; attempt < attempts; attempt++) {
     if (
       ranked.firstPlayerId ||
-      ranked.rps?.roundStatus === 'draw'
+      ranked.rps?.roundStatus === 'draw' ||
+      Number(ranked.rps?.round || 1) > round
     ) break;
 
     if (document.hidden) {
@@ -333,17 +358,21 @@ export const waitForRankedSettlement = async ({
   const ranked = ensureRankedState(state);
 
   for (let attempt = 0; attempt < attempts; attempt++) {
-    if (
-      [
-        'settled',
-        'forfeited',
-        'disputed',
-        'aborted',
-        'refunded'
-      ].includes(ranked.serverStatus)
-    ) {
-      break;
-    }
+    const terminal = [
+      'settled',
+      'forfeited',
+      'disputed',
+      'aborted',
+      'refunded'
+    ].includes(ranked.serverStatus);
+
+    const economyDone = [
+      'paid',
+      'refunded',
+      'not_required'
+    ].includes(ranked.economy?.status);
+
+    if (terminal && economyDone) break;
 
     if (document.hidden) {
       await wait(Math.max(intervalMs, 2500));
