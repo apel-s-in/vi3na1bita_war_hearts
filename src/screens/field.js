@@ -61,7 +61,6 @@ export const renderField = (root, state, actions) => {
     // 1. Верхняя навигация со стрелками
     const topNav = document.createElement('div');
     topNav.className = 'wh-field-topnav';
-    const hasLocalPreparedOpponent = state.phase === 'setup' && state.opponent && state.opponent?.type !== 'network';
 
     topNav.innerHTML = `
       <button class="wh-btn secondary mini" type="button" id="fn-menu">❮ Назад</button>
