@@ -111,7 +111,16 @@ const renderFairPlay = state => {
   const rankedBad =
     ranked.serverStatus === 'disputed' ||
     ranked.submitStatus === 'failed';
-  const rankedOk = ranked.serverStatus === 'settled';
+  const rankedOk = [
+    'settled',
+    'forfeited'
+  ].includes(ranked.serverStatus);
+  const economy = ranked.economy || {};
+  const economyOk = [
+    'paid',
+    'refunded',
+    'not_required'
+  ].includes(economy.status);
 
   return `
     <div class="wh-fairplay">
@@ -141,6 +150,10 @@ const renderFairPlay = state => {
               : ranked.submitStatus === 'submitted'
                 ? 'ждём соперника'
                 : 'подготовка'}</b>
+        </div>
+        <div class="${economyOk ? 'is-ok' : economy.status === 'paying' || economy.status === 'refunding' ? 'is-warn' : 'is-warn'}">
+          <span>Escrow · ${Number(economy.stakeEach || 100)} ♦</span>
+          <b>${economy.status || 'locking'}</b>
         </div>
       ` : ''}
       <p>${turnBad
