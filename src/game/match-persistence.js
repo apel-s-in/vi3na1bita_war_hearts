@@ -108,10 +108,20 @@ export const createMatchPersistence = ({
       isNetwork &&
       state.network?.ranked !== true;
 
+    const rankedTerminal = [
+      'settled',
+      'forfeited'
+    ].includes(state.ranked?.serverStatus);
+
+    const economyPaid = [
+      'paid',
+      'not_required'
+    ].includes(state.ranked?.economy?.status);
+
     const isUnsettledRanked =
       isNetwork &&
       state.network?.ranked === true &&
-      state.ranked?.serverStatus !== 'settled';
+      (!rankedTerminal || !economyPaid);
 
     if (isCasualNetwork || isUnsettledRanked) return;
 
