@@ -42,6 +42,7 @@ export const createMatchPersistence = ({
     networkShots: state.networkShots,
     networkTurn: state.networkTurn,
     networkWatchdog: state.networkWatchdog,
+    ranked: state.ranked,
     matchStats: state.matchStats,
     fleet: state.fleet,
     myBoard: packBoard(state.myBoard),
@@ -188,6 +189,13 @@ export const createMatchPersistence = ({
       ...(draft.networkWatchdog || {}),
       warning: false,
       note: ''
+    };
+    state.ranked = {
+      ...state.ranked,
+      ...(draft.ranked || {}),
+      transcript: Array.isArray(draft.ranked?.transcript)
+        ? draft.ranked.transcript
+        : []
     };
     state.matchStats = {
       ...createMatchStats(),
