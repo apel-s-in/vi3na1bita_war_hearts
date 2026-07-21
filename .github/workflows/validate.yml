@@ -49,7 +49,11 @@ jobs:
           grep -q "crypto.randomUUID" src/game/network-combat.js
           grep -q "serverStatus !== 'settled'" src/game/match-persistence.js
 
-          if grep -REn "createTranscript|TURN_STATE" src; then
-            echo "Legacy or dead transcript code found"
+          if grep -REn "createTranscript|TURN_STATE|RPS_CHOICE" src; then
+            echo "Legacy transcript or open P2P RPS found"
             exit 2
           fi
+
+          grep -q "playRankedRps" src/game/ranked-v2.js
+          grep -q "commitRankedRps" src/net/war-hearts-session.js
+          grep -q "revealRankedRps" src/net/war-hearts-session.js
