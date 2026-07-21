@@ -20,6 +20,7 @@ import {
   verifyBoardCommit
 } from './fair-play.js';
 import {
+  abortRankedMatch,
   prepareRankedMatch,
   recordRankedShot,
   resetRankedState,
@@ -665,6 +666,46 @@ export const createNetworkCombat = ({
     scheduleSaveMatchDraft();
   };
 
+  const abortRanked = async (
+    reason = 'disconnect'
+  ) => {
+    if (
+      state.network?.ranked !== true ||
+      !state.ranked?.matchId
+    ) {
+      return null;
+    }
+
+    try {
+      const ranked = await abortRankedMatch({
+        state,
+        session,
+        reason
+      });
+
+      setNetworkStatus(
+        ranked.serverStatus === 'forfeited'
+          ? 'Сервер зафиксировал техническое поражение.'
+          : 'Запрос завершения рейтингового матча отправлен.',
+        ranked.serverStatus === 'forfeited'
+          ? 'error'
+          : 'waiting'
+      );
+
+      scheduleSaveMatchDraft();
+      return ranked;
+    } catch (error) {
+      addSystemMessage(
+        `Не удалось зафиксировать выход: ${error.message}`
+      );
+      setNetworkStatus(
+        'Сервер не подтвердил завершение матча.',
+        'error'
+      );
+      return null;
+    }
+  };
+  
   const sendBoardReveal = () => {
     if (state.network.myRevealSent) return false;
 
@@ -1178,6 +1219,7 @@ ${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-l
     markReady,
     shoot,
     requestRematch,
+    abortRanked,
     sendBoardReveal,
     sendMatchFinished,
     handleGameData,
