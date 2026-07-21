@@ -18,6 +18,42 @@ const stableStringify = value =>
 const wait = ms =>
   new Promise(resolve => setTimeout(resolve, ms));
 
+const randomHex = (bytes = 24) => {
+  const data = crypto.getRandomValues(
+    new Uint8Array(bytes)
+  );
+
+  return [...data]
+    .map(value => value.toString(16).padStart(2, '0'))
+    .join('');
+};
+
+const applyRankedMatch = (state, match = {}) => {
+  const ranked = ensureRankedState(state);
+
+  ranked.serverStatus = String(
+    match.status ||
+    ranked.serverStatus ||
+    ''
+  );
+  ranked.settlement =
+    match.settlement ||
+    ranked.settlement ||
+    null;
+  ranked.rps =
+    match.rps && typeof match.rps === 'object'
+      ? { ...match.rps }
+      : ranked.rps || null;
+
+  if (ranked.rps?.firstPlayerId) {
+    ranked.firstPlayerId = String(
+      ranked.rps.firstPlayerId
+    );
+  }
+
+  return ranked;
+};
+
 const sha256Hex = async value => {
   const data = new TextEncoder().encode(String(value || ''));
   const digest = await crypto.subtle.digest('SHA-256', data);
@@ -53,6 +89,7 @@ export const resetRankedState = state => {
     playerId: '',
     peerPlayerId: '',
     firstPlayerId: '',
+    rps: null,
     transcript: [],
     submitStatus: '',
     serverStatus: '',
@@ -88,6 +125,108 @@ export const prepareRankedMatch = async ({
   ranked.error = '';
 
   state.matchStats.matchId = ranked.matchId;
+  return ranked;
+};
+
+export const playRankedRps = async ({
+  state,
+  session,
+  choice,
+  attempts = 40,
+  intervalMs = 650
+} = {}) => {
+  const ranked = ensureRankedState(state);
+  const selected = String(choice || '');
+
+  if (
+    !['rock', 'scissors', 'paper'].includes(selected)
+  ) {
+    throw new Error('ranked_rps_choice_invalid');
+  }
+
+  if (!ranked.matchId || !ranked.playerId) {
+    throw new Error('ranked_match_not_prepared');
+  }
+
+  let current = await refreshRankedMatchStatus({
+    state,
+    session
+  });
+
+  if (current.firstPlayerId) return current;
+
+  const round = Math.max(
+    1,
+    Number(current.rps?.round || 1)
+  );
+  const salt = randomHex(24);
+  const commit = await sha256Hex([
+    ranked.matchId,
+    round,
+    ranked.playerId,
+    selected,
+    salt
+  ].join(':'));
+
+  let response = await session.commitRankedRps({
+    matchId: ranked.matchId,
+    round,
+    commit
+  });
+
+  applyRankedMatch(state, response?.match || {});
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (
+      ranked.firstPlayerId ||
+      ranked.rps?.canReveal
+    ) break;
+
+    if (document.hidden) {
+      await wait(Math.max(intervalMs, 1800));
+      continue;
+    }
+
+    await wait(intervalMs);
+    await refreshRankedMatchStatus({
+      state,
+      session
+    });
+  }
+
+  if (ranked.firstPlayerId) return ranked;
+
+  if (!ranked.rps?.canReveal) {
+    throw new Error('ranked_rps_peer_commit_timeout');
+  }
+
+  response = await session.revealRankedRps({
+    matchId: ranked.matchId,
+    round,
+    choice: selected,
+    salt
+  });
+
+  applyRankedMatch(state, response?.match || {});
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (
+      ranked.firstPlayerId ||
+      ranked.rps?.roundStatus === 'draw'
+    ) break;
+
+    if (document.hidden) {
+      await wait(Math.max(intervalMs, 1800));
+      continue;
+    }
+
+    await wait(intervalMs);
+    await refreshRankedMatchStatus({
+      state,
+      session
+    });
+  }
+
   return ranked;
 };
 
@@ -166,8 +305,7 @@ export const refreshRankedMatchStatus = async ({
   );
 
   const match = response?.match || {};
-  ranked.serverStatus = String(match.status || '');
-  ranked.settlement = match.settlement || null;
+  applyRankedMatch(state, match);
 
   if (
     [
@@ -303,6 +441,7 @@ export default {
   resetRankedState,
   ensureRankedState,
   prepareRankedMatch,
+  playRankedRps,
   abortRankedMatch,
   recordRankedShot,
   setRankedFirstPlayer,
