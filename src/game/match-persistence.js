@@ -101,8 +101,19 @@ export const createMatchPersistence = ({
   const saveMatchStats = () => {
     if (!state.matchStats?.matchId) return;
 
-    const isCasualNetwork = state.opponent?.type === 'network' && state.network?.ranked !== true;
-    if (isCasualNetwork) return;
+    const isNetwork =
+      state.opponent?.type === 'network';
+
+    const isCasualNetwork =
+      isNetwork &&
+      state.network?.ranked !== true;
+
+    const isUnsettledRanked =
+      isNetwork &&
+      state.network?.ranked === true &&
+      state.ranked?.serverStatus !== 'settled';
+
+    if (isCasualNetwork || isUnsettledRanked) return;
 
     const item = makeHistoryItem();
     const history = readMatchHistory()
