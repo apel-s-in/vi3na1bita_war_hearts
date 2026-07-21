@@ -154,7 +154,8 @@ const markLaunchCancelled = () => {
 
 const stripLaunchParams = () => {
   const u = new URL(window.location.href);
-  ['inviteFriend', 'room', 'key', 'secret'].forEach(k => u.searchParams.delete(k));
+  ['inviteFriend', 'join', 'room', 'key', 'secret']
+    .forEach(key => u.searchParams.delete(key));
   window.history.replaceState(null, '', u.toString());
 };
 
@@ -1860,7 +1861,7 @@ render();
 sessionReady = session.init()
   .then(async () => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('room') && (params.get('key') || params.get('secret'))) {
+    if (params.get('join')) {
       setStatus('invite', false);
     }
 
