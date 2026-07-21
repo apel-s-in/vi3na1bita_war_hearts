@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 12:43:49 UTC
+Сгенерировано: 2026-07-21 12:44:19 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2184,8 +2184,17 @@ if (!root || !subtitle) return;
 
   // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активной стрельбы.
   const surrenderBtn = $('surrender-btn');
-  const canSurrender = (state.phase === 'player' || state.phase === 'computer') && state.screen === 'battle';
-  if (surrenderBtn) surrenderBtn.hidden = !canSurrender;
+  const canSurrender =
+    (
+      state.phase === 'player' ||
+      state.phase === 'computer'
+    ) &&
+    state.screen === 'battle' &&
+    state.network?.ranked !== true;
+
+  if (surrenderBtn) {
+    surrenderBtn.hidden = !canSurrender;
+  }
 
   // Во время боя активна только вкладка "Бой". Вне боя вкладка "Бой" заблокирована.
   document.querySelectorAll('.wh-tab').forEach(btn => {
