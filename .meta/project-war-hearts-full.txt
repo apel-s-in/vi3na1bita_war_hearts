@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 21:28:23 UTC
+Сгенерировано: 2026-07-21 21:30:02 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3237,6 +3237,11 @@ export const validateRevealLayout = reveal => {
 
 //=================================================
 // FILE: /src/game/match-persistence.js
+import {
+  isRankedEconomyFinal,
+  isRankedTerminal
+} from './ranked-v2.js';
+
 export const createMatchPersistence = ({
   state,
   gameId,
@@ -3347,20 +3352,17 @@ export const createMatchPersistence = ({
       isNetwork &&
       state.network?.ranked !== true;
 
-    const rankedTerminal = [
-      'settled',
-      'forfeited'
-    ].includes(state.ranked?.serverStatus);
-
-    const economyPaid = [
-      'paid',
-      'not_required'
-    ].includes(state.ranked?.economy?.status);
+    const rankedTerminal = isRankedTerminal(
+      state.ranked?.serverStatus
+    );
+    const economyFinal = isRankedEconomyFinal(
+      state.ranked?.economy?.status
+    );
 
     const isUnsettledRanked =
       isNetwork &&
       state.network?.ranked === true &&
-      (!rankedTerminal || !economyPaid);
+      (!rankedTerminal || !economyFinal);
 
     if (isCasualNetwork || isUnsettledRanked) return;
 
