@@ -1,5 +1,25 @@
 import { packBoardReveal } from './fair-play.js';
 
+export const RANKED_TERMINAL_STATUSES = new Set([
+  'settled',
+  'forfeited',
+  'disputed',
+  'aborted',
+  'refunded'
+]);
+
+export const RANKED_ECONOMY_FINAL_STATUSES = new Set([
+  'paid',
+  'refunded',
+  'not_required'
+]);
+
+export const isRankedTerminal = status =>
+  RANKED_TERMINAL_STATUSES.has(String(status || ''));
+
+export const isRankedEconomyFinal = status =>
+  RANKED_ECONOMY_FINAL_STATUSES.has(String(status || ''));
+
 const sortObject = value => {
   if (Array.isArray(value)) return value.map(sortObject);
   if (!value || typeof value !== 'object') return value;
@@ -290,13 +310,7 @@ export const abortRankedMatch = async ({
   if (
     state.network?.ranked !== true ||
     !ranked.matchId ||
-    [
-      'settled',
-      'forfeited',
-      'disputed',
-      'aborted',
-      'refunded'
-    ].includes(ranked.serverStatus)
+    isRankedTerminal(ranked.serverStatus)
   ) {
     return ranked;
   }
@@ -332,15 +346,7 @@ export const refreshRankedMatchStatus = async ({
   const match = response?.match || {};
   applyRankedMatch(state, match);
 
-  if (
-    [
-      'settled',
-      'forfeited',
-      'disputed',
-      'aborted',
-      'refunded'
-    ].includes(match.status)
-  ) {
+  if (isRankedTerminal(match.status)) {
     ranked.submitStatus = match.status;
   } else if (ranked.submitStatus !== 'submitting') {
     ranked.submitStatus = 'submitted';
@@ -358,19 +364,12 @@ export const waitForRankedSettlement = async ({
   const ranked = ensureRankedState(state);
 
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const terminal = [
-      'settled',
-      'forfeited',
-      'disputed',
-      'aborted',
-      'refunded'
-    ].includes(ranked.serverStatus);
-
-    const economyDone = [
-      'paid',
-      'refunded',
-      'not_required'
-    ].includes(ranked.economy?.status);
+    const terminal = isRankedTerminal(
+      ranked.serverStatus
+    );
+    const economyDone = isRankedEconomyFinal(
+      ranked.economy?.status
+    );
 
     if (terminal && economyDone) break;
 
@@ -467,6 +466,10 @@ export const submitRankedMatch = async ({
 };
 
 export default {
+  RANKED_TERMINAL_STATUSES,
+  RANKED_ECONOMY_FINAL_STATUSES,
+  isRankedTerminal,
+  isRankedEconomyFinal,
   resetRankedState,
   ensureRankedState,
   prepareRankedMatch,
