@@ -19,6 +19,13 @@ import {
   validateRevealLayout,
   verifyBoardCommit
 } from './fair-play.js';
+import {
+  prepareRankedMatch,
+  recordRankedShot,
+  resetRankedState,
+  setRankedFirstPlayer,
+  submitRankedMatch
+} from './ranked-v2.js';
 
 const RPS_CHOICES = [
   { id: 'rock', icon: '✊', label: 'Камень' },
@@ -138,6 +145,7 @@ export const createNetworkCombat = ({
     };
 
     state.networkTurn = createNetworkTurnState();
+    resetRankedState(state);
 
     state.myBoard.forEach(row => row.forEach(cell => {
       cell.status = '';
@@ -167,9 +175,28 @@ export const createNetworkCombat = ({
       return false;
     }
 
+    if (state.network.ranked === true) {
+      try {
+        await prepareRankedMatch({
+          state,
+          session
+        });
+      } catch (error) {
+        setNetworkStatus(
+          `Не удалось подготовить Ranked V2: ${error.message}`,
+          'error'
+        );
+        addSystemMessage(
+          'Сервер не выдал matchId. Рейтинговый бой не начат.'
+        );
+        return false;
+      }
+    }
+
     const myReveal = packBoardReveal(state.myBoard);
     const layoutCheck = validateRevealLayout(myReveal);
 
+    state.fairPlay.matchId = state.matchStats.matchId;
     state.fairPlay.myLayoutOk = layoutCheck.ok;
 
     if (!layoutCheck.ok) {
@@ -319,6 +346,15 @@ export const createNetworkCombat = ({
 
     state.networkRps.active = false;
 
+    if (state.network.ranked === true) {
+      setRankedFirstPlayer(
+        state,
+        result === 'mine'
+          ? state.ranked?.playerId
+          : state.ranked?.peerPlayerId
+      );
+    }
+
     if (result === 'mine') {
       state.phase = 'player';
       addSystemMessage('Розыгрыш завершён. Первый ход ваш.');
@@ -454,6 +490,22 @@ export const createNetworkCombat = ({
     registerShotStats('opponent', result);
     showBattleFx('mine', result);
 
+    if (state.network.ranked === true) {
+      recordRankedShot(state, {
+        shotId,
+        shooterId: state.ranked?.peerPlayerId,
+        x,
+        y,
+        result,
+        sunkCells: sunk
+          ? shipCells.map(point => ({
+            x: point.x,
+            y: point.y
+          }))
+          : []
+      });
+    }
+
     session.sendShotResult({
       matchId: state.matchStats.matchId,
       shotId: payload.shotId,
@@ -567,6 +619,19 @@ export const createNetworkCombat = ({
       shotId
     });
 
+    if (state.network.ranked === true) {
+      recordRankedShot(state, {
+        shotId,
+        shooterId: state.ranked?.playerId,
+        x,
+        y,
+        result,
+        sunkCells: Array.isArray(payload.sunkCells)
+          ? payload.sunkCells
+          : []
+      });
+    }
+
     registerShotStats('player', result);
     showBattleFx('enemy', result);
 
@@ -662,6 +727,49 @@ export const createNetworkCombat = ({
 
     state.fairPlay.revealed = true;
     state.network.awaitingReveal = false;
+
+    if (state.network.ranked === true) {
+      try {
+        const ranked = await submitRankedMatch({
+          state,
+          session
+        });
+
+        if (ranked?.serverStatus === 'settled') {
+          addSystemMessage(
+            `Ranked V2 подтверждён сервером. Изменение рейтинга: ${ranked.settlement?.winnerDelta || 0}.`
+          );
+          setNetworkStatus(
+            'Результат подтверждён сервером и записан в рейтинг.',
+            'ready'
+          );
+        } else if (ranked?.serverStatus === 'disputed') {
+          addSystemMessage(
+            'Ranked V2 отклонён сервером: transcript или board validation не пройдены.'
+          );
+          setNetworkStatus(
+            'Сервер отклонил рейтинговый результат.',
+            'error'
+          );
+        } else {
+          addSystemMessage(
+            'Ваш результат отправлен. Ожидаем submit соперника.'
+          );
+          setNetworkStatus(
+            'Результат отправлен. Ожидаем соперника.',
+            'waiting'
+          );
+        }
+      } catch (error) {
+        addSystemMessage(
+          `Не удалось отправить Ranked V2: ${error.message}`
+        );
+        setNetworkStatus(
+          'Ошибка отправки рейтингового результата.',
+          'error'
+        );
+      }
+    }
 
     render();
     saveMatchDraftNow();
