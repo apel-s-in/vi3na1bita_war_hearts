@@ -1664,10 +1664,17 @@ const bind = () => {
     document.body.appendChild(overlay);
 
     overlay.querySelector('#wh-surrender-cancel').onclick = () => overlay.remove();
-    overlay.querySelector('#wh-surrender-confirm').onclick = () => {
+    overlay.querySelector('#wh-surrender-confirm').onclick = async () => {
       overlay.remove();
-      // Выставляем поражение, но оставляем поле, чат и голосовую кнопку на экране боя.
-      finishMatch('loss', 'Игрок сдался. Матч завершён.');
+
+      if (state.network?.ranked === true) {
+        await networkCombat?.abortRanked?.('surrender');
+      }
+
+      finishMatch(
+        'loss',
+        'Игрок сдался. Матч завершён.'
+      );
     };
   });
 
