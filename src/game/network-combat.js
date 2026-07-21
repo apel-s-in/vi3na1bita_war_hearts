@@ -104,6 +104,7 @@ export const createNetworkCombat = ({
   };
 
   const resetNetworkRound = () => {
+    shotSeq = 0;
     state.network.myReady = false;
     state.network.peerReady = false;
     state.network.myCommitSent = false;
@@ -386,7 +387,22 @@ export const createNetworkCombat = ({
       return true;
     }
 
-    const shotId = `${state.matchStats.matchId}_${++shotSeq}`;
+    const shooterId = String(
+      state.ranked?.playerId ||
+      state.player?.id ||
+      'player'
+    ).replace(/[^A-Za-z0-9._:-]/g, '');
+
+    const randomPart = crypto.randomUUID()
+      .replace(/-/g, '')
+      .slice(0, 12);
+
+    const shotId = [
+      state.matchStats.matchId,
+      shooterId,
+      ++shotSeq,
+      randomPart
+    ].join('_');
 
     state.selectedTarget = { x, y };
     state.network.awaitingShotResult = true;
