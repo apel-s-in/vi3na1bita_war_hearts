@@ -1552,8 +1552,17 @@ if (!root || !subtitle) return;
 
   // Показываем белый флаг ТОЛЬКО на вкладке "Бой" и ТОЛЬКО во время активной стрельбы.
   const surrenderBtn = $('surrender-btn');
-  const canSurrender = (state.phase === 'player' || state.phase === 'computer') && state.screen === 'battle';
-  if (surrenderBtn) surrenderBtn.hidden = !canSurrender;
+  const canSurrender =
+    (
+      state.phase === 'player' ||
+      state.phase === 'computer'
+    ) &&
+    state.screen === 'battle' &&
+    state.network?.ranked !== true;
+
+  if (surrenderBtn) {
+    surrenderBtn.hidden = !canSurrender;
+  }
 
   // Во время боя активна только вкладка "Бой". Вне боя вкладка "Бой" заблокирована.
   document.querySelectorAll('.wh-tab').forEach(btn => {
