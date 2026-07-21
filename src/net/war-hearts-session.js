@@ -355,6 +355,20 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
     return this.bridge.getRankedMatchStatus(matchId);
   }
 
+  async abortRankedMatch({
+    matchId,
+    reason = 'disconnect'
+  } = {}) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.abortRankedMatch({
+      matchId,
+      reason
+    });
+  }
+
   async sendGameInvite({
     toFriendId,
     roomId,
