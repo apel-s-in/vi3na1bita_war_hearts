@@ -333,6 +333,40 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
     return result;
   }
 
+  async commitRankedRps({
+    matchId,
+    round,
+    commit
+  } = {}) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.commitRankedRps({
+      matchId,
+      round,
+      commit
+    });
+  }
+
+  async revealRankedRps({
+    matchId,
+    round,
+    choice,
+    salt
+  } = {}) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.revealRankedRps({
+      matchId,
+      round,
+      choice,
+      salt
+    });
+  }
+
   async submitRankedMatch({
     matchId,
     submission
