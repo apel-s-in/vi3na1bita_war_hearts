@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 11:23:18 UTC
+Сгенерировано: 2026-07-21 11:24:29 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2690,6 +2690,16 @@ jobs:
 
           grep -q "GC_SAVE_DATA" src/game/match-persistence.js
           grep -q "GC_SAVE_DATA" src/screens/field.js
+
+          grep -q "ranked_match_prepare" ../vi3na1bita-games/common/network-bridge.js 2>/dev/null || true
+          grep -q "prepareRankedMatch" src/game/ranked-v2.js
+          grep -q "transcriptHash" src/game/ranked-v2.js
+          grep -q "recordRankedShot" src/game/network-combat.js
+
+          if grep -REn "createTranscript|TURN_STATE" src; then
+            echo "Legacy or dead transcript code found"
+            exit 2
+          fi
 
 //=================================================
 // FILE: /src/game/achievements.js
