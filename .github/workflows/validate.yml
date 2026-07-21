@@ -39,3 +39,13 @@ jobs:
 
           grep -q "GC_SAVE_DATA" src/game/match-persistence.js
           grep -q "GC_SAVE_DATA" src/screens/field.js
+
+          grep -q "ranked_match_prepare" ../vi3na1bita-games/common/network-bridge.js 2>/dev/null || true
+          grep -q "prepareRankedMatch" src/game/ranked-v2.js
+          grep -q "transcriptHash" src/game/ranked-v2.js
+          grep -q "recordRankedShot" src/game/network-combat.js
+
+          if grep -REn "createTranscript|TURN_STATE" src; then
+            echo "Legacy or dead transcript code found"
+            exit 2
+          fi
