@@ -1,3 +1,8 @@
+import {
+  isRankedEconomyFinal,
+  isRankedTerminal
+} from './ranked-v2.js';
+
 export const createMatchPersistence = ({
   state,
   gameId,
@@ -108,20 +113,17 @@ export const createMatchPersistence = ({
       isNetwork &&
       state.network?.ranked !== true;
 
-    const rankedTerminal = [
-      'settled',
-      'forfeited'
-    ].includes(state.ranked?.serverStatus);
-
-    const economyPaid = [
-      'paid',
-      'not_required'
-    ].includes(state.ranked?.economy?.status);
+    const rankedTerminal = isRankedTerminal(
+      state.ranked?.serverStatus
+    );
+    const economyFinal = isRankedEconomyFinal(
+      state.ranked?.economy?.status
+    );
 
     const isUnsettledRanked =
       isNetwork &&
       state.network?.ranked === true &&
-      (!rankedTerminal || !economyPaid);
+      (!rankedTerminal || !economyFinal);
 
     if (isCasualNetwork || isUnsettledRanked) return;
 
