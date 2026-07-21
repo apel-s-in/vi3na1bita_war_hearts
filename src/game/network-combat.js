@@ -416,7 +416,11 @@ export const createNetworkCombat = ({
               return;
             }
 
-            if (ranked.rps?.roundStatus === 'draw') {
+            if (
+              ranked.rps?.roundStatus === 'draw' ||
+              Number(ranked.rps?.round || 1) >
+                Number(state.networkRps?.round || 1)
+            ) {
               if (text) {
                 text.textContent =
                   'Ничья. Сервер открыл следующий раунд.';
