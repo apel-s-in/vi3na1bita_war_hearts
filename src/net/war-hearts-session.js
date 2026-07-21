@@ -316,6 +316,45 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
     return this.bridge.getProfile(friendId);
   }
 
+  async prepareRankedMatch() {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    const result = await this.bridge.prepareRankedMatch();
+
+    this.ranked = {
+      matchId: result?.match?.matchId || '',
+      playerId: result?.playerId || '',
+      peerPlayerId: result?.peerPlayerId || '',
+      status: result?.match?.status || ''
+    };
+
+    return result;
+  }
+
+  async submitRankedMatch({
+    matchId,
+    submission
+  } = {}) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.submitRankedMatch({
+      matchId,
+      submission
+    });
+  }
+
+  async getRankedMatchStatus(matchId) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+
+    return this.bridge.getRankedMatchStatus(matchId);
+  }
+
   async sendGameInvite({
     toFriendId,
     roomId,
