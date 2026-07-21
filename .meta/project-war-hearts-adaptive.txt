@@ -89,7 +89,6 @@ vi3na1bita_war_hearts/
 │   │   ├── shot-verifier.js
 │   │   ├── state.js
 │   │   ├── targeting.js
-│   │   ├── transcript.js
 │   │   └── turn-guard.js
 │   ├── net/
 │   │   └── war-hearts-session.js
@@ -113,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-21 11:21:22 UTC
+Сгенерировано: 2026-07-21 11:21:38 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5532,29 +5531,6 @@ export const pickSmartTarget = board => {
 };
 
 export const pickRandomTarget = board => pickSmartTarget(board);
-
-//=================================================
-// FILE: /src/game/transcript.js
-export const createTranscript = () => {
-  const events = [];
-
-  return {
-    add(event) {
-      events.push({
-        seq: events.length + 1,
-        ...event
-      });
-    },
-
-    list() {
-      return events.slice();
-    },
-
-    latestSeq() {
-      return events.length;
-    }
-  };
-};
 
 //=================================================
 // FILE: /src/game/turn-guard.js
