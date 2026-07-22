@@ -910,7 +910,7 @@ async openFriends() {
 
   try {
     const module = await import(
-      '/Games/common/friends-embed.js?v=9.0.0'
+      '/Games/common/friends-embed.js?v=9.0.1'
     );
 
     overlay._friendsEmbed =
@@ -922,7 +922,7 @@ async openFriends() {
           state.snapshot?.friend ||
           state.friendIdentity ||
           {},
-        build: '9.0.0',
+        build: '9.0.1',
         onGameInvite: async ({
           friendId,
           gameId
