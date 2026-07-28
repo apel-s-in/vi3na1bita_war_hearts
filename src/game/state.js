@@ -85,6 +85,8 @@ updatedAt: 0
   networkTurn: {
     ok: true,
     expectedShotId: '',
+    expectedShotX: -1,
+    expectedShotY: -1,
     sentShotIds: [],
     receivedShotIds: [],
     resolvedShotIds: [],
