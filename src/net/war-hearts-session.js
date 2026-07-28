@@ -77,16 +77,30 @@ export class WarHeartsSession {
       await this.bridge.init();
 
       const joined = await this.bridge.connectFromUrl();
-      this.onStatus({ label: joined ? 'joining' : 'ready', online: false });
+      this.lastError = '';
+      this.onStatus({
+        label: joined ? 'joining' : 'ready',
+        online: false
+      });
+
+      return true;
     } catch (err) {
-      if (this.bridge) this.bridge.close().catch(() => {});
+      try {
+        await this.bridge?.close?.();
+      } catch {}
+
       this.bridge = null;
-      this.lastError = err?.message || String(err || 'network_bridge_init_failed');
+      this.ready = false;
+      this.lastError = err?.message ||
+        String(err || 'network_bridge_init_failed');
+
       this.onStatus({
         label: 'mock',
         online: false,
         error: this.lastError
       });
+
+      return false;
     }
   }
 
@@ -106,9 +120,19 @@ async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
   let registered = null;
   let code = '';
 
-  for (let i = 0; i < 3 && !registered; i++) {
-    code = this.bridge.generateLanCode?.() || String(Math.floor(100000 + Math.random() * 900000));
-    registered = await this.bridge.registerLanCode?.(code, room.roomId, room.roomSecret, ranked).catch(() => null);
+  for (let i = 0; i < 3 && !registered?.ok; i++) {
+    code = this.bridge.generateLanCode?.() ||
+      String(Math.floor(100000 + Math.random() * 900000));
+
+    registered = await this.bridge
+      .registerLanCode?.(
+        code,
+        room.roomId,
+        room.roomSecret,
+        ranked,
+        forceLocalOnly
+      )
+      .catch(() => null);
   }
 
   if (!registered?.ok) throw new Error('lan_code_register_failed');
