@@ -131,11 +131,17 @@ export class WarHeartsSession {
     await this.bridge.connectAsGuest({ roomId: res.roomId, roomSecret: res.roomSecret });
     return res;
   }
-  async createInvite() {
+  async createInvite({
+    createJoinToken = true
+  } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-    const room = await this.bridge.connectAsHost({ ranked: true, forceLocalOnly: false });
+    const room = await this.bridge.connectAsHost({
+      ranked: true,
+      forceLocalOnly: false,
+      createJoinToken
+    });
     if (room.ranked !== true) {
       throw new Error('ranked_room_required');
     }
