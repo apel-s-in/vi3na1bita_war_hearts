@@ -329,7 +329,16 @@ export class WarHeartsSession {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-    return this.bridge.submitRankedMatch({ matchId, submission });
+    return this.bridge.submitRankedMatch({
+      matchId,
+      submission
+    });
+  }
+  async getRankedMatchStatus(matchId) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+    return this.bridge.getRankedMatchStatus(matchId);
   }
   async getRankedStats() {
     if (!this.bridge) {
