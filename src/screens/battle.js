@@ -177,8 +177,8 @@ const renderStats = state => {
       <div><span>Твои выстрелы</span><b>${Number(s.playerShots || 0)}</b></div>
       <div><span>Попадания</span><b>${Number(s.playerHits || 0)}</b></div>
       <div><span>Промахи</span><b>${Number(s.playerMisses || 0)}</b></div>
-      <div><span>Твой лучший страйк</span><b>${Number(s.playerBestHitStreak || 0)}</b></div>
-      <div><span>Текущий страйк</span><b>${Number(s.playerHitStreak || 0)}</b></div>
+      <div><span>Серия попаданий</span><b>${Number(s.playerBestHitStreak || 0)}</b></div>
+      <div><span>Серия убитых кораблей</span><b>${Number(s.playerBestSunkStreak || 0)}</b></div>
       <div><span>Выстрелы соперника</span><b>${Number(s.opponentShots || 0)}</b></div>
       <div><span>Попадания соперника</span><b>${Number(s.opponentHits || 0)}</b></div>
       <div><span>Промахи соперника</span><b>${Number(s.opponentMisses || 0)}</b></div>
