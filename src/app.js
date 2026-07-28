@@ -1281,12 +1281,31 @@ const bind = () => {
     }
   };
   session.onConnect = peer => {
-    state.opponent = { id: peer?.id || 'network-peer', name: peer?.name || 'Соперник', title: session.room?.localOnly ? (session.room?.ranked ? 'LAN-only · рейтинг' : 'LAN-only · гость') : 'Сетевая дуэль', type: 'network' };
+    const ranked = !!(
+      session.room?.ranked ??
+      session.bridge?.ranked
+    );
+    const localOnly = !!(
+      session.room?.localOnly ??
+      session.bridge?.forceLocalOnly
+    );
+
+    state.opponent = {
+      id: peer?.id || 'network-peer',
+      name: peer?.name || 'Соперник',
+      title: localOnly
+        ? ranked
+          ? 'LAN · рейтинг'
+          : 'LAN · гость'
+        : 'Сетевая дуэль',
+      type: 'network'
+    };
+
     state.network.active = true;
     state.network.connected = true;
     state.network.peerName = state.opponent.name;
-    state.network.ranked = !!session.room?.ranked;
-    state.network.localOnly = !!session.room?.localOnly;
+    state.network.ranked = ranked;
+    state.network.localOnly = localOnly;
     state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
     networkCombat?.onConnected(state.opponent.name);
     networkWatchdog?.touchPeer();
