@@ -1131,10 +1131,7 @@ const joinLanByCode = async code => {
 const connectLanRoom = async code => {
   toast('Подключаемся к рейтинговой комнате...');
 
-  const res = await session.joinLanRoom(code, {
-    forceLocalOnly: false,
-    rankedOverride: true
-  });
+  const res = await session.joinLanRoom(code);
 
   if (res.ranked !== true) {
     throw new Error('ranked_room_required');
@@ -1146,7 +1143,7 @@ const connectLanRoom = async code => {
     roomSecret: res.roomSecret,
     code: res.code || code,
     isLan: true,
-    localOnly: false,
+    localOnly: true,
     ranked: true,
     matchMode: 'ranked',
     expiresAt: res.expiresAt || Date.now() + 300000
