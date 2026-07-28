@@ -9,32 +9,11 @@ const RPS_CHOICES = [
   { id: 'paper', icon: '✋', label: 'Бумага' }
 ];
 const getChoiceLabel = id => RPS_CHOICES.find(item => item.id === id)?.label || id;
-const escapeHtml = value =>
-  String(value || '').replace(
-    /[&<>"']/g,
-    char => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    })[char]
-  );
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
 const clearModal = selector => {
   document.querySelectorAll(selector).forEach(el => el.remove());
 };
-const MATCH_SCOPED_TYPES = new Set([
-  MessageType.READY,
-  MessageType.BOARD_COMMIT,
-  MessageType.BOARD_REVEAL,
-  MessageType.SHOT,
-  MessageType.SHOT_RESULT,
-  MessageType.MATCH_FINISHED,
-  MessageType.MATCH_ABORTED,
-  MessageType.MATCH_MODE,
-  MessageType.PING,
-  MessageType.PONG
-]);
+const MATCH_SCOPED_TYPES = new Set([MessageType.READY, MessageType.BOARD_COMMIT, MessageType.BOARD_REVEAL, MessageType.SHOT, MessageType.SHOT_RESULT, MessageType.MATCH_FINISHED, MessageType.MATCH_ABORTED, MessageType.MATCH_MODE, MessageType.PING, MessageType.PONG]);
 export const createNetworkCombat = ({
   state,
   session,
@@ -122,42 +101,16 @@ export const createNetworkCombat = ({
   };
   const scheduleReadyRetry = () => {
     clearTimeout(readyRetryTimer);
-
-    if (
-      !state.network.connected ||
-      !state.network.myReady ||
-      (
-        state.network.peerReady &&
-        state.network.peerCommitReceived
-      )
-    ) {
+    if (!state.network.connected || !state.network.myReady || (state.network.peerReady && state.network.peerCommitReceived)) {
       readyRetryTimer = 0;
       return;
     }
-
     readyRetryTimer = setTimeout(() => {
-      if (
-        state.network.connected &&
-        state.network.myReady &&
-        state.phase === 'setup'
-      ) {
-        session.sendBoardCommit({
-          matchId: state.matchStats.matchId,
-          commitHash: state.fairPlay.myCommitHash,
-          algorithm: 'sha256'
-        });
-
-        session.sendReady({
-          matchId: state.matchStats.matchId,
-          ready: true
-        });
-
-        setNetworkStatus(
-          'Повторяем подтверждение готовности. Ожидаем соперника...',
-          'waiting'
-        );
+      if (state.network.connected && state.network.myReady && state.phase === 'setup') {
+        session.sendBoardCommit({ matchId: state.matchStats.matchId, commitHash: state.fairPlay.myCommitHash, algorithm: 'sha256' });
+        session.sendReady({ matchId: state.matchStats.matchId, ready: true });
+        setNetworkStatus('Повторяем подтверждение готовности. Ожидаем соперника...', 'waiting');
       }
-
       scheduleReadyRetry();
     }, 4000);
   };
@@ -407,13 +360,7 @@ export const createNetworkCombat = ({
     const y = Number(payload.y);
     const result = payload.result || 'miss';
     const shotId = String(payload.shotId || '');
-    const guard = verifyIncomingShotResult({
-      state,
-      shotId,
-      x,
-      y,
-      result
-    });
+    const guard = verifyIncomingShotResult({ state, shotId, x, y, result });
     if (!guard.ok) {
       setNetworkStatus(`SHOT_RESULT отклонён: ${guard.reason}.`, 'error');
       addSystemMessage(`Turn guard: SHOT_RESULT отклонён (${guard.reason}).`);
@@ -584,15 +531,7 @@ export const createNetworkCombat = ({
       toast?.('Уже ждём ответ на реванш');
       return true;
     }
-    const sent = session.sendGame(
-      MessageType.REMATCH_REQUEST,
-      {
-        matchId: state.matchStats.matchId,
-        ranked: true,
-        matchMode: 'ranked',
-        at: Date.now()
-      }
-    );
+    const sent = session.sendGame(MessageType.REMATCH_REQUEST, { matchId: state.matchStats.matchId, ranked: true, matchMode: 'ranked', at: Date.now() });
     if (!sent) {
       setNetworkStatus('Не удалось отправить предложение реванша. Проверьте соединение.', 'error');
       toast?.('Реванш не отправлен');
@@ -601,26 +540,19 @@ export const createNetworkCombat = ({
     state.network.rematchPending = true;
     state.network.ranked = true;
     state.network.matchMode = 'ranked';
-    setNetworkStatus(
-      'Предложение рейтингового реванша отправлено. Ждём ответ соперника...',
-      'waiting'
-    );
-    addSystemMessage(
-      'Вы предложили сопернику рейтинговый реванш.'
-    );
+    setNetworkStatus('Предложение рейтингового реванша отправлено. Ждём ответ соперника...', 'waiting');
+    addSystemMessage('Вы предложили сопернику рейтинговый реванш.');
     toast?.('Предложение реванша отправлено');
     scheduleSaveMatchDraft();
     return true;
   };
   const requestRematch = () => {
     if (state.opponent?.type !== 'network') return false;
-
     if (!state.snapshot?.user?.yandexLinked) {
       requestHostAuth?.('ranked_rematch');
       toast?.('Для рейтингового реванша войдите через Яндекс');
       return false;
     }
-
     state.network.ranked = true;
     state.network.matchMode = 'ranked';
     return sendRematchRequest();
@@ -634,13 +566,9 @@ export const createNetworkCombat = ({
   };
   const openRematchModal = () => {
     clearModal('.wh-rematch-offer-overlay');
-
-    const isAuthed =
-      !!state.snapshot?.user?.yandexLinked;
+    const isAuthed = !!state.snapshot?.user?.yandexLinked;
     const overlay = document.createElement('div');
-
-    overlay.className =
-      'wh-modal-overlay wh-rematch-offer-overlay';
+    overlay.className = 'wh-modal-overlay wh-rematch-offer-overlay';
     overlay.innerHTML = `
       <div class="wh-modal-box">
         <h3 class="wh-modal-title">
@@ -650,9 +578,7 @@ export const createNetworkCombat = ({
           🏆 РЕЙТИНГ · 100 ♦
         </div>
         <p class="wh-modal-text">
-          ${escapeHtml(
-            state.rematchOffer.from || 'Соперник'
-          )}
+          ${escapeHtml(state.rematchOffer.from || 'Соперник')}
           предлагает новый рейтинговый бой.
           После принятия оба игрока заново
           расставят корабли и внесут ставку 100 ♦.
@@ -667,113 +593,45 @@ export const createNetworkCombat = ({
         </div>
       </div>
     `;
-
     document.body.appendChild(overlay);
-
-    overlay
-      .querySelector('#wh-rematch-reject')
-      ?.addEventListener('click', () => {
-        overlay.remove();
-        session.sendGame(
-          MessageType.REMATCH_REJECT,
-          {
-            matchId:
-              state.rematchOffer.matchId,
-            at: Date.now()
-          }
-        );
-        state.rematchOffer.active = false;
-        state.network.rematchPending = false;
-        setNetworkStatus(
-          'Вы отклонили реванш.',
-          'ready'
-        );
-        addSystemMessage('Реванш отклонён.');
-        scheduleSaveMatchDraft();
-      });
-
-    overlay
-      .querySelector('#wh-rematch-accept')
-      ?.addEventListener('click', () => {
-        if (
-          !state.snapshot?.user?.yandexLinked
-        ) {
-          requestHostAuth?.(
-            'ranked_rematch_accept'
-          );
-          toast?.(
-            'Войдите через Яндекс и нажмите «Принять» ещё раз'
-          );
-          return;
-        }
-
-        overlay.remove();
-
-        session.sendGame(
-          MessageType.REMATCH_ACCEPT,
-          {
-            matchId:
-              state.rematchOffer.matchId,
-            ranked: true,
-            at: Date.now()
-          }
-        );
-
-        session.sendGame(
-          MessageType.MATCH_MODE,
-          {
-            matchId:
-              state.rematchOffer.matchId,
-            ranked: true,
-            matchMode: 'ranked',
-            at: Date.now()
-          }
-        );
-
-        state.rematchOffer.active = false;
-        state.network.rematchPending = false;
-        state.network.ranked = true;
-        state.network.matchMode = 'ranked';
-
-        addSystemMessage(
-          'Рейтинговый реванш принят. Переходим к новой расстановке.'
-        );
-
-        startNetworkPreparation({
-          initiator: false
-        });
-      });
+    overlay.querySelector('#wh-rematch-reject')?.addEventListener('click', () => {
+      overlay.remove();
+      session.sendGame(MessageType.REMATCH_REJECT, { matchId: state.rematchOffer.matchId, at: Date.now() });
+      state.rematchOffer.active = false;
+      state.network.rematchPending = false;
+      setNetworkStatus('Вы отклонили реванш.', 'ready');
+      addSystemMessage('Реванш отклонён.');
+      scheduleSaveMatchDraft();
+    });
+    overlay.querySelector('#wh-rematch-accept')?.addEventListener('click', () => {
+      if (!state.snapshot?.user?.yandexLinked) {
+        requestHostAuth?.('ranked_rematch_accept');
+        toast?.('Войдите через Яндекс и нажмите «Принять» ещё раз');
+        return;
+      }
+      overlay.remove();
+      session.sendGame(MessageType.REMATCH_ACCEPT, { matchId: state.rematchOffer.matchId, ranked: true, at: Date.now() });
+      session.sendGame(MessageType.MATCH_MODE, { matchId: state.rematchOffer.matchId, ranked: true, matchMode: 'ranked', at: Date.now() });
+      state.rematchOffer.active = false;
+      state.network.rematchPending = false;
+      state.network.ranked = true;
+      state.network.matchMode = 'ranked';
+      addSystemMessage('Рейтинговый реванш принят. Переходим к новой расстановке.');
+      startNetworkPreparation({ initiator: false });
+    });
   };
   const receiveRematchAccept = msg => {
     if (msg?.payload?.ranked !== true) {
-      recordTurnViolation(
-        state,
-        'casual_rematch_forbidden',
-        {
-          ranked: msg?.payload?.ranked
-        }
-      );
-      setNetworkStatus(
-        'Нерейтинговый реванш отклонён.',
-        'error'
-      );
+      recordTurnViolation(state, 'casual_rematch_forbidden', { ranked: msg?.payload?.ranked });
+      setNetworkStatus('Нерейтинговый реванш отклонён.', 'error');
       return;
     }
-
     state.network.rematchPending = false;
     state.network.ranked = true;
     state.network.matchMode = 'ranked';
-
-    addSystemMessage(
-      'Соперник принял рейтинговый реванш. Переходим к новой расстановке.'
-    );
-    setNetworkStatus(
-      'Рейтинговый реванш принят. Расставьте корабли.',
-      'setup'
-    );
-    startNetworkPreparation({
-      initiator: true
-    });
+    addSystemMessage('Соперник принял рейтинговый реванш. Переходим к новой расстановке.');
+    setNetworkStatus('Рейтинговый реванш принят. Расставьте корабли.', 'setup');
+    startNetworkPreparation({ initiator: true });
   };
   const receiveRematchReject = () => {
     state.network.rematchPending = false;
@@ -784,107 +642,46 @@ export const createNetworkCombat = ({
   };
   const handleGameData = msg => {
     if (!msg?.type) return;
-
     if (MATCH_SCOPED_TYPES.has(msg.type)) {
-      const expectedMatchId = String(
-        state.matchStats?.matchId || ''
-      );
-      const actualMatchId = String(
-        msg.payload?.matchId || ''
-      );
-
-      if (
-        !expectedMatchId ||
-        !actualMatchId ||
-        actualMatchId !== expectedMatchId
-      ) {
-        recordTurnViolation(
-          state,
-          'network_match_id_mismatch',
-          {
-            type: msg.type,
-            expectedMatchId,
-            actualMatchId
-          }
-        );
-        addSystemMessage(
-          `Отклонено сетевое событие ${msg.type}: другой matchId.`
-        );
-        setNetworkStatus(
-          'Получено устаревшее событие другого матча.',
-          'error'
-        );
+      const expectedMatchId = String(state.matchStats?.matchId || '');
+      const actualMatchId = String(msg.payload?.matchId || '');
+      if (!expectedMatchId || !actualMatchId || actualMatchId !== expectedMatchId) {
+        recordTurnViolation(state, 'network_match_id_mismatch', { type: msg.type, expectedMatchId, actualMatchId });
+        addSystemMessage(`Отклонено сетевое событие ${msg.type}: другой matchId.`);
+        setNetworkStatus('Получено устаревшее событие другого матча.', 'error');
         scheduleSaveMatchDraft();
         return;
       }
     }
-
     if (!state.network.connected) {
       state.network.connected = true;
     }
     ensureNetworkOpponent();
     switch (msg.type) {
       case MessageType.BOARD_COMMIT: {
-        const commitHash = String(
-          msg.payload?.commitHash || ''
-        ).toLowerCase();
-
-        if (
-          msg.payload?.algorithm !== 'sha256' ||
-          !/^[a-f0-9]{64}$/.test(commitHash)
-        ) {
-          recordTurnViolation(
-            state,
-            'board_commit_invalid',
-            {
-              algorithm:
-                msg.payload?.algorithm || '',
-              commitHash
-            }
-          );
-          setNetworkStatus(
-            'Некорректный commit доски соперника.',
-            'error'
-          );
+        const commitHash = String(msg.payload?.commitHash || '').toLowerCase();
+        if (msg.payload?.algorithm !== 'sha256' || !/^[a-f0-9]{64}$/.test(commitHash)) {
+          recordTurnViolation(state, 'board_commit_invalid', { algorithm: msg.payload?.algorithm || '', commitHash });
+          setNetworkStatus('Некорректный commit доски соперника.', 'error');
           break;
         }
-
-        state.fairPlay.enemyCommitHash =
-          commitHash;
+        state.fairPlay.enemyCommitHash = commitHash;
         state.network.peerCommitReceived = true;
-        addSystemMessage(
-          'Получен commit доски соперника.'
-        );
-        setNetworkStatus(
-          'Commit соперника получен. Ожидаем готовность...',
-          'waiting'
-        );
+        addSystemMessage('Получен commit доски соперника.');
+        setNetworkStatus('Commit соперника получен. Ожидаем готовность...', 'waiting');
         maybeStartRps();
         scheduleSaveMatchDraft();
         break;
       }
       case MessageType.READY:
         if (msg.payload?.ready !== true) {
-          recordTurnViolation(
-            state,
-            'peer_ready_value_invalid',
-            {
-              ready: msg.payload?.ready
-            }
-          );
-          setNetworkStatus(
-            'Некорректное подтверждение готовности.',
-            'error'
-          );
+          recordTurnViolation(state, 'peer_ready_value_invalid', { ready: msg.payload?.ready });
+          setNetworkStatus('Некорректное подтверждение готовности.', 'error');
           break;
         }
-
         state.network.peerReady = true;
         addSystemMessage('Соперник готов к бою.');
-        setNetworkStatus(
-          'Соперник готов. Синхронизация боя...',
-          'waiting'
-        );
+        setNetworkStatus('Соперник готов. Синхронизация боя...', 'waiting');
         maybeStartRps();
         scheduleSaveMatchDraft();
         break;
@@ -925,10 +722,7 @@ export const createNetworkCombat = ({
         break;
       case MessageType.MATCH_MODE:
         if (msg.payload?.ranked !== true || msg.payload?.matchMode !== 'ranked') {
-          recordTurnViolation(state, 'casual_network_mode_forbidden', {
-            ranked: msg.payload?.ranked,
-            matchMode: msg.payload?.matchMode
-          });
+          recordTurnViolation(state, 'casual_network_mode_forbidden', { ranked: msg.payload?.ranked, matchMode: msg.payload?.matchMode });
           addSystemMessage('Отклонена попытка переключить сетевой бой в нерейтинговый режим.');
           setNetworkStatus('Сетевой бой может быть только рейтинговым.', 'error');
           break;
