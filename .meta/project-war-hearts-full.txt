@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 09:56:07 UTC
+Сгенерировано: 2026-07-28 10:05:16 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5463,7 +5463,6 @@ export const recordIncomingShotResult = ({ state, shotId }) => {
 //=================================================
 // FILE: /src/net/war-hearts-session.js
 import { createMessage, MessageType } from '../game/protocol.js';
-
 export class WarHeartsSession {
   constructor({ gameId, player }) {
     this.gameId = gameId;
@@ -5480,26 +5479,14 @@ export class WarHeartsSession {
     this.onIceDiagnostics = () => {};
     this.lastError = '';
   }
-
   async init() {
     this.onStatus({ label: 'bridge...', online: false });
-
     try {
-      const url = new URL(
-        '/Games/common/network-bridge.js',
-        window.location.href
-      );
+      const url = new URL('/Games/common/network-bridge.js', window.location.href);
       url.searchParams.set('rev', '20260728-network-2');
-
       const mod = await import(url.href);
       const NetworkBridge = mod.NetworkBridge;
-
-      this.bridge = new NetworkBridge({
-        gameId: this.gameId,
-        playerId: this.player.id,
-        displayName: this.player.name
-      });
-
+      this.bridge = new NetworkBridge({ gameId: this.gameId, playerId: this.player.id, displayName: this.player.name });
       this.bridge.onStatus = info => {
         if (info?.ice) this.onIceDiagnostics(info.ice);
         this.onStatus(info);
@@ -5525,224 +5512,107 @@ export class WarHeartsSession {
           this.onStatus({ label: 'signal retry', online: false, transient: true });
           return;
         }
-
         this.ready = false;
         this.onStatus({ label: 'net err', online: false });
         this.onDisconnect({ reason: 'network_error' });
       };
-
       this.bridge.onDisconnect = info => {
         this.ready = false;
         this.onStatus({ label: 'offline', online: false });
         this.onDisconnect(info || { reason: 'disconnect' });
       };
-
       this.bridge.onClose = info => {
         this.ready = false;
         this.onStatus({ label: 'closed', online: false });
         this.onDisconnect(info || { reason: 'closed' });
       };
-
       await this.bridge.init();
-
       const joined = await this.bridge.connectFromUrl();
       this.lastError = '';
-      this.onStatus({
-        label: joined ? 'joining' : 'ready',
-        online: false
-      });
-
+      this.onStatus({ label: joined ? 'joining' : 'ready', online: false });
       return true;
     } catch (err) {
       try {
         await this.bridge?.close?.();
       } catch {}
-
       this.bridge = null;
       this.ready = false;
-      this.lastError = err?.message ||
-        String(err || 'network_bridge_init_failed');
-
-      this.onStatus({
-        label: 'mock',
-        online: false,
-        error: this.lastError
-      });
-
+      this.lastError = err?.message || String(err || 'network_bridge_init_failed');
+      this.onStatus({ label: 'mock', online: false, error: this.lastError });
       return false;
     }
   }
-
-async createNearbyGameCode() {
-if (!this.bridge) throw new Error('network_bridge_unavailable');
-if (!this.room) {
-await this.createInvite();
-}
-return this.bridge.createNearbyGameCode();
-}
-
-// ─── LAN Wi-Fi: создание и подключение к комнате ──────────────────────────────
-async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
-  if (!this.bridge) throw new Error('network_bridge_unavailable');
-
-  const room = await this.bridge.connectAsHost({ forceLocalOnly, ranked });
-  let registered = null;
-  let code = '';
-
-  for (let i = 0; i < 3 && !registered?.ok; i++) {
-    code = this.bridge.generateLanCode?.() ||
-      String(Math.floor(100000 + Math.random() * 900000));
-
-    registered = await this.bridge
-      .registerLanCode?.(
-        code,
-        room.roomId,
-        room.roomSecret,
-        ranked,
-        forceLocalOnly
-      )
-      .catch(() => null);
+  async createNearbyGameCode() {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+    if (!this.room) {
+      await this.createInvite();
+    }
+    return this.bridge.createNearbyGameCode();
   }
-
-  if (!registered?.ok) throw new Error('lan_code_register_failed');
-
-  this.room = {
-    roomId: room.roomId,
-    roomSecret: room.roomSecret,
-    code,
-    ranked: !!ranked,
-    localOnly: !!forceLocalOnly,
-    matchMode: ranked ? 'ranked' : 'casual',
-    joinUrl: room.joinUrl
-  };
-
-  return {
-    roomId: room.roomId,
-    roomSecret: room.roomSecret,
-    code,
-    ranked: !!ranked,
-    localOnly: !!forceLocalOnly,
-    matchMode: ranked ? 'ranked' : 'casual',
-    joinUrl: room.joinUrl,
-    expiresAt: registered.expiresAt
-  };
-}
-
-async resolveLanRoom(code) {
-  if (!this.bridge) throw new Error('network_bridge_unavailable');
-
-  const cleanCode = String(code || '').replace(/\D/g, '').slice(0, 6);
-  if (!cleanCode) throw new Error('lan_code_required');
-
-  const roomInfo = await this.bridge.getLanRoomByCode?.(cleanCode);
-  if (!roomInfo?.roomId || !roomInfo?.roomSecret) throw new Error('lan_room_not_found');
-
-  return {
-    ...roomInfo,
-    code: cleanCode,
-    ranked: !!roomInfo.ranked,
-    localOnly: roomInfo.localOnly !== false,
-    matchMode: roomInfo.ranked ? 'ranked' : 'casual'
-  };
-}
-
-async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) {
-  if (!this.bridge) throw new Error('network_bridge_unavailable');
-
-  const roomInfo = await this.resolveLanRoom(code);
-  const ranked = rankedOverride === null ? !!roomInfo.ranked : !!rankedOverride;
-  const localOnly = roomInfo.localOnly !== false && !!forceLocalOnly;
-
-  this.room = {
-    roomId: roomInfo.roomId,
-    roomSecret: roomInfo.roomSecret,
-    code: roomInfo.code,
-    ranked,
-    localOnly,
-    matchMode: ranked ? 'ranked' : 'casual',
-    expiresAt: roomInfo.expiresAt || 0
-  };
-
-  await this.bridge.connectAsGuest({
-    roomId: roomInfo.roomId,
-    roomSecret: roomInfo.roomSecret,
-    forceLocalOnly: localOnly,
-    ranked,
-    rankedOverride
-  });
-
-  this.room = {
-    ...this.room,
-    ranked: !!this.bridge.ranked,
-    localOnly: !!this.bridge.forceLocalOnly,
-    matchMode: this.bridge.ranked ? 'ranked' : 'casual'
-  };
-
-  return this.room;
-}
-
+  // ─── LAN Wi-Fi: создание и подключение к комнате ──────────────────────────────
+  async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+    const room = await this.bridge.connectAsHost({ forceLocalOnly, ranked });
+    let registered = null;
+    let code = '';
+    for (let i = 0; i < 3 && !registered?.ok; i++) {
+      code = this.bridge.generateLanCode?.() || String(Math.floor(100000 + Math.random() * 900000));
+      registered = await this.bridge.registerLanCode?.(code, room.roomId, room.roomSecret, ranked, forceLocalOnly).catch(() => null);
+    }
+    if (!registered?.ok) throw new Error('lan_code_register_failed');
+    this.room = { roomId: room.roomId, roomSecret: room.roomSecret, code, ranked: !!ranked, localOnly: !!forceLocalOnly, matchMode: ranked ? 'ranked' : 'casual', joinUrl: room.joinUrl };
+    return { roomId: room.roomId, roomSecret: room.roomSecret, code, ranked: !!ranked, localOnly: !!forceLocalOnly, matchMode: ranked ? 'ranked' : 'casual', joinUrl: room.joinUrl, expiresAt: registered.expiresAt };
+  }
+  async resolveLanRoom(code) {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+    const cleanCode = String(code || '')
+      .replace(/\D/g, '')
+      .slice(0, 6);
+    if (!cleanCode) throw new Error('lan_code_required');
+    const roomInfo = await this.bridge.getLanRoomByCode?.(cleanCode);
+    if (!roomInfo?.roomId || !roomInfo?.roomSecret) throw new Error('lan_room_not_found');
+    return { ...roomInfo, code: cleanCode, ranked: !!roomInfo.ranked, localOnly: roomInfo.localOnly !== false, matchMode: roomInfo.ranked ? 'ranked' : 'casual' };
+  }
+  async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) {
+    if (!this.bridge) throw new Error('network_bridge_unavailable');
+    const roomInfo = await this.resolveLanRoom(code);
+    const ranked = rankedOverride === null ? !!roomInfo.ranked : !!rankedOverride;
+    const localOnly = roomInfo.localOnly !== false && !!forceLocalOnly;
+    this.room = { roomId: roomInfo.roomId, roomSecret: roomInfo.roomSecret, code: roomInfo.code, ranked, localOnly, matchMode: ranked ? 'ranked' : 'casual', expiresAt: roomInfo.expiresAt || 0 };
+    await this.bridge.connectAsGuest({ roomId: roomInfo.roomId, roomSecret: roomInfo.roomSecret, forceLocalOnly: localOnly, ranked, rankedOverride });
+    this.room = { ...this.room, ranked: !!this.bridge.ranked, localOnly: !!this.bridge.forceLocalOnly, matchMode: this.bridge.ranked ? 'ranked' : 'casual' };
+    return this.room;
+  }
   async joinNearbyGameCode(code) {
     if (!this.bridge) throw new Error('network_bridge_unavailable');
-
     const res = await this.bridge.getNearbyGame(code);
     if (!res?.roomId || !res?.roomSecret) throw new Error('nearby_game_not_found');
-
-    await this.bridge.connectAsGuest({
-      roomId: res.roomId,
-      roomSecret: res.roomSecret
-    });
-
+    await this.bridge.connectAsGuest({ roomId: res.roomId, roomSecret: res.roomSecret });
     return res;
   }
-
   async createInvite() {
     if (!this.bridge) {
-      const invite = {
-        id: `mock_${Date.now().toString(36)}`,
-        roomId: '',
-        roomSecret: '',
-        url: '',
-        expiresAt: Date.now() + 120000,
-        preview: true,
-        mock: true
-      };
+      const invite = { id: `mock_${Date.now().toString(36)}`, roomId: '', roomSecret: '', url: '', expiresAt: Date.now() + 120000, preview: true, mock: true };
       this.room = invite;
       return invite;
     }
-
     const room = await this.bridge.connectAsHost();
-    const invite = {
-      id: room.roomId,
-      roomId: room.roomId,
-      roomSecret: room.roomSecret,
-      url: room.joinUrl,
-      expiresAt: Date.now() + 120000
-    };
-
+    const invite = { id: room.roomId, roomId: room.roomId, roomSecret: room.roomSecret, url: room.joinUrl, expiresAt: Date.now() + 120000 };
     this.room = invite;
     return invite;
   }
-
   handleData(data) {
     if (!data) return;
-
     if (data?.type === MessageType.CHAT_MESSAGE || data?.type === 'CHAT_MESSAGE') {
-      this.onChat({
-        from: data.payload?.from || 'Соперник',
-        text: data.payload?.text || '',
-        at: data.at || Date.now()
-      });
+      this.onChat({ from: data.payload?.from || 'Соперник', text: data.payload?.text || '', at: data.at || Date.now() });
       return;
     }
-
     if (Object.values(MessageType).includes(data.type)) {
       this.onGameData(data);
     }
   }
-
   send(data) {
     if (!this.bridge || !this.ready) return false;
-
     try {
       return !!this.bridge.send(data);
     } catch {
@@ -5752,19 +5622,11 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
       return false;
     }
   }
-
   sendChat(text) {
-    const msg = createMessage(MessageType.CHAT_MESSAGE, {
-      from: this.player.name,
-      text
-    });
-
+    const msg = createMessage(MessageType.CHAT_MESSAGE, { from: this.player.name, text });
     if (!this.bridge || !this.ready) return false;
-
     try {
-      return this.bridge.sendChat
-        ? !!this.bridge.sendChat(text, this.player.name)
-        : this.send(msg);
+      return this.bridge.sendChat ? !!this.bridge.sendChat(text, this.player.name) : this.send(msg);
     } catch {
       this.ready = false;
       this.onStatus({ label: 'chat err', online: false });
@@ -5772,175 +5634,94 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
       return false;
     }
   }
-
   sendGame(type, payload = {}) {
-    return this.send(createMessage(type, {
-      gameId: this.gameId,
-      from: {
-        id: this.player.id,
-        name: this.player.name
-      },
-      ...payload
-    }));
+    return this.send(createMessage(type, { gameId: this.gameId, from: { id: this.player.id, name: this.player.name }, ...payload }));
   }
-
   sendReady(payload = {}) {
     return this.sendGame(MessageType.READY, payload);
   }
-
   sendBoardCommit(payload = {}) {
     return this.sendGame(MessageType.BOARD_COMMIT, payload);
   }
-
   sendBoardReveal(payload = {}) {
     return this.sendGame(MessageType.BOARD_REVEAL, payload);
   }
-
   sendShot(payload = {}) {
     return this.sendGame(MessageType.SHOT, payload);
   }
-
   sendShotResult(payload = {}) {
     return this.sendGame(MessageType.SHOT_RESULT, payload);
   }
-
   sendMatchFinished(payload = {}) {
     return this.sendGame(MessageType.MATCH_FINISHED, payload);
   }
-
   async getProfile(friendId) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
     return this.bridge.getProfile(friendId);
   }
-
   async prepareRankedMatch() {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
     const result = await this.bridge.prepareRankedMatch();
-
-    this.ranked = {
-      matchId: result?.match?.matchId || '',
-      playerId: result?.playerId || '',
-      peerPlayerId: result?.peerPlayerId || '',
-      status: result?.match?.status || ''
-    };
-
+    this.ranked = { matchId: result?.match?.matchId || '', playerId: result?.playerId || '', peerPlayerId: result?.peerPlayerId || '', status: result?.match?.status || '' };
     return result;
   }
-
   async prepareRankedStake(matchId) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
     return this.bridge.prepareRankedStake(matchId);
   }
-
-  async commitRankedRps({
-    matchId,
-    round,
-    commit
-  } = {}) {
+  async commitRankedRps({ matchId, round, commit } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
-    return this.bridge.commitRankedRps({
-      matchId,
-      round,
-      commit
-    });
+    return this.bridge.commitRankedRps({ matchId, round, commit });
   }
-
-  async revealRankedRps({
-    matchId,
-    round,
-    choice,
-    salt
-  } = {}) {
+  async revealRankedRps({ matchId, round, choice, salt } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
-    return this.bridge.revealRankedRps({
-      matchId,
-      round,
-      choice,
-      salt
-    });
+    return this.bridge.revealRankedRps({ matchId, round, choice, salt });
   }
-
-  async submitRankedMatch({
-    matchId,
-    submission
-  } = {}) {
+  async submitRankedMatch({ matchId, submission } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
-    return this.bridge.submitRankedMatch({
-      matchId,
-      submission
-    });
+    return this.bridge.submitRankedMatch({ matchId, submission });
   }
-
   async getRankedMatchStatus(matchId) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
     return this.bridge.getRankedMatchStatus(matchId);
   }
-
-  async abortRankedMatch({
-    matchId,
-    reason = 'disconnect'
-  } = {}) {
+  async abortRankedMatch({ matchId, reason = 'disconnect' } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
-    return this.bridge.abortRankedMatch({
-      matchId,
-      reason
-    });
+    return this.bridge.abortRankedMatch({ matchId, reason });
   }
-
-  async sendGameInvite({
-    toFriendId,
-    roomId,
-    roomSecret
-  } = {}) {
+  async sendGameInvite({ toFriendId, roomId, roomSecret } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-
-    return this.bridge.sendGameInvite({
-      toFriendId,
-      gameId: this.gameId,
-      roomId,
-      roomSecret
-    });
+    return this.bridge.sendGameInvite({ toFriendId, gameId: this.gameId, roomId, roomSecret });
   }
-
   async toggleVoice(active) {
     if (!this.bridge) return false;
     await this.bridge.toggleVoice(active);
     return true;
   }
-
   async close() {
     try {
       await this.bridge?.close?.();
     } catch {
       // ignore bridge close errors
     }
-
     this.ready = false;
     this.room = null;
     this.onStatus({ label: 'offline', online: false });
