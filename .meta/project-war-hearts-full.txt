@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 09:41:58 UTC
+Сгенерировано: 2026-07-28 09:42:54 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -927,7 +927,20 @@ window.addEventListener('message', e => {
   }
 });
 postToHost('GC_READY');
-const session = new WarHeartsSession({ gameId: 'war_hearts', player: state.player });
+
+const waitForHostBridge = async (timeoutMs = 5000) => {
+  if (window.parent === window) return true;
+
+  const startedAt = Date.now();
+  while (!hostBridgeId && Date.now() - startedAt < timeoutMs) {
+    postToHost('GC_READY');
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  return !!hostBridgeId;
+};
+
+const session = new WarHeartsSession({ gameId: GAME_ID, player: state.player });
 let computerTimer = 0;
 let playerAutoTimer = 0;
 let inviteTimer = 0;
@@ -2171,31 +2184,61 @@ document.addEventListener('visibilitychange', () => {
 });
 bind();
 render();
-sessionReady = session
-  .init()
-  .then(async () => {
+sessionReady = waitForHostBridge()
+  .then(async bridgeReady => {
+    if (!bridgeReady && window.parent !== window) {
+      throw new Error('game_parent_bridge_timeout');
+    }
+
+    const ready = await session.init();
+    if (!ready) {
+      throw new Error(session.lastError || 'network_bridge_init_failed');
+    }
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('join')) {
+      state.network.active = true;
       state.network.status = 'connecting';
+      state.network.text = 'Подключаемся к комнате по приглашению...';
+      state.network.lastEventAt = Date.now();
+      render();
     }
+
     const inviteFriendId = params.get('inviteFriend');
     if (inviteFriendId && !isLaunchCancelled()) {
       stripLaunchParams();
+
       try {
         const identity = await waitForFriendIdentity();
         if (!identity?.friendId) {
           throw new Error('friend_identity_not_ready');
         }
+
         const profile = await session.getProfile(inviteFriendId).catch(() => null);
-        actions.inviteFriend(inviteFriendId, profile?.displayName || 'Друг');
-      } catch (e) {
-        console.error('[Auto-Invite Error]', e);
+        await actions.inviteFriend(
+          inviteFriendId,
+          profile?.displayName || 'Друг'
+        );
+      } catch (error) {
+        console.error('[Auto-Invite Error]', error);
+        toast(`Ошибка приглашения: ${error?.message || 'unknown_error'}`);
       }
     }
+
     return true;
   })
-  .catch(() => {
-    setStatus('mock', false);
+  .catch(error => {
+    session.lastError = String(
+      error?.message || 'network_bridge_init_failed'
+    );
+
+    state.network.connected = false;
+    state.network.status = 'error';
+    state.network.text = `Сетевой контур недоступен: ${session.lastError}`;
+    state.network.lastEventAt = Date.now();
+
+    console.error('[War Hearts Network Init]', error);
+    render();
     return false;
   });
 
