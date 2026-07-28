@@ -72,7 +72,13 @@ export const prepareRankedMatch = async ({ state, session } = {}) => {
   }
   return ranked;
 };
-export const playRankedRps = async ({ state, session, choice, attempts = 40, intervalMs = 650 } = {}) => {
+export const playRankedRps = async ({
+  state,
+  session,
+  choice,
+  attempts = 24,
+  intervalMs = 1250
+} = {}) => {
   const ranked = ensureRankedState(state);
   const selected = String(choice || '');
   if (!['rock', 'scissors', 'paper'].includes(selected)) {
