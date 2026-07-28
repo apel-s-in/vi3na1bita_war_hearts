@@ -1,132 +1,51 @@
 const MAX_TURN_LOG = 80;
-
-const trimList = list => Array.isArray(list) ? list.slice(-MAX_TURN_LOG) : [];
-
-const makeViolation = (reason, details = {}) => ({
-  reason,
-  details,
-  at: Date.now()
-});
-
-export const createNetworkTurnState = () => ({
-  ok: true,
-  expectedShotId: '',
-  expectedShotX: -1,
-  expectedShotY: -1,
-  sentShotIds: [],
-  receivedShotIds: [],
-  resolvedShotIds: [],
-  violations: [],
-  note: ''
-});
-
+const trimList = list => (Array.isArray(list) ? list.slice(-MAX_TURN_LOG) : []);
+const makeViolation = (reason, details = {}) => ({ reason, details, at: Date.now() });
+export const createNetworkTurnState = () => ({ ok: true, expectedShotId: '', expectedShotX: -1, expectedShotY: -1, sentShotIds: [], receivedShotIds: [], resolvedShotIds: [], violations: [], note: '' });
 export const ensureNetworkTurnState = state => {
   if (!state.networkTurn) state.networkTurn = createNetworkTurnState();
-
-  state.networkTurn.expectedShotId =
-    String(
-      state.networkTurn.expectedShotId || ''
-    );
-  state.networkTurn.expectedShotX =
-    Number.isInteger(
-      Number(state.networkTurn.expectedShotX)
-    )
-      ? Number(state.networkTurn.expectedShotX)
-      : -1;
-  state.networkTurn.expectedShotY =
-    Number.isInteger(
-      Number(state.networkTurn.expectedShotY)
-    )
-      ? Number(state.networkTurn.expectedShotY)
-      : -1;
-  state.networkTurn.sentShotIds =
-    trimList(state.networkTurn.sentShotIds);
+  state.networkTurn.expectedShotId = String(state.networkTurn.expectedShotId || '');
+  state.networkTurn.expectedShotX = Number.isInteger(Number(state.networkTurn.expectedShotX)) ? Number(state.networkTurn.expectedShotX) : -1;
+  state.networkTurn.expectedShotY = Number.isInteger(Number(state.networkTurn.expectedShotY)) ? Number(state.networkTurn.expectedShotY) : -1;
+  state.networkTurn.sentShotIds = trimList(state.networkTurn.sentShotIds);
   state.networkTurn.receivedShotIds = trimList(state.networkTurn.receivedShotIds);
   state.networkTurn.resolvedShotIds = trimList(state.networkTurn.resolvedShotIds);
   state.networkTurn.violations = trimList(state.networkTurn.violations);
-
   return state.networkTurn;
 };
-
 export const recordTurnViolation = (state, reason, details = {}) => {
   const turn = ensureNetworkTurnState(state);
-
   turn.ok = false;
   turn.note = reason;
-  turn.violations = trimList([
-    ...turn.violations,
-    makeViolation(reason, details)
-  ]);
-
-  return {
-    ok: false,
-    reason,
-    details
-  };
+  turn.violations = trimList([...turn.violations, makeViolation(reason, details)]);
+  return { ok: false, reason, details };
 };
-
 export const canSendNetworkShot = ({ state, x, y }) => {
   const turn = ensureNetworkTurnState(state);
   const cell = state.enemyBoard?.[y]?.[x];
-
   if (state.phase !== 'player') {
-    return recordTurnViolation(state, 'shot_not_your_turn', {
-      phase: state.phase,
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'shot_not_your_turn', { phase: state.phase, x, y });
   }
-
   if (state.network?.awaitingShotResult || turn.expectedShotId) {
-    return recordTurnViolation(state, 'shot_result_still_pending', {
-      expectedShotId: turn.expectedShotId,
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'shot_result_still_pending', { expectedShotId: turn.expectedShotId, x, y });
   }
-
   if (!cell) {
-    return recordTurnViolation(state, 'shot_outside_enemy_board', {
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'shot_outside_enemy_board', { x, y });
   }
-
   if (cell.status) {
-    return recordTurnViolation(state, 'shot_to_open_cell', {
-      x,
-      y,
-      status: cell.status
-    });
+    return recordTurnViolation(state, 'shot_to_open_cell', { x, y, status: cell.status });
   }
-
-  return {
-    ok: true,
-    reason: 'ok'
-  };
+  return { ok: true, reason: 'ok' };
 };
-
 export const recordOutgoingShot = ({ state, shotId, x, y, seq }) => {
   const turn = ensureNetworkTurnState(state);
-
   turn.expectedShotId = String(shotId || '');
   turn.expectedShotX = Number(x);
   turn.expectedShotY = Number(y);
-  turn.sentShotIds = trimList([
-    ...turn.sentShotIds,
-    String(shotId || '')
-  ]);
+  turn.sentShotIds = trimList([...turn.sentShotIds, String(shotId || '')]);
   turn.note = `ожидается SHOT_RESULT ${shotId}`;
-
-  return {
-    ok: true,
-    shotId,
-    x,
-    y,
-    seq
-  };
+  return { ok: true, shotId, x, y, seq };
 };
-
 export const clearOutgoingShotExpectation = state => {
   const turn = ensureNetworkTurnState(state);
   turn.expectedShotId = '';
@@ -134,138 +53,63 @@ export const clearOutgoingShotExpectation = state => {
   turn.expectedShotY = -1;
   turn.note = '';
 };
-
 export const verifyIncomingShot = ({ state, shotId, x, y }) => {
   const turn = ensureNetworkTurnState(state);
   const id = String(shotId || '');
   const cell = state.myBoard?.[y]?.[x];
-
   if (state.phase !== 'computer') {
-    return recordTurnViolation(state, 'incoming_shot_not_peer_turn', {
-      phase: state.phase,
-      shotId: id,
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'incoming_shot_not_peer_turn', { phase: state.phase, shotId: id, x, y });
   }
-
   if (!id) {
-    return recordTurnViolation(state, 'incoming_shot_without_id', {
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'incoming_shot_without_id', { x, y });
   }
-
   if (turn.receivedShotIds.includes(id)) {
-    return recordTurnViolation(state, 'duplicate_incoming_shot', {
-      shotId: id,
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'duplicate_incoming_shot', { shotId: id, x, y });
   }
-
   if (!cell) {
-    return recordTurnViolation(state, 'incoming_shot_outside_board', {
-      shotId: id,
-      x,
-      y
-    });
+    return recordTurnViolation(state, 'incoming_shot_outside_board', { shotId: id, x, y });
   }
-
   if (cell.status) {
-    return recordTurnViolation(state, 'incoming_shot_to_open_cell', {
-      shotId: id,
-      x,
-      y,
-      status: cell.status
-    });
+    return recordTurnViolation(state, 'incoming_shot_to_open_cell', { shotId: id, x, y, status: cell.status });
   }
-
-  return {
-    ok: true,
-    reason: 'ok'
-  };
+  return { ok: true, reason: 'ok' };
 };
-
 export const recordIncomingShot = ({ state, shotId }) => {
   const turn = ensureNetworkTurnState(state);
-
-  turn.receivedShotIds = trimList([
-    ...turn.receivedShotIds,
-    String(shotId || '')
-  ]);
+  turn.receivedShotIds = trimList([...turn.receivedShotIds, String(shotId || '')]);
   turn.note = '';
-
-  return {
-    ok: true
-  };
+  return { ok: true };
 };
-
 export const verifyIncomingShotResult = ({ state, shotId, x, y, result }) => {
   const turn = ensureNetworkTurnState(state);
   const id = String(shotId || '');
-
   if (!state.network?.awaitingShotResult && !turn.expectedShotId) {
-    return recordTurnViolation(state, 'unexpected_shot_result', {
-      shotId: id
-    });
+    return recordTurnViolation(state, 'unexpected_shot_result', { shotId: id });
   }
-
   if (!id) {
     return recordTurnViolation(state, 'shot_result_without_id', {});
   }
-
   if (turn.expectedShotId && id !== turn.expectedShotId) {
-    return recordTurnViolation(state, 'shot_result_id_mismatch', {
-      expectedShotId: turn.expectedShotId,
-      actualShotId: id
-    });
+    return recordTurnViolation(state, 'shot_result_id_mismatch', { expectedShotId: turn.expectedShotId, actualShotId: id });
   }
-  if (
-    Number(x) !== Number(turn.expectedShotX) ||
-    Number(y) !== Number(turn.expectedShotY)
-  ) {
-    return recordTurnViolation(state, 'shot_result_coordinate_mismatch', {
-      expectedX: turn.expectedShotX,
-      expectedY: turn.expectedShotY,
-      actualX: Number(x),
-      actualY: Number(y),
-      shotId: id
-    });
+  if (Number(x) !== Number(turn.expectedShotX) || Number(y) !== Number(turn.expectedShotY)) {
+    return recordTurnViolation(state, 'shot_result_coordinate_mismatch', { expectedX: turn.expectedShotX, expectedY: turn.expectedShotY, actualX: Number(x), actualY: Number(y), shotId: id });
   }
-
   if (!['miss', 'hit', 'sunk'].includes(String(result || ''))) {
-    return recordTurnViolation(state, 'shot_result_value_invalid', {
-      shotId: id,
-      result
-    });
+    return recordTurnViolation(state, 'shot_result_value_invalid', { shotId: id, result });
   }
   if (turn.resolvedShotIds.includes(id)) {
-    return recordTurnViolation(state, 'duplicate_shot_result', {
-      shotId: id
-    });
+    return recordTurnViolation(state, 'duplicate_shot_result', { shotId: id });
   }
-
-  return {
-    ok: true,
-    reason: 'ok'
-  };
+  return { ok: true, reason: 'ok' };
 };
-
 export const recordIncomingShotResult = ({ state, shotId }) => {
   const turn = ensureNetworkTurnState(state);
   const id = String(shotId || '');
-
   turn.expectedShotId = '';
   turn.expectedShotX = -1;
   turn.expectedShotY = -1;
-  turn.resolvedShotIds = trimList([
-    ...turn.resolvedShotIds,
-    id
-  ]);
+  turn.resolvedShotIds = trimList([...turn.resolvedShotIds, id]);
   turn.note = '';
-
-  return {
-    ok: true
-  };
+  return { ok: true };
 };
