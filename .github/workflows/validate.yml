@@ -56,6 +56,11 @@ jobs:
             exit 2
           fi
 
+          if grep -REn 'getUserMedia|MediaStream|addTrack|removeTrack|RTCRtpSender|toggleVoice|pushToTalk|push-to-talk' src; then
+            echo "Voice transport is forbidden inside War Hearts"
+            exit 2
+          fi
+
           grep -q "playRankedRps" src/game/ranked-v2.js
           grep -q "commitRankedRps" src/net/war-hearts-session.js
           grep -q "revealRankedRps" src/net/war-hearts-session.js
