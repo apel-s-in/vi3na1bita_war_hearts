@@ -1,4 +1,8 @@
-import { createMessage, MessageType } from '../game/protocol.js';
+import {
+  createMessage,
+  MessageType,
+  PROTOCOL_VERSION
+} from '../game/protocol.js';
 export class WarHeartsSession {
   constructor({ gameId, player }) {
     this.gameId = gameId;
@@ -216,11 +220,31 @@ export class WarHeartsSession {
     return invite;
   }
   handleData(data) {
-    if (!data) return;
-    if (data?.type === MessageType.CHAT_MESSAGE || data?.type === 'CHAT_MESSAGE') {
-      this.onChat({ from: data.payload?.from || 'Соперник', text: data.payload?.text || '', at: data.at || Date.now() });
+    if (!data || typeof data !== 'object') return;
+
+    if (
+      data.type === MessageType.CHAT_MESSAGE ||
+      data.type === 'CHAT_MESSAGE'
+    ) {
+      this.onChat({
+        from: data.payload?.from || 'Соперник',
+        text: String(
+          data.payload?.text || ''
+        ).slice(0, 300),
+        at: data.at || Date.now()
+      });
       return;
     }
+
+    if (data.v !== PROTOCOL_VERSION) {
+      this.onStatus({
+        label: 'protocol mismatch',
+        online: false,
+        error: 'game_protocol_mismatch'
+      });
+      return;
+    }
+
     if (Object.values(MessageType).includes(data.type)) {
       this.onGameData(data);
     }
