@@ -12,6 +12,18 @@ const getChoiceLabel = id => RPS_CHOICES.find(item => item.id === id)?.label || 
 const clearModal = selector => {
   document.querySelectorAll(selector).forEach(el => el.remove());
 };
+const MATCH_SCOPED_TYPES = new Set([
+  MessageType.READY,
+  MessageType.BOARD_COMMIT,
+  MessageType.BOARD_REVEAL,
+  MessageType.SHOT,
+  MessageType.SHOT_RESULT,
+  MessageType.MATCH_FINISHED,
+  MessageType.MATCH_ABORTED,
+  MessageType.MATCH_MODE,
+  MessageType.PING,
+  MessageType.PONG
+]);
 export const createNetworkCombat = ({
   state,
   session,
@@ -699,23 +711,107 @@ export const createNetworkCombat = ({
   };
   const handleGameData = msg => {
     if (!msg?.type) return;
+
+    if (MATCH_SCOPED_TYPES.has(msg.type)) {
+      const expectedMatchId = String(
+        state.matchStats?.matchId || ''
+      );
+      const actualMatchId = String(
+        msg.payload?.matchId || ''
+      );
+
+      if (
+        !expectedMatchId ||
+        !actualMatchId ||
+        actualMatchId !== expectedMatchId
+      ) {
+        recordTurnViolation(
+          state,
+          'network_match_id_mismatch',
+          {
+            type: msg.type,
+            expectedMatchId,
+            actualMatchId
+          }
+        );
+        addSystemMessage(
+          `Отклонено сетевое событие ${msg.type}: другой matchId.`
+        );
+        setNetworkStatus(
+          'Получено устаревшее событие другого матча.',
+          'error'
+        );
+        scheduleSaveMatchDraft();
+        return;
+      }
+    }
+
     if (!state.network.connected) {
       state.network.connected = true;
     }
     ensureNetworkOpponent();
     switch (msg.type) {
-      case MessageType.BOARD_COMMIT:
-        state.fairPlay.enemyCommitHash = msg.payload?.commitHash || '';
-        state.network.peerCommitReceived = !!state.fairPlay.enemyCommitHash;
-        addSystemMessage('Получен commit доски соперника.');
-        setNetworkStatus('Commit соперника получен. Ожидаем готовность...', 'waiting');
+      case MessageType.BOARD_COMMIT: {
+        const commitHash = String(
+          msg.payload?.commitHash || ''
+        ).toLowerCase();
+
+        if (
+          msg.payload?.algorithm !== 'sha256' ||
+          !/^[a-f0-9]{64}$/.test(commitHash)
+        ) {
+          recordTurnViolation(
+            state,
+            'board_commit_invalid',
+            {
+              algorithm:
+                msg.payload?.algorithm || '',
+              commitHash
+            }
+          );
+          setNetworkStatus(
+            'Некорректный commit доски соперника.',
+            'error'
+          );
+          break;
+        }
+
+        state.fairPlay.enemyCommitHash =
+          commitHash;
+        state.network.peerCommitReceived = true;
+        addSystemMessage(
+          'Получен commit доски соперника.'
+        );
+        setNetworkStatus(
+          'Commit соперника получен. Ожидаем готовность...',
+          'waiting'
+        );
         maybeStartRps();
         scheduleSaveMatchDraft();
         break;
+      }
       case MessageType.READY:
+        if (msg.payload?.ready !== true) {
+          recordTurnViolation(
+            state,
+            'peer_ready_value_invalid',
+            {
+              ready: msg.payload?.ready
+            }
+          );
+          setNetworkStatus(
+            'Некорректное подтверждение готовности.',
+            'error'
+          );
+          break;
+        }
+
         state.network.peerReady = true;
         addSystemMessage('Соперник готов к бою.');
-        setNetworkStatus('Соперник готов. Синхронизация боя...', 'waiting');
+        setNetworkStatus(
+          'Соперник готов. Синхронизация боя...',
+          'waiting'
+        );
         maybeStartRps();
         scheduleSaveMatchDraft();
         break;
