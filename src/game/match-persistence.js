@@ -68,12 +68,32 @@ export const createMatchPersistence = ({
     const playerHits = Number(s.playerHits || 0);
     const accuracy = playerShots ? Math.round((playerHits / playerShots) * 100) : 0;
     const opponentType = state.opponent?.type || 'computer';
+    const startedAt = Number(s.startedAt || 0);
+    const finishedAt = Number(s.finishedAt || Date.now());
+    const durationMs = startedAt > 0
+      ? Math.max(0, finishedAt - startedAt)
+      : 0;
+    const ranked = opponentType === 'network' &&
+      state.network?.ranked === true;
+    const settlement = state.ranked?.settlement || null;
 
     return {
       matchId: String(s.matchId || ''),
       gameId,
-      finishedAt: Number(s.finishedAt || Date.now()),
-      startedAt: Number(s.startedAt || 0),
+      finishedAt,
+      startedAt,
+      durationMs,
+      ranked,
+      training: opponentType === 'computer',
+      stakeEach: ranked ? Number(state.ranked?.economy?.stakeEach || 100) : 0,
+      serverStatus: ranked ? String(state.ranked?.serverStatus || '') : 'training',
+      ratingDelta: ranked
+        ? Number(
+            state.result === 'win'
+              ? settlement?.winnerDelta
+              : settlement?.loserDelta
+          ) || 0
+        : 0,
       opponentId: String(state.opponent?.id || ''),
       opponentName: String(state.opponent?.name || (opponentType === 'computer' ? 'Компьютер' : 'Соперник')),
       opponentType,
@@ -92,6 +112,8 @@ export const createMatchPersistence = ({
       opponentMisses: Number(s.opponentMisses || 0),
       playerBestHitStreak: Number(s.playerBestHitStreak || 0),
       opponentBestHitStreak: Number(s.opponentBestHitStreak || 0),
+      playerBestSunkStreak: Number(s.playerBestSunkStreak || 0),
+      opponentBestSunkStreak: Number(s.opponentBestSunkStreak || 0),
       fairPlay: {
         myLayoutOk: state.fairPlay?.myLayoutOk,
         enemyLayoutOk: state.fairPlay?.enemyLayoutOk,
