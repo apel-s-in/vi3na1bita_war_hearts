@@ -647,7 +647,33 @@ const setScreen = screen => {
   inviteTimer = 0;
   if (screen === 'invite' && !document.hidden) {
     inviteTimer = setInterval(() => {
-      if (state.screen === 'invite' && !document.hidden) render();
+      if (state.screen !== 'invite' || document.hidden) return;
+
+      const expiresAt = Number(state.invite?.expiresAt || 0);
+      if (
+        expiresAt > 0 &&
+        expiresAt <= Date.now() &&
+        !state.network?.connected
+      ) {
+        clearInterval(inviteTimer);
+        inviteTimer = 0;
+
+        session.close?.().catch(() => null);
+        state.invite = null;
+        state.opponent = null;
+        state.network.active = false;
+        state.network.connected = false;
+        state.network.status = 'offline';
+        state.network.text = '';
+        state.network.peerName = '';
+        state.network.lastEventAt = Date.now();
+
+        toast('Код комнаты истёк');
+        setScreen('opponents');
+        return;
+      }
+
+      render();
     }, 1000);
   }
   document.querySelectorAll('.wh-tab').forEach(btn => {
