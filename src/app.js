@@ -933,12 +933,6 @@ const actions = {
     toast('Приглашение отменено');
     setScreen('opponents');
   },
-  acceptMockOpponent() {
-    state.opponent = { id: 'friend_preview', name: 'Друг рядом', title: 'Гость арены', type: 'computer' };
-    state.phase = 'setup';
-    setScreen('field');
-    toast('Preview-соперник выбран. Расставьте корабли.');
-  },
   startComputerGame() {
     state.opponent = { id: 'computer_preview', name: 'Компьютер', title: 'Случайный стрелок', type: 'computer' };
     state.phase = 'setup';
