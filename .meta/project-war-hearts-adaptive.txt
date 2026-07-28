@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 08:41:03 UTC
+Сгенерировано: 2026-07-28 08:50:48 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -125,18 +125,33 @@ on:
       - '.meta/**'
       - '.github/workflows/generate-context.yml'
   workflow_dispatch:
+    inputs:
+      full_sync:
+        description: 'Полностью синхронизировать prefix Games/war_hearts'
+        required: false
+        type: boolean
+        default: false
+      base_sha:
+        description: 'Необязательный базовый commit для ручного incremental deploy'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
 
 concurrency:
   group: yc-s3-war-hearts-deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Incremental deploy public files
         env:
@@ -144,78 +159,286 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ru-central1
           BEFORE_SHA: ${{ github.event.before }}
+          MANUAL_BASE_SHA: ${{ inputs.base_sha || '' }}
+          FULL_SYNC: ${{ inputs.full_sync || false }}
+          EVENT_NAME: ${{ github.event_name }}
           BUCKET: vi3na1bita
           PREFIX: Games/war_hearts
         run: |
           set -euo pipefail
 
+          upload_count=0
+          delete_count=0
+          mode="incremental"
+
           is_public_file() {
-            case "$1" in
-              .git/*|.github/*|.meta/*|generate-context.js|ai-rules.txt|README.md) return 1 ;;
-              *) return 0 ;;
+            local file="$1"
+
+            case "$file" in
+              .nojekyll|index.html|styles.css)
+                return 0
+                ;;
+              src/*.js|src/**/*.js)
+                return 0
+                ;;
+              assets/*.json|assets/**/*.json)
+                return 0
+                ;;
+              assets/*.svg|assets/**/*.svg)
+                return 0
+                ;;
+              assets/*.webp|assets/**/*.webp)
+                return 0
+                ;;
+              assets/*.png|assets/**/*.png)
+                return 0
+                ;;
+              assets/*.jpg|assets/**/*.jpg)
+                return 0
+                ;;
+              assets/*.jpeg|assets/**/*.jpeg)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
             esac
           }
 
           upload_file() {
-            local f="$1"
-            [ -f "$f" ] || return 0
-            is_public_file "$f" || return 0
+            local file="$1"
 
-            local ct="application/octet-stream"
-            local cc="public, max-age=300"
-            case "$f" in
-              *.html) ct="text/html; charset=utf-8"; cc="no-cache, no-store, must-revalidate" ;;
-              *.css) ct="text/css; charset=utf-8" ;;
-              *.js|*.mjs) ct="application/javascript; charset=utf-8"; cc="public, max-age=120" ;;
-              *.json) ct="application/json; charset=utf-8" ;;
-              *.svg) ct="image/svg+xml" ;;
-              *.webp|*.png|*.jpg) ct="image/${f##*.}"; cc="public, max-age=86400" ;;
+            [ -f "$file" ] || return 0
+            is_public_file "$file" || return 0
+
+            local content_type="application/octet-stream"
+            local cache_control="public, max-age=300"
+
+            case "$file" in
+              index.html)
+                content_type="text/html; charset=utf-8"
+                cache_control="no-cache, no-store, must-revalidate"
+                ;;
+              styles.css)
+                content_type="text/css; charset=utf-8"
+                cache_control="public, max-age=300, must-revalidate"
+                ;;
+              src/app.js)
+                content_type="application/javascript; charset=utf-8"
+                cache_control="no-cache, no-store, must-revalidate"
+                ;;
+              *.js|*.mjs)
+                content_type="application/javascript; charset=utf-8"
+                cache_control="public, max-age=120, must-revalidate"
+                ;;
+              *.json)
+                content_type="application/json; charset=utf-8"
+                cache_control="public, max-age=300, must-revalidate"
+                ;;
+              *.svg)
+                content_type="image/svg+xml"
+                cache_control="public, max-age=86400"
+                ;;
+              *.webp)
+                content_type="image/webp"
+                cache_control="public, max-age=86400"
+                ;;
+              *.png)
+                content_type="image/png"
+                cache_control="public, max-age=86400"
+                ;;
+              *.jpg|*.jpeg)
+                content_type="image/jpeg"
+                cache_control="public, max-age=86400"
+                ;;
+              .nojekyll)
+                content_type="text/plain; charset=utf-8"
+                cache_control="no-cache"
+                ;;
             esac
 
-            echo "PUT $f"
-            aws --endpoint-url=https://storage.yandexcloud.net s3 cp "$f" "s3://$BUCKET/$PREFIX/$f" \
+            echo "PUT $file"
+
+            aws \
+              --endpoint-url=https://storage.yandexcloud.net \
+              s3 cp \
+              "$file" \
+              "s3://$BUCKET/$PREFIX/$file" \
               --only-show-errors \
-              --cache-control "$cc" \
-              --content-type "$ct"
+              --cache-control "$cache_control" \
+              --content-type "$content_type"
+
+            upload_count=$((upload_count + 1))
           }
 
           delete_file() {
-            local f="$1"
-            is_public_file "$f" || return 0
-            echo "DELETE $f"
-            aws --endpoint-url=https://storage.yandexcloud.net s3 rm "s3://$BUCKET/$PREFIX/$f" --only-show-errors || true
+            local file="$1"
+
+            is_public_file "$file" || return 0
+
+            echo "DELETE $file"
+
+            aws \
+              --endpoint-url=https://storage.yandexcloud.net \
+              s3 rm \
+              "s3://$BUCKET/$PREFIX/$file" \
+              --only-show-errors \
+              || true
+
+            delete_count=$((delete_count + 1))
           }
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ -z "${BEFORE_SHA:-}" ] || [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
-            echo "Manual/initial deploy: full public sync"
-            aws --endpoint-url=https://storage.yandexcloud.net s3 sync ./ "s3://$BUCKET/$PREFIX/" \
-              --delete --only-show-errors \
+          publish_or_delete_special() {
+            local file="$1"
+
+            if [ -f "$file" ]; then
+              upload_file "$file"
+            else
+              delete_file "$file"
+            fi
+          }
+
+          write_summary() {
+            {
+              echo "## War Hearts Object Storage deploy"
+              echo ""
+              echo "- Mode: $mode"
+              echo "- Actor: $GITHUB_ACTOR"
+              echo "- Event: $EVENT_NAME"
+              echo "- Run ID: $GITHUB_RUN_ID"
+              echo "- Commit: $GITHUB_SHA"
+              echo "- Uploaded: $upload_count"
+              echo "- Deleted: $delete_count"
+              echo "- Destination: s3://$BUCKET/$PREFIX/"
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          base_sha="${BEFORE_SHA:-}"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ -n "${MANUAL_BASE_SHA:-}" ]; then
+              base_sha="$MANUAL_BASE_SHA"
+            else
+              base_sha="$(git rev-parse "${GITHUB_SHA}^" 2>/dev/null || true)"
+            fi
+          fi
+
+          if [ "$FULL_SYNC" = "true" ]; then
+            mode="full"
+          elif [ -z "$base_sha" ] || [[ "$base_sha" =~ ^0+$ ]]; then
+            mode="full"
+          elif ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            echo "Base commit is unavailable: $base_sha"
+            echo "Refusing implicit full deploy."
+            echo "Run workflow manually with full_sync=true if a full repair is required."
+            exit 2
+          fi
+
+          if [ "$mode" = "full" ]; then
+            echo "Explicit/initial full synchronization"
+            echo "Destination: s3://$BUCKET/$PREFIX/"
+
+            aws \
+              --endpoint-url=https://storage.yandexcloud.net \
+              s3 sync \
+              ./ \
+              "s3://$BUCKET/$PREFIX/" \
+              --delete \
+              --only-show-errors \
               --exclude "*" \
-              --include "*.html" \
-              --include "*.css" \
-              --include "*.js" \
-              --include "*.json" \
-              --include "*.svg" \
-              --include "*.webp" \
-              --include "*.png" \
-              --include "*.jpg" \
-              --exclude ".git/*" \
-              --exclude ".github/*" \
-              --exclude ".meta/*" \
-              --exclude "generate-context.js" \
-              --exclude "ai-rules.txt" \
-              --exclude "README.md"
+              --include ".nojekyll" \
+              --include "assets/*.json" \
+              --include "assets/**/*.json" \
+              --include "assets/*.svg" \
+              --include "assets/**/*.svg" \
+              --include "assets/*.webp" \
+              --include "assets/**/*.webp" \
+              --include "assets/*.png" \
+              --include "assets/**/*.png" \
+              --include "assets/*.jpg" \
+              --include "assets/**/*.jpg" \
+              --include "assets/*.jpeg" \
+              --include "assets/**/*.jpeg" \
+              --include "src/*.js" \
+              --include "src/**/*.js" \
+              --include "styles.css" \
+              --include "index.html" \
+              --exclude "styles.css" \
+              --exclude "src/app.js" \
+              --exclude "index.html"
+
+            # Entry points публикуются строго после остальных модулей.
+            publish_or_delete_special "styles.css"
+            publish_or_delete_special "src/app.js"
+            publish_or_delete_special "index.html"
+
+            write_summary
             exit 0
           fi
 
-          git diff --name-status "$BEFORE_SHA" "$GITHUB_SHA" | while IFS=$'\t' read -r status a b; do
-            file="${b:-$a}"
-            if [[ "$status" == D* ]]; then
-              delete_file "$a"
-            else
-              upload_file "$file"
-            fi
+          echo "Incremental deploy"
+          echo "Base: $base_sha"
+          echo "Head: $GITHUB_SHA"
+
+          mapfile -t changed_files < <(
+            git diff \
+              --no-renames \
+              --name-only \
+              --diff-filter=ACMTUXB \
+              "$base_sha" \
+              "$GITHUB_SHA"
+          )
+
+          mapfile -t deleted_files < <(
+            git diff \
+              --no-renames \
+              --name-only \
+              --diff-filter=D \
+              "$base_sha" \
+              "$GITHUB_SHA"
+          )
+
+          declare -A changed_set=()
+
+          for file in "${changed_files[@]}"; do
+            changed_set["$file"]=1
           done
+
+          # Сначала зависимости, модули и статические ресурсы.
+          for file in "${changed_files[@]}"; do
+            case "$file" in
+              styles.css|src/app.js|index.html)
+                continue
+                ;;
+            esac
+
+            upload_file "$file"
+          done
+
+          # Затем CSS, главный JS entry point и HTML — строго в этом порядке.
+          if [ -n "${changed_set[styles.css]+x}" ]; then
+            upload_file "styles.css"
+          fi
+
+          if [ -n "${changed_set[src/app.js]+x}" ]; then
+            upload_file "src/app.js"
+          fi
+
+          if [ -n "${changed_set[index.html]+x}" ]; then
+            upload_file "index.html"
+          fi
+
+          # Удаления выполняются после публикации новых файлов.
+          # --no-renames превращает rename в отдельные ADD + DELETE.
+          for file in "${deleted_files[@]}"; do
+            delete_file "$file"
+          done
+
+          if [ "$upload_count" -eq 0 ] && [ "$delete_count" -eq 0 ]; then
+            echo "No public War Hearts files changed"
+          fi
+
+          write_summary
 
 //=================================================
 // FILE: /.github/workflows/generate-context.yml
