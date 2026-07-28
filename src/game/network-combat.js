@@ -337,7 +337,13 @@ export const createNetworkCombat = ({
     const y = Number(payload.y);
     const result = payload.result || 'miss';
     const shotId = String(payload.shotId || '');
-    const guard = verifyIncomingShotResult({ state, shotId });
+    const guard = verifyIncomingShotResult({
+      state,
+      shotId,
+      x,
+      y,
+      result
+    });
     if (!guard.ok) {
       setNetworkStatus(`SHOT_RESULT отклонён: ${guard.reason}.`, 'error');
       addSystemMessage(`Turn guard: SHOT_RESULT отклонён (${guard.reason}).`);
