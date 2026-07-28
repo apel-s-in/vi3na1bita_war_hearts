@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 10:55:08 UTC
+Сгенерировано: 2026-07-28 10:55:52 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5708,11 +5708,6 @@ export class WarHeartsSession {
       throw new Error('network_bridge_unavailable');
     }
     return this.bridge.sendGameInvite({ toFriendId, gameId: this.gameId, roomId, roomSecret });
-  }
-  async toggleVoice(active) {
-    if (!this.bridge) return false;
-    await this.bridge.toggleVoice(active);
-    return true;
   }
   async close() {
     try {
