@@ -1251,10 +1251,16 @@ const bind = () => {
           'send ice': 'Отправляем ICE candidate...',
           'ice sent': 'ICE candidate отправлен.',
           'ice received': 'ICE candidate получен.',
+          'ice retry': 'Один ICE candidate не отправлен. Пробуем остальные...',
+          'ice failed': 'Прямой ICE-маршрут не найден. Пробуем переподключение...',
+          'reconnecting': 'Соединение временно прервано. Восстанавливаем...',
+          'lan waiting': 'Wi‑Fi-комната готова. Ждём подключение гостя...',
+          'lan connecting': 'Подключаемся к Wi‑Fi-комнате...',
+          'signal retry': 'Signaling временно недоступен. Повторяем...',
           'online': 'P2P-соединение установлено.'
         }[label] ||
-        state.network.text ||
         label ||
+        state.network.text ||
         'Синхронизация сети...';
       state.network.lastEventAt = Date.now();
       if (info?.ice) state.network.ice = { ...state.network.ice, ...info.ice };
