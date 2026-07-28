@@ -89,6 +89,7 @@ let matchPersistence = null;
 let networkCombat = null;
 let networkWatchdog = null;
 let sessionReady = Promise.resolve(false);
+let lanJoinPromise = null;
 const saveMatchDraftNow = () => matchPersistence?.saveMatchDraftNow();
 const scheduleSaveMatchDraft = () => matchPersistence?.scheduleSaveMatchDraft();
 const restoreMatchDraft = () => matchPersistence?.restoreMatchDraft() || false;
@@ -1070,36 +1071,70 @@ const joinLanByCode = async code => {
       throw new Error(session.lastError || 'network_bridge_unavailable');
     }
     if (!isYandexAuthed()) {
-      openRankedAuthGate({ title: '🏆 Рейтинговый бой', text: 'Бой между пользователями всегда рейтинговый. Для подключения нужен вход через Яндекс и ставка 100 ♦.', loginText: 'Войти и подключиться', onAuthed: () => connectLanRoom(code) });
+      openRankedAuthGate({
+        title: '🏆 Рейтинговый бой',
+        text: 'Бой между пользователями всегда рейтинговый. Для подключения нужен вход через Яндекс и ставка 100 ♦.',
+        loginText: 'Войти и подключиться',
+        onAuthed: () => {
+          connectLanRoom(code).catch(error => {
+            toast(`Ошибка: ${error.message}`);
+          });
+        }
+      });
       return;
-    }
-    const roomInfo = await session.resolveLanRoom(code);
-    if (roomInfo.ranked !== true) {
-      throw new Error('ranked_room_required');
     }
     await connectLanRoom(code);
   } catch (error) {
     toast(error.message === 'lan_room_not_found' ? 'Комната не найдена или код истёк' : error.message === 'ranked_room_required' ? 'Этот старый код не относится к рейтинговой комнате' : `Ошибка: ${error.message}`);
   }
 };
-const connectLanRoom = async code => {
-  toast('Подключаемся к рейтинговой комнате...');
-  const res = await session.joinLanRoom(code);
-  if (res.ranked !== true) {
-    throw new Error('ranked_room_required');
-  }
-  state.invite = { id: res.roomId, roomId: res.roomId, roomSecret: res.roomSecret, code: res.code || code, isLan: true, localOnly: true, ranked: true, matchMode: 'ranked', expiresAt: res.expiresAt || Date.now() + 300000 };
-  state.network.active = true;
-  state.network.connected = false;
-  state.network.status = 'connecting';
-  state.network.peerName = 'Хост комнаты';
-  state.network.text = 'Код принят. Устанавливаем рейтинговое P2P-соединение...';
-  state.network.ranked = true;
-  state.network.localOnly = true;
-  state.network.matchMode = 'ranked';
-  state.network.lastEventAt = Date.now();
-  addSystemMessage('Подключение к рейтинговому бою за 100 ♦. Результат будет подтверждён сервером.');
-  setScreen('invite');
+const connectLanRoom = code => {
+  if (lanJoinPromise) return lanJoinPromise;
+
+  lanJoinPromise = (async () => {
+    toast('Подключаемся к рейтинговой комнате...');
+
+    state.network.active = true;
+    state.network.connected = false;
+    state.network.status = 'connecting';
+    state.network.peerName = 'Хост комнаты';
+    state.network.text = 'Проверяем код и ждём доступ к signaling-серверу...';
+    state.network.lastEventAt = Date.now();
+    render();
+
+    const res = await session.joinLanRoom(code);
+    if (res.ranked !== true) {
+      throw new Error('ranked_room_required');
+    }
+
+    state.invite = {
+      id: res.roomId,
+      roomId: res.roomId,
+      roomSecret: res.roomSecret,
+      code: res.code || code,
+      isLan: true,
+      localOnly: true,
+      ranked: true,
+      matchMode: 'ranked',
+      expiresAt: res.expiresAt || Date.now() + 300000
+    };
+    state.network.status = 'connecting';
+    state.network.text = 'Код принят. Устанавливаем рейтинговое P2P-соединение...';
+    state.network.ranked = true;
+    state.network.localOnly = true;
+    state.network.matchMode = 'ranked';
+    state.network.lastEventAt = Date.now();
+
+    addSystemMessage(
+      'Подключение к рейтинговому бою за 100 ♦. Результат будет подтверждён сервером.'
+    );
+    setScreen('invite');
+    return res;
+  })().finally(() => {
+    lanJoinPromise = null;
+  });
+
+  return lanJoinPromise;
 };
 const render = () => {
   const root = $('screen-root');
@@ -1255,6 +1290,7 @@ const bind = () => {
           'lan waiting': 'Wi‑Fi-комната готова. Ждём подключение гостя...',
           'lan connecting': 'Подключаемся к Wi‑Fi-комнате...',
           'signal retry': 'Signaling временно недоступен. Повторяем...',
+          'server backoff': 'Сервер временно ограничил запросы. Ждём и подключаемся автоматически...',
           'online': 'P2P-соединение установлено.'
         }[label] ||
         label ||
