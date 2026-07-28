@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 12:13:52 UTC
+Сгенерировано: 2026-07-28 12:14:46 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1788,12 +1788,6 @@ const actions = {
     clearMatchDraft();
     toast('Приглашение отменено');
     setScreen('opponents');
-  },
-  acceptMockOpponent() {
-    state.opponent = { id: 'friend_preview', name: 'Друг рядом', title: 'Гость арены', type: 'computer' };
-    state.phase = 'setup';
-    setScreen('field');
-    toast('Preview-соперник выбран. Расставьте корабли.');
   },
   startComputerGame() {
     state.opponent = { id: 'computer_preview', name: 'Компьютер', title: 'Случайный стрелок', type: 'computer' };
