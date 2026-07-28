@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 11:38:35 UTC
+Сгенерировано: 2026-07-28 12:08:16 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1987,10 +1987,7 @@ const joinLanByCode = async code => {
 const connectLanRoom = async code => {
   toast('Подключаемся к рейтинговой комнате...');
 
-  const res = await session.joinLanRoom(code, {
-    forceLocalOnly: false,
-    rankedOverride: true
-  });
+  const res = await session.joinLanRoom(code);
 
   if (res.ranked !== true) {
     throw new Error('ranked_room_required');
@@ -2002,7 +1999,7 @@ const connectLanRoom = async code => {
     roomSecret: res.roomSecret,
     code: res.code || code,
     isLan: true,
-    localOnly: false,
+    localOnly: true,
     ranked: true,
     matchMode: 'ranked',
     expiresAt: res.expiresAt || Date.now() + 300000
