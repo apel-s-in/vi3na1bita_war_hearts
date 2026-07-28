@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 12:08:16 UTC
+Сгенерировано: 2026-07-28 12:09:06 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5615,18 +5615,49 @@ export class WarHeartsSession {
     return this.bridge.createNearbyGameCode();
   }
   // ─── LAN Wi-Fi: создание и подключение к комнате ──────────────────────────────
-  async createLanRoom({ ranked = false, forceLocalOnly = false } = {}) {
+  async createLanRoom() {
     if (!this.bridge) throw new Error('network_bridge_unavailable');
-    const room = await this.bridge.connectAsHost({ forceLocalOnly, ranked });
+
+    const room = await this.bridge.connectAsHost({
+      forceLocalOnly: true,
+      ranked: true
+    });
+
+    if (room.ranked !== true) throw new Error('ranked_room_required');
+
     let registered = null;
     let code = '';
-    for (let i = 0; i < 3 && !registered?.ok; i++) {
-      code = this.bridge.generateLanCode?.() || String(Math.floor(100000 + Math.random() * 900000));
-      registered = await this.bridge.registerLanCode?.(code, room.roomId, room.roomSecret, ranked, forceLocalOnly).catch(() => null);
+
+    for (let attempt = 0; attempt < 5 && !registered?.ok; attempt++) {
+      code = this.bridge.generateLanCode?.() ||
+        String(Math.floor(100000 + Math.random() * 900000));
+
+      registered = await this.bridge.registerLanCode?.(
+        code,
+        room.roomId,
+        room.roomSecret,
+        true,
+        true
+      ).catch(() => null);
     }
+
     if (!registered?.ok) throw new Error('lan_code_register_failed');
-    this.room = { roomId: room.roomId, roomSecret: room.roomSecret, code, ranked: !!ranked, localOnly: !!forceLocalOnly, matchMode: ranked ? 'ranked' : 'casual', joinUrl: room.joinUrl };
-    return { roomId: room.roomId, roomSecret: room.roomSecret, code, ranked: !!ranked, localOnly: !!forceLocalOnly, matchMode: ranked ? 'ranked' : 'casual', joinUrl: room.joinUrl, expiresAt: registered.expiresAt };
+
+    this.room = {
+      role: 'host',
+      roomId: room.roomId,
+      roomSecret: room.roomSecret,
+      code,
+      ranked: true,
+      localOnly: true,
+      matchMode: 'ranked',
+      joinUrl: room.joinUrl
+    };
+
+    return {
+      ...this.room,
+      expiresAt: registered.expiresAt
+    };
   }
   async resolveLanRoom(code) {
     if (!this.bridge) throw new Error('network_bridge_unavailable');
@@ -5638,14 +5669,44 @@ export class WarHeartsSession {
     if (!roomInfo?.roomId || !roomInfo?.roomSecret) throw new Error('lan_room_not_found');
     return { ...roomInfo, code: cleanCode, ranked: !!roomInfo.ranked, localOnly: roomInfo.localOnly !== false, matchMode: roomInfo.ranked ? 'ranked' : 'casual' };
   }
-  async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) {
+  async joinLanRoom(code) {
     if (!this.bridge) throw new Error('network_bridge_unavailable');
+
     const roomInfo = await this.resolveLanRoom(code);
-    const ranked = rankedOverride === null ? !!roomInfo.ranked : !!rankedOverride;
-    const localOnly = roomInfo.localOnly !== false && !!forceLocalOnly;
-    this.room = { roomId: roomInfo.roomId, roomSecret: roomInfo.roomSecret, code: roomInfo.code, ranked, localOnly, matchMode: ranked ? 'ranked' : 'casual', expiresAt: roomInfo.expiresAt || 0 };
-    await this.bridge.connectAsGuest({ roomId: roomInfo.roomId, roomSecret: roomInfo.roomSecret, forceLocalOnly: localOnly, ranked, rankedOverride });
-    this.room = { ...this.room, ranked: !!this.bridge.ranked, localOnly: !!this.bridge.forceLocalOnly, matchMode: this.bridge.ranked ? 'ranked' : 'casual' };
+    if (roomInfo.ranked !== true || roomInfo.matchMode !== 'ranked') {
+      throw new Error('ranked_room_required');
+    }
+
+    this.room = {
+      role: 'guest',
+      roomId: roomInfo.roomId,
+      roomSecret: roomInfo.roomSecret,
+      code: roomInfo.code,
+      ranked: true,
+      localOnly: true,
+      matchMode: 'ranked',
+      expiresAt: roomInfo.expiresAt || 0
+    };
+
+    await this.bridge.connectAsGuest({
+      roomId: roomInfo.roomId,
+      roomSecret: roomInfo.roomSecret,
+      forceLocalOnly: true,
+      ranked: true,
+      rankedOverride: true
+    });
+
+    if (this.bridge.ranked !== true) {
+      throw new Error('ranked_room_required');
+    }
+
+    this.room = {
+      ...this.room,
+      ranked: true,
+      localOnly: true,
+      matchMode: 'ranked'
+    };
+
     return this.room;
   }
   async joinNearbyGameCode(code) {
