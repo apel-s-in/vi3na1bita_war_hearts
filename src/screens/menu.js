@@ -95,7 +95,8 @@ const renderStats = state => {
       <div><span>Выстрелы</span><b>${p.shots}</b></div>
       <div><span>Попадания</span><b>${p.hits}</b></div>
       <div><span>Убито кораблей</span><b>${p.sunk}</b></div>
-      <div><span>Лучший страйк</span><b>${p.bestStreak}</b></div>
+      <div><span>Серия попаданий</span><b>${p.bestStreak}</b></div>
+      <div><span>Серия убитых кораблей</span><b>${p.bestSunkStreak}</b></div>
     </div>
   `;
 
