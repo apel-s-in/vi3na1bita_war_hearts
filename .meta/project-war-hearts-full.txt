@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 16:42:59 UTC
+Сгенерировано: 2026-07-28 16:51:33 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5178,11 +5178,17 @@ export class WarHeartsSession {
     await this.bridge.connectAsGuest({ roomId: res.roomId, roomSecret: res.roomSecret });
     return res;
   }
-  async createInvite() {
+  async createInvite({
+    createJoinToken = true
+  } = {}) {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-    const room = await this.bridge.connectAsHost({ ranked: true, forceLocalOnly: false });
+    const room = await this.bridge.connectAsHost({
+      ranked: true,
+      forceLocalOnly: false,
+      createJoinToken
+    });
     if (room.ranked !== true) {
       throw new Error('ranked_room_required');
     }
