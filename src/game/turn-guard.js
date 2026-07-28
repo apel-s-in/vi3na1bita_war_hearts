@@ -11,6 +11,8 @@ const makeViolation = (reason, details = {}) => ({
 export const createNetworkTurnState = () => ({
   ok: true,
   expectedShotId: '',
+  expectedShotX: -1,
+  expectedShotY: -1,
   sentShotIds: [],
   receivedShotIds: [],
   resolvedShotIds: [],
@@ -91,6 +93,8 @@ export const recordOutgoingShot = ({ state, shotId, x, y, seq }) => {
   const turn = ensureNetworkTurnState(state);
 
   turn.expectedShotId = String(shotId || '');
+  turn.expectedShotX = Number(x);
+  turn.expectedShotY = Number(y);
   turn.sentShotIds = trimList([
     ...turn.sentShotIds,
     String(shotId || '')
@@ -109,6 +113,8 @@ export const recordOutgoingShot = ({ state, shotId, x, y, seq }) => {
 export const clearOutgoingShotExpectation = state => {
   const turn = ensureNetworkTurnState(state);
   turn.expectedShotId = '';
+  turn.expectedShotX = -1;
+  turn.expectedShotY = -1;
   turn.note = '';
 };
 
