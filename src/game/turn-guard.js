@@ -23,7 +23,24 @@ export const createNetworkTurnState = () => ({
 export const ensureNetworkTurnState = state => {
   if (!state.networkTurn) state.networkTurn = createNetworkTurnState();
 
-  state.networkTurn.sentShotIds = trimList(state.networkTurn.sentShotIds);
+  state.networkTurn.expectedShotId =
+    String(
+      state.networkTurn.expectedShotId || ''
+    );
+  state.networkTurn.expectedShotX =
+    Number.isInteger(
+      Number(state.networkTurn.expectedShotX)
+    )
+      ? Number(state.networkTurn.expectedShotX)
+      : -1;
+  state.networkTurn.expectedShotY =
+    Number.isInteger(
+      Number(state.networkTurn.expectedShotY)
+    )
+      ? Number(state.networkTurn.expectedShotY)
+      : -1;
+  state.networkTurn.sentShotIds =
+    trimList(state.networkTurn.sentShotIds);
   state.networkTurn.receivedShotIds = trimList(state.networkTurn.receivedShotIds);
   state.networkTurn.resolvedShotIds = trimList(state.networkTurn.resolvedShotIds);
   state.networkTurn.violations = trimList(state.networkTurn.violations);
@@ -240,6 +257,8 @@ export const recordIncomingShotResult = ({ state, shotId }) => {
   const id = String(shotId || '');
 
   turn.expectedShotId = '';
+  turn.expectedShotX = -1;
+  turn.expectedShotY = -1;
   turn.resolvedShotIds = trimList([
     ...turn.resolvedShotIds,
     id
