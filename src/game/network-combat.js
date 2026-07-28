@@ -59,6 +59,7 @@ export const createNetworkCombat = ({
   requestHostAuth
 }) => {
   let shotSeq = 0;
+  let readyRetryTimer = 0;
   const setNetworkStatus = (text, status = 'info') => {
     state.network.active = state.opponent?.type === 'network' || !!state.network.active;
     state.network.status = status;
@@ -77,6 +78,8 @@ export const createNetworkCombat = ({
     state.network.active = true;
   };
   const resetNetworkRound = () => {
+    clearTimeout(readyRetryTimer);
+    readyRetryTimer = 0;
     shotSeq = 0;
     state.network.myReady = false;
     state.network.peerReady = false;
@@ -116,6 +119,47 @@ export const createNetworkCombat = ({
     setNetworkStatus(initiator ? 'Сетевой бой: расставьте корабли и нажмите «Готов к бою».' : 'Соперник готовит бой. Расставьте корабли и подтвердите готовность.', 'setup');
     setScreen('field');
     scheduleSaveMatchDraft();
+  };
+  const scheduleReadyRetry = () => {
+    clearTimeout(readyRetryTimer);
+
+    if (
+      !state.network.connected ||
+      !state.network.myReady ||
+      (
+        state.network.peerReady &&
+        state.network.peerCommitReceived
+      )
+    ) {
+      readyRetryTimer = 0;
+      return;
+    }
+
+    readyRetryTimer = setTimeout(() => {
+      if (
+        state.network.connected &&
+        state.network.myReady &&
+        state.phase === 'setup'
+      ) {
+        session.sendBoardCommit({
+          matchId: state.matchStats.matchId,
+          commitHash: state.fairPlay.myCommitHash,
+          algorithm: 'sha256'
+        });
+
+        session.sendReady({
+          matchId: state.matchStats.matchId,
+          ready: true
+        });
+
+        setNetworkStatus(
+          'Повторяем подтверждение готовности. Ожидаем соперника...',
+          'waiting'
+        );
+      }
+
+      scheduleReadyRetry();
+    }, 4000);
   };
   const markReady = async () => {
     ensureNetworkOpponent();
@@ -158,6 +202,7 @@ export const createNetworkCombat = ({
     }
     state.network.myReady = true;
     state.network.myCommitSent = true;
+    scheduleReadyRetry();
     addSystemMessage('Вы готовы к сетевому бою. Commit доски отправлен.');
     setNetworkStatus('Вы готовы. Ожидаем готовность соперника...', 'waiting');
     maybeStartRps();
@@ -168,6 +213,8 @@ export const createNetworkCombat = ({
     if (state.network.rpsStarted || state.networkRps.active || state.phase === 'rps') return;
     if (!state.network.myReady || !state.network.peerReady) return;
     if (!state.network.myCommitSent || !state.network.peerCommitReceived) return;
+    clearTimeout(readyRetryTimer);
+    readyRetryTimer = 0;
     state.network.rpsStarted = true;
     state.phase = 'rps';
     setScreen('battle');
