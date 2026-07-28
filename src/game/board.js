@@ -71,13 +71,26 @@ export const placeShipRandomly = (fleet, shipId) => {
 };
 
 export const autoPlaceFleet = (fleet) => {
-  fleet.forEach(s => s.placed = false);
-  let success = false;
-  while (!success) {
-    fleet.forEach(s => s.placed = false);
-    success = fleet.every(ship => placeShipRandomly(fleet, ship.id));
+  for (let restart = 0; restart < 200; restart++) {
+    fleet.forEach(ship => {
+      ship.x = null;
+      ship.y = null;
+      ship.isVert = false;
+      ship.placed = false;
+    });
+
+    if (
+      fleet.every(ship =>
+        placeShipRandomly(fleet, ship.id)
+      )
+    ) {
+      return fleet;
+    }
   }
-  return fleet;
+
+  throw new Error(
+    'fleet_auto_placement_failed'
+  );
 };
 
 export const syncFleetToBoard = (fleet, board) => {
