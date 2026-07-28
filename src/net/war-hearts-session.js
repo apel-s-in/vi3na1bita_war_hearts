@@ -128,12 +128,29 @@ export class WarHeartsSession {
   }
   async createInvite() {
     if (!this.bridge) {
-      const invite = { id: `mock_${Date.now().toString(36)}`, roomId: '', roomSecret: '', url: '', expiresAt: Date.now() + 120000, preview: true, mock: true };
-      this.room = invite;
-      return invite;
+      throw new Error('network_bridge_unavailable');
     }
-    const room = await this.bridge.connectAsHost();
-    const invite = { id: room.roomId, roomId: room.roomId, roomSecret: room.roomSecret, url: room.joinUrl, expiresAt: Date.now() + 120000 };
+
+    const room = await this.bridge.connectAsHost({
+      ranked: true,
+      forceLocalOnly: false
+    });
+
+    if (room.ranked !== true) {
+      throw new Error('ranked_room_required');
+    }
+
+    const invite = {
+      id: room.roomId,
+      roomId: room.roomId,
+      roomSecret: room.roomSecret,
+      url: room.joinUrl,
+      ranked: true,
+      localOnly: false,
+      matchMode: 'ranked',
+      expiresAt: Date.now() + 120000
+    };
+
     this.room = invite;
     return invite;
   }
