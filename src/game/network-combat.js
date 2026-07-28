@@ -32,7 +32,8 @@ export const createNetworkCombat = ({
   scheduleSaveMatchDraft,
   saveMatchDraftNow,
   clearTimers,
-  makeEmptyBoard
+  makeEmptyBoard,
+  requestHostAuth
 }) => {
   let shotSeq = 0;
   const setNetworkStatus = (text, status = 'info') => {
@@ -566,7 +567,7 @@ ${isAuthed ? 'Рейтинговый реванш потребует автор�
     overlay.querySelector('#wh-rematch-ranked')?.addEventListener('click', () => {
       overlay.remove();
       if (!isAuthed) {
-        window.parent?.postMessage?.({ kind: 'vitrina:game', type: 'GC_AUTH_LOGIN', gameId: 'war_hearts', payload: { reason: 'ranked_rematch' } }, '*');
+        requestHostAuth?.('ranked_rematch');
         toast?.('Войдите через Яндекс и нажмите реванш ещё раз');
         return;
       }
@@ -620,7 +621,7 @@ ${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-l
       scheduleSaveMatchDraft();
     });
     overlay.querySelector('#wh-rematch-login')?.addEventListener('click', () => {
-      window.parent?.postMessage?.({ kind: 'vitrina:game', type: 'GC_AUTH_LOGIN', gameId: 'war_hearts', payload: { reason: 'ranked_rematch_accept' } }, '*');
+      requestHostAuth?.('ranked_rematch_accept');
       toast?.('Войдите через Яндекс и примите реванш снова');
     });
     overlay.querySelector('#wh-rematch-casual')?.addEventListener('click', () => {
