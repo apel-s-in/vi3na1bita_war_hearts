@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Validate ESM syntax
         run: |
@@ -51,7 +51,7 @@ jobs:
           grep -q "recordRankedShot" src/game/network-combat.js
           grep -q "crypto.randomUUID" src/game/network-combat.js
 
-          if grep -REn "createTranscript|TURN_STATE|RPS_CHOICE" src; then
+          if grep -REn '\bcreateTranscript\b|\bTURN_STATE\b|\bRPS_CHOICE\b' src; then
             echo "Legacy transcript or open P2P RPS found"
             exit 2
           fi
