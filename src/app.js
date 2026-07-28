@@ -484,7 +484,11 @@ networkCombat = createNetworkCombat({
   scheduleSaveMatchDraft,
   saveMatchDraftNow,
   clearTimers: clearBattleTimers,
-  makeEmptyBoard
+  makeEmptyBoard,
+  requestHostAuth: reason => {
+    postToHost('GC_AUTH_LOGIN', { reason });
+    postToHost('GC_REQUEST_SNAPSHOT');
+  }
 });
 networkWatchdog = createNetworkWatchdog({ state, session, render: () => render(), addSystemMessage, scheduleSaveMatchDraft });
 networkWatchdog.start();
