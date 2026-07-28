@@ -21,8 +21,9 @@
 - Общий сетевой модуль подключается из /Games/common/network-bridge.js.
 - Игра не должна читать OAuth token, parent localStorage, parent IndexedDB или parent.window.
 - Связь с Game Center допускается только через postMessage или безопасные параметры запуска.
-- Игра может иметь собственный WebRTC DataChannel, игровой чат и голосовой PTT внутри игровой сессии.
-- Голос включается только по пользовательскому действию.
+- Игра использует только WebRTC DataChannel для игровых сообщений и текстового чата.
+- Голосовой чат, MediaStream, getUserMedia, аудиотреки WebRTC и push-to-talk внутри War Hearts запрещены.
+- Голосовые звонки раздела Friends являются отдельным контуром и не входят в War Hearts.
 - На раннем этапе не добавлять service worker.
 - Основная ориентация интерфейса: мобильная вертикальная 9:16.
 - Игра должна работать standalone-preview, даже если Game Center или network bridge недоступны.
