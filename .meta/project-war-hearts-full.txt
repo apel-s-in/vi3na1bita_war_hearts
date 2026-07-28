@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 09:41:26 UTC
+Сгенерировано: 2026-07-28 09:41:58 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -462,13 +462,13 @@ jobs:
   meta:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Generate War Hearts context
         run: |
