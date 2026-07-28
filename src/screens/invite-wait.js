@@ -59,7 +59,7 @@ el.innerHTML = `
       ${url && !isDirect ? `<button class="wh-btn" type="button" data-act="share">Поделиться ссылкой</button>` : ''}
       ${url && !isDirect ? `<button class="wh-btn secondary" type="button" data-act="copy">Скопировать</button>` : ''}
       <button class="wh-btn secondary" type="button" data-act="extend">Продлить на 2 минуты</button>
-      ${url ? '' : '<button class="wh-btn secondary" type="button" data-act="accepted">Preview-бой без сети</button>'}
+      ${url ? '' : '<p class="wh-history-empty">Сетевой бой недоступен. Для тренировки вернитесь и выберите компьютер.</p>'}
       <button class="wh-btn secondary" type="button" data-act="menu">Отменить</button>
     </div>
   `;
@@ -71,7 +71,6 @@ el.innerHTML = `
   }
 
   el.querySelector('[data-act="extend"]')?.addEventListener('click', actions.extendInvite);
-  el.querySelector('[data-act="accepted"]')?.addEventListener('click', actions.acceptMockOpponent);
   el.querySelector('[data-act="menu"]')?.addEventListener('click', actions.cancelInvite || actions.openMenu);
   el.querySelector('[data-act="copy"]')?.addEventListener('click', () => navigator.clipboard?.writeText?.(url));
   el.querySelector('[data-act="share"]')?.addEventListener('click', () => {
