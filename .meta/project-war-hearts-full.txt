@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 16:51:33 UTC
+Сгенерировано: 2026-07-28 16:54:46 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1636,7 +1636,9 @@ const actions = {
       try {
         await sessionReady;
       } catch {}
-      const invite = await session.createInvite();
+      const invite = await session.createInvite({
+        createJoinToken: false
+      });
       await session.sendGameInvite({ toFriendId: friendId, roomId: invite.roomId, roomSecret: invite.roomSecret });
       state.invite = { id: invite.id || invite.roomId || `invite_${Date.now().toString(36)}`, roomId: invite.roomId || '', roomSecret: invite.roomSecret || '', url: invite.url || '', expiresAt: Date.now() + INVITE_TTL_MS, isDirectPush: true };
       state.network.active = true;
@@ -2156,21 +2158,34 @@ const bind = () => {
     }
   };
   session.onConnect = peer => {
-    const ranked = !!(session.room?.ranked ?? session.bridge?.ranked);
-    const localOnly = !!(session.room?.localOnly ?? session.bridge?.forceLocalOnly);
-    state.opponent = { id: peer?.id || 'network-peer', name: peer?.name || 'Соперник', title: localOnly ? (ranked ? 'LAN · рейтинг' : 'LAN · гость') : 'Сетевая дуэль', type: 'network' };
+    const ranked = true;
+    const localOnly = !!(
+      session.room?.localOnly ??
+      session.bridge?.forceLocalOnly
+    );
+
+    state.opponent = {
+      id: peer?.id || 'network-peer',
+      name: peer?.name || 'Соперник',
+      title: localOnly
+        ? 'LAN · рейтинг · 100 ♦'
+        : 'Сетевая рейтинговая дуэль · 100 ♦',
+      type: 'network'
+    };
     state.network.active = true;
     state.network.connected = true;
     state.network.peerName = state.opponent.name;
     state.network.ranked = ranked;
     state.network.localOnly = localOnly;
-    state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
+    state.network.matchMode = 'ranked';
     networkCombat?.onConnected(state.opponent.name);
     networkWatchdog?.touchPeer();
     addSystemMessage('Сетевое соединение установлено.');
     const canStartPreparation = !['setup', 'rps', 'player', 'computer'].includes(state.phase);
     if (canStartPreparation) {
-      networkCombat?.startNetworkPreparation({ initiator: session.room?.role !== 'guest', ranked: !!state.network.ranked });
+      networkCombat?.startNetworkPreparation({
+        initiator: session.room?.role !== 'guest'
+      });
       return;
     }
     render();
