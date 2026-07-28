@@ -331,11 +331,12 @@ export class WarHeartsSession {
     }
     return this.bridge.submitRankedMatch({ matchId, submission });
   }
-  async getRankedMatchStatus(matchId) {
+  async getRankedStats() {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-    return this.bridge.getRankedMatchStatus(matchId);
+
+    return this.bridge.getRankedStats();
   }
   async abortRankedMatch({ matchId, reason = 'disconnect' } = {}) {
     if (!this.bridge) {
