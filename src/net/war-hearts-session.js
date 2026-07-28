@@ -247,11 +247,6 @@ export class WarHeartsSession {
     }
     return this.bridge.sendGameInvite({ toFriendId, gameId: this.gameId, roomId, roomSecret });
   }
-  async toggleVoice(active) {
-    if (!this.bridge) return false;
-    await this.bridge.toggleVoice(active);
-    return true;
-  }
   async close() {
     try {
       await this.bridge?.close?.();
