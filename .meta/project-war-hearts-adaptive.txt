@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 11:33:22 UTC
+Сгенерировано: 2026-07-28 11:34:01 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2556,6 +2556,11 @@ jobs:
 
           if grep -REn '\bcreateTranscript\b|\bTURN_STATE\b|\bRPS_CHOICE\b' src; then
             echo "Legacy transcript or open P2P RPS found"
+            exit 2
+          fi
+
+          if grep -REn 'getUserMedia|MediaStream|addTrack|removeTrack|RTCRtpSender|toggleVoice|pushToTalk|push-to-talk' src; then
+            echo "Voice transport is forbidden inside War Hearts"
             exit 2
           fi
 
