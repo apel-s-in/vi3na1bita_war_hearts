@@ -1039,7 +1039,10 @@ const createLanRoom = async ranked => {
   toast('Создаём LAN-only комнату...');
   try {
     await sessionReady;
-    const res = await session.createLanRoom({ ranked, forceLocalOnly: false });
+    const res = await session.createLanRoom({
+      ranked,
+      forceLocalOnly: true
+    });
     state.lanCode = res.code;
     state.invite = { id: res.roomId, roomId: res.roomId, roomSecret: res.roomSecret, code: res.code, isLan: true, localOnly: false, ranked: !!ranked, matchMode: ranked ? 'ranked' : 'casual', expiresAt: res.expiresAt || Date.now() + 300000 };
     state.network.active = true;
@@ -1082,7 +1085,10 @@ const joinLanByCode = async code => {
 };
 const connectLanRoom = async (code, rankedOverride = null) => {
   toast('Подключаемся по LAN-коду...');
-  const res = await session.joinLanRoom(code, { forceLocalOnly: false, rankedOverride });
+  const res = await session.joinLanRoom(code, {
+    forceLocalOnly: true,
+    rankedOverride
+  });
   const ranked = !!res.ranked;
   state.invite = { id: res.roomId, roomId: res.roomId, roomSecret: res.roomSecret, code: res.code || code, isLan: true, localOnly: false, ranked, matchMode: ranked ? 'ranked' : 'casual', expiresAt: res.expiresAt || Date.now() + 300000 };
   state.network.active = true;
