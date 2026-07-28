@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 09:52:54 UTC
+Сгенерировано: 2026-07-28 09:53:59 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5480,8 +5480,13 @@ export class WarHeartsSession {
     this.onStatus({ label: 'bridge...', online: false });
 
     try {
-      const url = new URL('/Games/common/network-bridge.js', window.location.href).href;
-      const mod = await import(url);
+      const url = new URL(
+        '/Games/common/network-bridge.js',
+        window.location.href
+      );
+      url.searchParams.set('rev', '20260728-network-2');
+
+      const mod = await import(url.href);
       const NetworkBridge = mod.NetworkBridge;
 
       this.bridge = new NetworkBridge({
