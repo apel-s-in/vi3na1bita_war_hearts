@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 13:18:49 UTC
+Сгенерировано: 2026-07-28 13:19:42 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -2765,13 +2765,26 @@ export const placeShipRandomly = (fleet, shipId) => {
 };
 
 export const autoPlaceFleet = (fleet) => {
-  fleet.forEach(s => s.placed = false);
-  let success = false;
-  while (!success) {
-    fleet.forEach(s => s.placed = false);
-    success = fleet.every(ship => placeShipRandomly(fleet, ship.id));
+  for (let restart = 0; restart < 200; restart++) {
+    fleet.forEach(ship => {
+      ship.x = null;
+      ship.y = null;
+      ship.isVert = false;
+      ship.placed = false;
+    });
+
+    if (
+      fleet.every(ship =>
+        placeShipRandomly(fleet, ship.id)
+      )
+    ) {
+      return fleet;
+    }
   }
-  return fleet;
+
+  throw new Error(
+    'fleet_auto_placement_failed'
+  );
 };
 
 export const syncFleetToBoard = (fleet, board) => {
