@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 12:09:06 UTC
+Сгенерировано: 2026-07-28 12:13:52 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3418,7 +3418,7 @@ export const createNetworkCombat = ({
     state.network.rematchPending = false;
     state.networkRps = { active: false, myChoice: '', peerChoice: '', round: 0 };
   };
-  const startNetworkPreparation = ({ initiator = false, ranked = state.network?.ranked } = {}) => {
+  const startNetworkPreparation = ({ initiator = false } = {}) => {
     ensureNetworkOpponent();
     if (!state.network.connected) {
       setNetworkStatus('Ожидаем P2P-соединение с соперником...', 'waiting');
@@ -3426,8 +3426,8 @@ export const createNetworkCombat = ({
     }
     clearTimers?.();
     resetNetworkRound();
-    state.network.ranked = !!ranked;
-    state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
+    state.network.ranked = true;
+    state.network.matchMode = 'ranked';
     resetMatchStats();
     resetFairPlayForMatch();
     state.networkShots = { mine: [], peer: [], enemyTranscriptOk: null, note: '' };
@@ -3500,13 +3500,11 @@ export const createNetworkCombat = ({
     state.network.rpsStarted = true;
     state.phase = 'rps';
     setScreen('battle');
-    setNetworkStatus(state.network.ranked ? 'Оба игрока готовы. Рейтинговый бой зафиксирован. Розыгрыш первого хода.' : 'Оба игрока готовы. Гостевой бой зафиксирован. Розыгрыш первого хода.', 'ready');
-    addSystemMessage(state.network.ranked ? 'Оба игрока готовы. Рейтинговый статус боя зафиксирован для этого сражения.' : 'Оба игрока готовы. Гостевой статус боя зафиксирован для этого сражения.');
-    if (state.network.ranked) {
-      openNetworkRpsModal();
-    } else {
-      resolveCasualCommitLottery();
-    }
+    state.network.ranked = true;
+    state.network.matchMode = 'ranked';
+    setNetworkStatus('Оба игрока готовы. Рейтинговый бой за 100 ♦ зафиксирован. Разыгрываем первый ход.', 'ready');
+    addSystemMessage('Оба игрока готовы. Ставки заблокированы, первый ход определяет серверный RPS.');
+    openNetworkRpsModal();
     scheduleSaveMatchDraft();
   };
   const applyFirstTurn = firstPlayerId => {
@@ -3527,17 +3525,6 @@ export const createNetworkCombat = ({
     }
     render();
     scheduleSaveMatchDraft();
-  };
-  const resolveCasualCommitLottery = () => {
-    const mine = String(state.fairPlay?.myCommitHash || '');
-    const peer = String(state.fairPlay?.enemyCommitHash || '');
-    if (!mine || !peer) {
-      setNetworkStatus('Не удалось провести жеребьёвку по commit.', 'error');
-      return;
-    }
-    const mineFirst = mine.localeCompare(peer) < 0;
-    addSystemMessage('Гостевой первый ход определён по двум скрытым board commits.');
-    applyFirstTurn(mineFirst ? 'mine' : 'peer');
   };
   const openNetworkRpsModal = () => {
     clearModal('.wh-rps-modal-overlay');
@@ -3890,42 +3877,16 @@ export const createNetworkCombat = ({
   };
   const requestRematch = () => {
     if (state.opponent?.type !== 'network') return false;
-    const isAuthed = !!state.snapshot?.user?.yandexLinked;
-    if (state.network?.ranked) {
-      return sendRematchRequest(true);
+
+    if (!state.snapshot?.user?.yandexLinked) {
+      requestHostAuth?.('ranked_rematch');
+      toast?.('Для рейтингового реванша войдите через Яндекс');
+      return false;
     }
-    const overlay = document.createElement('div');
-    overlay.className = 'wh-modal-overlay';
-    overlay.innerHTML = `
-<div class="wh-modal-box">
-<h3 class="wh-modal-title">Реванш?</h3>
-<p class="wh-modal-text">
-Можно сыграть снова гостевой бой или предложить рейтинговый реванш.
-${isAuthed ? 'Рейтинговый реванш потребует авторизацию соперника.' : 'Для рейтингового реванша нужно войти через Яндекс.'}
-</p>
-<div class="wh-modal-actions" style="flex-direction:column;gap:10px">
-<button class="wh-btn" type="button" id="wh-rematch-ranked" style="background:linear-gradient(135deg,#ff9800,#f57c00)">🏆 ${isAuthed ? 'Предложить рейтинговый реванш' : 'Войти и предложить рейтинговый реванш'}</button>
-<button class="wh-btn secondary" type="button" id="wh-rematch-casual">👤 Сыграть гостевой реванш</button>
-<button class="wh-btn secondary" type="button" id="wh-rematch-cancel" style="background:transparent;border:1px solid rgba(255,255,255,.2)">Отмена</button>
-</div>
-</div>
-`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('#wh-rematch-cancel')?.addEventListener('click', () => overlay.remove());
-    overlay.querySelector('#wh-rematch-casual')?.addEventListener('click', () => {
-      overlay.remove();
-      sendRematchRequest(false);
-    });
-    overlay.querySelector('#wh-rematch-ranked')?.addEventListener('click', () => {
-      overlay.remove();
-      if (!isAuthed) {
-        requestHostAuth?.('ranked_rematch');
-        toast?.('Войдите через Яндекс и нажмите реванш ещё раз');
-        return;
-      }
-      sendRematchRequest(true);
-    });
-    return true;
+
+    state.network.ranked = true;
+    state.network.matchMode = 'ranked';
+    return sendRematchRequest(true);
   };
   const receiveRematchRequest = msg => {
     state.network.rematchPending = false;
@@ -4075,10 +4036,19 @@ ${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-l
         setNetworkStatus('Соперник прервал матч или отключился.', 'error');
         break;
       case MessageType.MATCH_MODE:
-        state.network.ranked = msg.payload?.ranked === true;
-        state.network.matchMode = state.network.ranked ? 'ranked' : 'casual';
-        addSystemMessage(state.network.ranked ? 'Режим боя обновлён: рейтинговый.' : 'Режим боя обновлён: гостевой без статистики.');
-        setNetworkStatus(state.network.ranked ? 'Режим боя: рейтинговый.' : 'Режим боя: гостевой без статистики.', 'setup');
+        if (msg.payload?.ranked !== true || msg.payload?.matchMode !== 'ranked') {
+          recordTurnViolation(state, 'casual_network_mode_forbidden', {
+            ranked: msg.payload?.ranked,
+            matchMode: msg.payload?.matchMode
+          });
+          addSystemMessage('Отклонена попытка переключить сетевой бой в нерейтинговый режим.');
+          setNetworkStatus('Сетевой бой может быть только рейтинговым.', 'error');
+          break;
+        }
+        state.network.ranked = true;
+        state.network.matchMode = 'ranked';
+        addSystemMessage('Режим боя подтверждён: рейтинговый, ставка 100 ♦.');
+        setNetworkStatus('Режим боя: рейтинговый · 100 ♦.', 'setup');
         scheduleSaveMatchDraft();
         break;
       default:
