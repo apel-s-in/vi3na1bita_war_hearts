@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 12:21:55 UTC
+Сгенерировано: 2026-07-28 12:22:53 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -3730,7 +3730,13 @@ export const createNetworkCombat = ({
     const y = Number(payload.y);
     const result = payload.result || 'miss';
     const shotId = String(payload.shotId || '');
-    const guard = verifyIncomingShotResult({ state, shotId });
+    const guard = verifyIncomingShotResult({
+      state,
+      shotId,
+      x,
+      y,
+      result
+    });
     if (!guard.ok) {
       setNetworkStatus(`SHOT_RESULT отклонён: ${guard.reason}.`, 'error');
       addSystemMessage(`Turn guard: SHOT_RESULT отклонён (${guard.reason}).`);
