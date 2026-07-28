@@ -76,8 +76,8 @@ export const playRankedRps = async ({
   state,
   session,
   choice,
-  attempts = 24,
-  intervalMs = 1250
+  attempts = 10,
+  intervalMs = 3000
 } = {}) => {
   const ranked = ensureRankedState(state);
   const selected = String(choice || '');
@@ -163,7 +163,7 @@ export const refreshRankedMatchStatus = async ({ state, session } = {}) => {
   }
   return ranked;
 };
-export const waitForRankedSettlement = async ({ state, session, attempts = 12, intervalMs = 1250 } = {}) => {
+export const waitForRankedSettlement = async ({ state, session, attempts = 8, intervalMs = 2500 } = {}) => {
   const ranked = ensureRankedState(state);
   for (let attempt = 0; attempt < attempts; attempt++) {
     const terminal = isRankedTerminal(ranked.serverStatus);
