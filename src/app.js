@@ -959,14 +959,6 @@ const actions = {
     render();
     scheduleSaveMatchDraft();
   },
-  async toggleVoice(active) {
-    try {
-      await session.toggleVoice(active);
-      toast(active ? 'Голос включён' : 'Голос выключен');
-    } catch {
-      toast('Микрофон недоступен');
-    }
-  },
   finishMock(result = 'win') {
     finishMatch(result, result === 'win' ? 'Preview завершён: победа.' : 'Preview завершён: поражение.');
   },
