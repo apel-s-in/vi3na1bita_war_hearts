@@ -551,79 +551,144 @@ export const createNetworkCombat = ({
   };
   const openRematchModal = () => {
     clearModal('.wh-rematch-offer-overlay');
-    const isRanked = !!state.rematchOffer?.ranked;
-    const isAuthed = !!state.snapshot?.user?.yandexLinked;
-    const rankBadge = isRanked
-      ? '<div style="padding:4px 12px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">🏆 Рейтинговый</div>'
-      : '<div style="padding:4px 12px;border-radius:999px;background:rgba(124,77,255,.2);border:1px solid rgba(124,77,255,.4);color:#b388ff;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">👤 Гостевой</div>';
-    const authWarning =
-      !isAuthed && isRanked
-        ? '<div style="padding:10px;border-radius:10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);margin-bottom:10px;font-size:11px;color:#ffb74d">🏆 Соперник зовёт в рейтинговый реванш. Войдите через Яндекс, чтобы принять его рейтингово, или предложите гостевой реванш.</div>'
-        : '';
+
+    const isAuthed =
+      !!state.snapshot?.user?.yandexLinked;
     const overlay = document.createElement('div');
-    overlay.className = 'wh-modal-overlay wh-rematch-offer-overlay';
+
+    overlay.className =
+      'wh-modal-overlay wh-rematch-offer-overlay';
     overlay.innerHTML = `
-<div class="wh-modal-box">
-<h3 class="wh-modal-title">Реванш?</h3>
-${rankBadge}
-${authWarning}
-<p class="wh-modal-text">
-${state.rematchOffer.from || 'Соперник'} предлагает сыграть ещё раз.
-Если принять, вы перейдёте к новой расстановке кораблей.
-</p>
-<div class="wh-modal-actions" style="flex-direction:${isRanked && !isAuthed ? 'column' : 'row'};gap:10px">
-<button class="wh-btn secondary" type="button" id="wh-rematch-reject">Отклонить</button>
-${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-login" style="background:linear-gradient(135deg,#ff9800,#f57c00)">🏆 Войти и принять рейтингово</button><button class="wh-btn secondary" type="button" id="wh-rematch-casual">👤 Предложить гостевой реванш</button>' : '<button class="wh-btn" type="button" id="wh-rematch-accept">Принять</button>'}
-</div>
-</div>
-`;
+      <div class="wh-modal-box">
+        <h3 class="wh-modal-title">
+          Рейтинговый реванш?
+        </h3>
+        <div style="padding:4px 12px;border-radius:999px;background:rgba(255,152,0,.2);border:1px solid rgba(255,152,0,.4);color:#ffb74d;font-size:11px;font-weight:900;display:inline-block;margin-bottom:10px">
+          🏆 РЕЙТИНГ · 100 ♦
+        </div>
+        <p class="wh-modal-text">
+          ${state.rematchOffer.from || 'Соперник'}
+          предлагает новый рейтинговый бой.
+          После принятия оба игрока заново
+          расставят корабли и внесут ставку 100 ♦.
+        </p>
+        <div class="wh-modal-actions">
+          <button class="wh-btn secondary" type="button" id="wh-rematch-reject">
+            Отклонить
+          </button>
+          <button class="wh-btn" type="button" id="wh-rematch-accept">
+            ${isAuthed ? 'Принять' : 'Войти и принять'}
+          </button>
+        </div>
+      </div>
+    `;
+
     document.body.appendChild(overlay);
-    overlay.querySelector('#wh-rematch-reject')?.addEventListener('click', () => {
-      overlay.remove();
-      session.sendGame(MessageType.REMATCH_REJECT, { matchId: state.rematchOffer.matchId, at: Date.now() });
-      state.rematchOffer.active = false;
-      state.network.rematchPending = false;
-      setNetworkStatus('Вы отклонили реванш.', 'ready');
-      addSystemMessage('Реванш отклонён.');
-      scheduleSaveMatchDraft();
-    });
-    overlay.querySelector('#wh-rematch-login')?.addEventListener('click', () => {
-      requestHostAuth?.('ranked_rematch_accept');
-      toast?.('Войдите через Яндекс и примите реванш снова');
-    });
-    overlay.querySelector('#wh-rematch-casual')?.addEventListener('click', () => {
-      overlay.remove();
-      state.rematchOffer.ranked = false;
-      session.sendGame(MessageType.REMATCH_ACCEPT, { matchId: state.rematchOffer.matchId, ranked: false, at: Date.now() });
-      session.sendGame(MessageType.MATCH_MODE, { matchId: state.rematchOffer.matchId, ranked: false, matchMode: 'casual', at: Date.now() });
-      state.rematchOffer.active = false;
-      state.network.rematchPending = false;
-      state.network.ranked = false;
-      state.network.matchMode = 'casual';
-      addSystemMessage('Вы предложили продолжить реванш как гостевой.');
-      startNetworkPreparation({ initiator: false, ranked: false });
-    });
-    overlay.querySelector('#wh-rematch-accept')?.addEventListener('click', () => {
-      overlay.remove();
-      const ranked = !!state.rematchOffer.ranked;
-      session.sendGame(MessageType.REMATCH_ACCEPT, { matchId: state.rematchOffer.matchId, ranked, at: Date.now() });
-      session.sendGame(MessageType.MATCH_MODE, { matchId: state.rematchOffer.matchId, ranked, matchMode: ranked ? 'ranked' : 'casual', at: Date.now() });
-      state.rematchOffer.active = false;
-      state.network.rematchPending = false;
-      state.network.ranked = ranked;
-      state.network.matchMode = ranked ? 'ranked' : 'casual';
-      addSystemMessage(ranked ? 'Рейтинговый реванш принят. Переходим к расстановке.' : 'Гостевой реванш принят. Переходим к расстановке.');
-      startNetworkPreparation({ initiator: false, ranked });
-    });
+
+    overlay
+      .querySelector('#wh-rematch-reject')
+      ?.addEventListener('click', () => {
+        overlay.remove();
+        session.sendGame(
+          MessageType.REMATCH_REJECT,
+          {
+            matchId:
+              state.rematchOffer.matchId,
+            at: Date.now()
+          }
+        );
+        state.rematchOffer.active = false;
+        state.network.rematchPending = false;
+        setNetworkStatus(
+          'Вы отклонили реванш.',
+          'ready'
+        );
+        addSystemMessage('Реванш отклонён.');
+        scheduleSaveMatchDraft();
+      });
+
+    overlay
+      .querySelector('#wh-rematch-accept')
+      ?.addEventListener('click', () => {
+        if (
+          !state.snapshot?.user?.yandexLinked
+        ) {
+          requestHostAuth?.(
+            'ranked_rematch_accept'
+          );
+          toast?.(
+            'Войдите через Яндекс и нажмите «Принять» ещё раз'
+          );
+          return;
+        }
+
+        overlay.remove();
+
+        session.sendGame(
+          MessageType.REMATCH_ACCEPT,
+          {
+            matchId:
+              state.rematchOffer.matchId,
+            ranked: true,
+            at: Date.now()
+          }
+        );
+
+        session.sendGame(
+          MessageType.MATCH_MODE,
+          {
+            matchId:
+              state.rematchOffer.matchId,
+            ranked: true,
+            matchMode: 'ranked',
+            at: Date.now()
+          }
+        );
+
+        state.rematchOffer.active = false;
+        state.network.rematchPending = false;
+        state.network.ranked = true;
+        state.network.matchMode = 'ranked';
+
+        addSystemMessage(
+          'Рейтинговый реванш принят. Переходим к новой расстановке.'
+        );
+
+        startNetworkPreparation({
+          initiator: false
+        });
+      });
   };
   const receiveRematchAccept = msg => {
-    const ranked = msg?.payload?.ranked === true;
+    if (msg?.payload?.ranked !== true) {
+      recordTurnViolation(
+        state,
+        'casual_rematch_forbidden',
+        {
+          ranked: msg?.payload?.ranked
+        }
+      );
+      setNetworkStatus(
+        'Нерейтинговый реванш отклонён.',
+        'error'
+      );
+      return;
+    }
+
     state.network.rematchPending = false;
-    state.network.ranked = ranked;
-    state.network.matchMode = ranked ? 'ranked' : 'casual';
-    addSystemMessage(ranked ? 'Соперник принял рейтинговый реванш. Переходим к расстановке.' : 'Соперник принял гостевой реванш. Переходим к расстановке.');
-    setNetworkStatus(ranked ? 'Рейтинговый реванш принят. Расставьте корабли.' : 'Гостевой реванш принят. Расставьте корабли.', 'setup');
-    startNetworkPreparation({ initiator: true, ranked });
+    state.network.ranked = true;
+    state.network.matchMode = 'ranked';
+
+    addSystemMessage(
+      'Соперник принял рейтинговый реванш. Переходим к новой расстановке.'
+    );
+    setNetworkStatus(
+      'Рейтинговый реванш принят. Расставьте корабли.',
+      'setup'
+    );
+    startNetworkPreparation({
+      initiator: true
+    });
   };
   const receiveRematchReject = () => {
     state.network.rematchPending = false;
