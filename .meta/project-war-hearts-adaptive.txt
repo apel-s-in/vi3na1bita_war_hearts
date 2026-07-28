@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 14:04:20 UTC
+Сгенерировано: 2026-07-28 14:20:26 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -5646,7 +5646,16 @@ export class WarHeartsSession {
     if (!this.bridge) {
       throw new Error('network_bridge_unavailable');
     }
-    return this.bridge.submitRankedMatch({ matchId, submission });
+    return this.bridge.submitRankedMatch({
+      matchId,
+      submission
+    });
+  }
+  async getRankedMatchStatus(matchId) {
+    if (!this.bridge) {
+      throw new Error('network_bridge_unavailable');
+    }
+    return this.bridge.getRankedMatchStatus(matchId);
   }
   async getRankedStats() {
     if (!this.bridge) {
