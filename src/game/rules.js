@@ -31,8 +31,7 @@ export const GAME_RULES = {
   // Конфиг: [размер_корабля, ...]
   ships: [4, 3, 3, 2, 2, 2, 1, 1, 1, 1],
   turnMode: 'classic',
-  chat: true,
-  voice: true
+  chat: true
 };
 
 export const isInsideBoard = (x, y) =>
