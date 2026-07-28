@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 09:53:59 UTC
+Сгенерировано: 2026-07-28 09:56:07 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1339,7 +1339,11 @@ networkCombat = createNetworkCombat({
   scheduleSaveMatchDraft,
   saveMatchDraftNow,
   clearTimers: clearBattleTimers,
-  makeEmptyBoard
+  makeEmptyBoard,
+  requestHostAuth: reason => {
+    postToHost('GC_AUTH_LOGIN', { reason });
+    postToHost('GC_REQUEST_SNAPSHOT');
+  }
 });
 networkWatchdog = createNetworkWatchdog({ state, session, render: () => render(), addSystemMessage, scheduleSaveMatchDraft });
 networkWatchdog.start();
@@ -3319,7 +3323,8 @@ export const createNetworkCombat = ({
   scheduleSaveMatchDraft,
   saveMatchDraftNow,
   clearTimers,
-  makeEmptyBoard
+  makeEmptyBoard,
+  requestHostAuth
 }) => {
   let shotSeq = 0;
   const setNetworkStatus = (text, status = 'info') => {
@@ -3853,7 +3858,7 @@ ${isAuthed ? 'Рейтинговый реванш потребует автор�
     overlay.querySelector('#wh-rematch-ranked')?.addEventListener('click', () => {
       overlay.remove();
       if (!isAuthed) {
-        window.parent?.postMessage?.({ kind: 'vitrina:game', type: 'GC_AUTH_LOGIN', gameId: 'war_hearts', payload: { reason: 'ranked_rematch' } }, '*');
+        requestHostAuth?.('ranked_rematch');
         toast?.('Войдите через Яндекс и нажмите реванш ещё раз');
         return;
       }
@@ -3907,7 +3912,7 @@ ${isRanked && !isAuthed ? '<button class="wh-btn" type="button" id="wh-rematch-l
       scheduleSaveMatchDraft();
     });
     overlay.querySelector('#wh-rematch-login')?.addEventListener('click', () => {
-      window.parent?.postMessage?.({ kind: 'vitrina:game', type: 'GC_AUTH_LOGIN', gameId: 'war_hearts', payload: { reason: 'ranked_rematch_accept' } }, '*');
+      requestHostAuth?.('ranked_rematch_accept');
       toast?.('Войдите через Яндекс и примите реванш снова');
     });
     overlay.querySelector('#wh-rematch-casual')?.addEventListener('click', () => {
