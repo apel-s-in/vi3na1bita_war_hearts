@@ -123,7 +123,11 @@ updatedAt: 0
     playerHitStreak: 0,
     opponentHitStreak: 0,
     playerBestHitStreak: 0,
-    opponentBestHitStreak: 0
+    opponentBestHitStreak: 0,
+    playerSunkStreak: 0,
+    opponentSunkStreak: 0,
+    playerBestSunkStreak: 0,
+    opponentBestSunkStreak: 0
   },
   rps: {
     active: false,
