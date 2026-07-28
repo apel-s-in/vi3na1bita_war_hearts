@@ -19,7 +19,7 @@ export class WarHeartsSession {
     this.onStatus({ label: 'bridge...', online: false });
     try {
       const url = new URL('/Games/common/network-bridge.js', window.location.href);
-      url.searchParams.set('rev', '20260728-network-5');
+      url.searchParams.set('rev', '20260728-network-6');
       const mod = await import(url.href);
       const NetworkBridge = mod.NetworkBridge;
       this.bridge = new NetworkBridge({ gameId: this.gameId, playerId: this.player.id, displayName: this.player.name });
