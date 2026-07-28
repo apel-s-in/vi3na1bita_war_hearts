@@ -1,6 +1,5 @@
 import { renderBoard } from '../ui/board-view.js';
 import { renderChat } from '../ui/chat-view.js';
-import { renderVoiceButton } from '../ui/voice-button.js';
 import { renderNetworkIndicator } from '../ui/network-indicator.js';
 
 export const renderBattle = (root, state, actions) => {
@@ -71,19 +70,7 @@ export const renderBattle = (root, state, actions) => {
   tools.className = 'wh-card';
   tools.append(renderChat(state.chat, actions.sendChat));
 
-  const bottom = document.createElement('div');
-  bottom.className = 'wh-battle-tools';
-
-  const finish = document.createElement('button');
-  finish.className = 'wh-btn secondary';
-  finish.type = 'button';
-  finish.textContent = 'Завершить preview';
-  finish.hidden = state.phase === 'finished' || state.opponent?.type === 'network';
-  finish.addEventListener('click', () => actions.finishMock('win'));
-
-  bottom.append(finish, renderVoiceButton(actions.toggleVoice));
-
-  wrap.append(enemy, mine, tools, bottom);
+  wrap.append(enemy, mine, tools);
   root.append(wrap);
 };
 
