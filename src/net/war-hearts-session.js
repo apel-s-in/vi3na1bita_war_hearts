@@ -184,6 +184,16 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
   const ranked = rankedOverride === null ? !!roomInfo.ranked : !!rankedOverride;
   const localOnly = roomInfo.localOnly !== false && !!forceLocalOnly;
 
+  this.room = {
+    roomId: roomInfo.roomId,
+    roomSecret: roomInfo.roomSecret,
+    code: roomInfo.code,
+    ranked,
+    localOnly,
+    matchMode: ranked ? 'ranked' : 'casual',
+    expiresAt: roomInfo.expiresAt || 0
+  };
+
   await this.bridge.connectAsGuest({
     roomId: roomInfo.roomId,
     roomSecret: roomInfo.roomSecret,
@@ -193,13 +203,10 @@ async joinLanRoom(code, { forceLocalOnly = false, rankedOverride = null } = {}) 
   });
 
   this.room = {
-    roomId: roomInfo.roomId,
-    roomSecret: roomInfo.roomSecret,
-    code: roomInfo.code,
-    ranked,
-    localOnly,
-    matchMode: ranked ? 'ranked' : 'casual',
-    expiresAt: roomInfo.expiresAt || 0
+    ...this.room,
+    ranked: !!this.bridge.ranked,
+    localOnly: !!this.bridge.forceLocalOnly,
+    matchMode: this.bridge.ranked ? 'ranked' : 'casual'
   };
 
   return this.room;
