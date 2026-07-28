@@ -111,7 +111,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 10:57:50 UTC
+Сгенерировано: 2026-07-28 10:58:38 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -1812,14 +1812,6 @@ const actions = {
     }
     render();
     scheduleSaveMatchDraft();
-  },
-  async toggleVoice(active) {
-    try {
-      await session.toggleVoice(active);
-      toast(active ? 'Голос включён' : 'Голос выключен');
-    } catch {
-      toast('Микрофон недоступен');
-    }
   },
   finishMock(result = 'win') {
     finishMatch(result, result === 'win' ? 'Preview завершён: победа.' : 'Preview завершён: поражение.');
