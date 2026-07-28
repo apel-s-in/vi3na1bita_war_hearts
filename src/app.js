@@ -1056,10 +1056,7 @@ const createLanRoom = async () => {
       throw new Error(session.lastError || 'network_bridge_unavailable');
     }
 
-    const res = await session.createLanRoom({
-      ranked: true,
-      forceLocalOnly: false
-    });
+    const res = await session.createLanRoom();
 
     state.lanCode = res.code;
     state.invite = {
@@ -1068,7 +1065,7 @@ const createLanRoom = async () => {
       roomSecret: res.roomSecret,
       code: res.code,
       isLan: true,
-      localOnly: false,
+      localOnly: true,
       ranked: true,
       matchMode: 'ranked',
       expiresAt: res.expiresAt || Date.now() + 300000
@@ -1079,7 +1076,7 @@ const createLanRoom = async () => {
     state.network.peerName = 'Соперник по Wi‑Fi';
     state.network.text = 'Рейтинговая P2P-комната создана. Назовите код сопернику.';
     state.network.ranked = true;
-    state.network.localOnly = false;
+    state.network.localOnly = true;
     state.network.matchMode = 'ranked';
     state.network.lastEventAt = Date.now();
 
@@ -1160,7 +1157,7 @@ const connectLanRoom = async code => {
   state.network.peerName = 'Хост комнаты';
   state.network.text = 'Код принят. Устанавливаем рейтинговое P2P-соединение...';
   state.network.ranked = true;
-  state.network.localOnly = false;
+  state.network.localOnly = true;
   state.network.matchMode = 'ranked';
   state.network.lastEventAt = Date.now();
 
