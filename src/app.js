@@ -192,7 +192,11 @@ const createMatchStats = () => ({
   playerHitStreak: 0,
   opponentHitStreak: 0,
   playerBestHitStreak: 0,
-  opponentBestHitStreak: 0
+  opponentBestHitStreak: 0,
+  playerSunkStreak: 0,
+  opponentSunkStreak: 0,
+  playerBestSunkStreak: 0,
+  opponentBestSunkStreak: 0
 });
 const resetMatchStats = () => {
   state.matchStats = createMatchStats();
@@ -255,7 +259,16 @@ const registerShotStats = (side, result) => {
       stats.playerMisses++;
       stats.playerHitStreak = 0;
     }
-    if (result === 'sunk') stats.playerSunk++;
+    if (result === 'sunk') {
+      stats.playerSunk++;
+      stats.playerSunkStreak = Number(stats.playerSunkStreak || 0) + 1;
+      stats.playerBestSunkStreak = Math.max(
+        Number(stats.playerBestSunkStreak || 0),
+        stats.playerSunkStreak
+      );
+    } else if (result === 'miss') {
+      stats.playerSunkStreak = 0;
+    }
     return;
   }
   stats.opponentShots++;
@@ -267,7 +280,16 @@ const registerShotStats = (side, result) => {
     stats.opponentMisses++;
     stats.opponentHitStreak = 0;
   }
-  if (result === 'sunk') stats.opponentSunk++;
+  if (result === 'sunk') {
+    stats.opponentSunk++;
+    stats.opponentSunkStreak = Number(stats.opponentSunkStreak || 0) + 1;
+    stats.opponentBestSunkStreak = Math.max(
+      Number(stats.opponentBestSunkStreak || 0),
+      stats.opponentSunkStreak
+    );
+  } else if (result === 'miss') {
+    stats.opponentSunkStreak = 0;
+  }
 };
 const addSystemMessage = text => {
   state.chat.push({ from: 'Система', text, at: Date.now() });
