@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 14:34:32 UTC
+Сгенерировано: 2026-07-28 14:35:03 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -4986,6 +4986,8 @@ updatedAt: 0
   networkTurn: {
     ok: true,
     expectedShotId: '',
+    expectedShotX: -1,
+    expectedShotY: -1,
     sentShotIds: [],
     receivedShotIds: [],
     resolvedShotIds: [],
