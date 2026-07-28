@@ -112,7 +112,7 @@ vi3na1bita_war_hearts/
 ├── index.html
 └── styles.css
 
-Сгенерировано: 2026-07-28 13:19:42 UTC
+Сгенерировано: 2026-07-28 13:26:35 UTC
 
 //=================================================
 // FILE: /.github/workflows/deploy.yml
@@ -928,19 +928,15 @@ window.addEventListener('message', e => {
   }
 });
 postToHost('GC_READY');
-
 const waitForHostBridge = async (timeoutMs = 5000) => {
   if (window.parent === window) return true;
-
   const startedAt = Date.now();
   while (!hostBridgeId && Date.now() - startedAt < timeoutMs) {
     postToHost('GC_READY');
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-
   return !!hostBridgeId;
 };
-
 const session = new WarHeartsSession({ gameId: GAME_ID, player: state.player });
 let computerTimer = 0;
 let playerAutoTimer = 0;
@@ -985,12 +981,7 @@ const waitForYandexAuth = async (timeoutMs = 18000) => {
   }
   return isYandexAuthed();
 };
-const openRankedAuthGate = ({
-  title = 'Рейтинговый бой',
-  text = 'Войдите через Яндекс. Сетевые бои всегда рейтинговые и требуют ставку 100 ♦.',
-  loginText = 'Войти через Яндекс',
-  onAuthed
-} = {}) => {
+const openRankedAuthGate = ({ title = 'Рейтинговый бой', text = 'Войдите через Яндекс. Сетевые бои всегда рейтинговые и требуют ставку 100 ♦.', loginText = 'Войти через Яндекс', onAuthed } = {}) => {
   const overlay = document.createElement('div');
   overlay.className = 'wh-modal-overlay';
   overlay.innerHTML = `
@@ -1007,17 +998,14 @@ const openRankedAuthGate = ({
       </div>
     </div>
   `;
-
   document.body.appendChild(overlay);
   overlay.querySelector('#wh-auth-cancel').onclick = () => overlay.remove();
   overlay.querySelector('#wh-auth-login').onclick = async () => {
     requestYandexLogin();
-
     if (!(await waitForYandexAuth())) {
       toast('Авторизация пока не завершена');
       return;
     }
-
     overlay.remove();
     onAuthed?.();
   };
@@ -1118,10 +1106,7 @@ const registerShotStats = (side, result) => {
     if (result === 'sunk') {
       stats.playerSunk++;
       stats.playerSunkStreak = Number(stats.playerSunkStreak || 0) + 1;
-      stats.playerBestSunkStreak = Math.max(
-        Number(stats.playerBestSunkStreak || 0),
-        stats.playerSunkStreak
-      );
+      stats.playerBestSunkStreak = Math.max(Number(stats.playerBestSunkStreak || 0), stats.playerSunkStreak);
     } else if (result === 'miss') {
       stats.playerSunkStreak = 0;
     }
@@ -1139,10 +1124,7 @@ const registerShotStats = (side, result) => {
   if (result === 'sunk') {
     stats.opponentSunk++;
     stats.opponentSunkStreak = Number(stats.opponentSunkStreak || 0) + 1;
-    stats.opponentBestSunkStreak = Math.max(
-      Number(stats.opponentBestSunkStreak || 0),
-      stats.opponentSunkStreak
-    );
+    stats.opponentBestSunkStreak = Math.max(Number(stats.opponentBestSunkStreak || 0), stats.opponentSunkStreak);
   } else if (result === 'miss') {
     stats.opponentSunkStreak = 0;
   }
@@ -1613,7 +1595,6 @@ const actions = {
           </div>
         </div>
       `;
-
       document.body.appendChild(overlay);
       overlay.querySelector('#lan-cancel-btn').onclick = () => overlay.remove();
       overlay.querySelector('#lan-host-btn').onclick = () => {
@@ -1625,18 +1606,11 @@ const actions = {
         showLanJoinCodeInput();
       };
     };
-
     if (isYandexAuthed()) {
       open();
       return;
     }
-
-    openRankedAuthGate({
-      title: '📶 Рейтинговый бой по Wi‑Fi/LAN',
-      text: 'Для боя с реальным игроком нужен вход через Яндекс и 100 доступных Осколков.',
-      loginText: 'Войти и продолжить',
-      onAuthed: open
-    });
+    openRankedAuthGate({ title: '📶 Рейтинговый бой по Wi‑Fi/LAN', text: 'Для боя с реальным игроком нужен вход через Яндекс и 100 доступных Осколков.', loginText: 'Войти и продолжить', onAuthed: open });
   },
   openMenu() {
     clearTimeout(computerTimer);
@@ -1922,26 +1896,13 @@ autocomplete="off" inputmode="numeric" pattern="[0-9]*">
 // Создание LAN-комнаты
 const createLanRoom = async () => {
   toast('Создаём рейтинговую P2P-комнату...');
-
   try {
     if (!(await sessionReady)) {
       throw new Error(session.lastError || 'network_bridge_unavailable');
     }
-
     const res = await session.createLanRoom();
-
     state.lanCode = res.code;
-    state.invite = {
-      id: res.roomId,
-      roomId: res.roomId,
-      roomSecret: res.roomSecret,
-      code: res.code,
-      isLan: true,
-      localOnly: true,
-      ranked: true,
-      matchMode: 'ranked',
-      expiresAt: res.expiresAt || Date.now() + 300000
-    };
+    state.invite = { id: res.roomId, roomId: res.roomId, roomSecret: res.roomSecret, code: res.code, isLan: true, localOnly: true, ranked: true, matchMode: 'ranked', expiresAt: res.expiresAt || Date.now() + 300000 };
     state.network.active = true;
     state.network.connected = false;
     state.network.status = 'waiting';
@@ -1951,75 +1912,39 @@ const createLanRoom = async () => {
     state.network.localOnly = true;
     state.network.matchMode = 'ranked';
     state.network.lastEventAt = Date.now();
-
-    addSystemMessage(
-      'Создан рейтинговый бой за 100 ♦. Результат будет принят только после серверной fair-play проверки.'
-    );
-
+    addSystemMessage('Создан рейтинговый бой за 100 ♦. Результат будет принят только после серверной fair-play проверки.');
     setScreen('invite');
   } catch (error) {
-    toast(
-      error.message === 'lan_code_register_failed'
-        ? 'Не удалось зарегистрировать код комнаты'
-        : `Ошибка: ${error.message}`
-    );
+    toast(error.message === 'lan_code_register_failed' ? 'Не удалось зарегистрировать код комнаты' : `Ошибка: ${error.message}`);
   }
 };
 // Подключение по LAN-коду
 const joinLanByCode = async code => {
   toast('Проверяем код комнаты...');
-
   try {
     if (!(await sessionReady)) {
       throw new Error(session.lastError || 'network_bridge_unavailable');
     }
-
     if (!isYandexAuthed()) {
-      openRankedAuthGate({
-        title: '🏆 Рейтинговый бой',
-        text: 'Бой между пользователями всегда рейтинговый. Для подключения нужен вход через Яндекс и ставка 100 ♦.',
-        loginText: 'Войти и подключиться',
-        onAuthed: () => connectLanRoom(code)
-      });
+      openRankedAuthGate({ title: '🏆 Рейтинговый бой', text: 'Бой между пользователями всегда рейтинговый. Для подключения нужен вход через Яндекс и ставка 100 ♦.', loginText: 'Войти и подключиться', onAuthed: () => connectLanRoom(code) });
       return;
     }
-
     const roomInfo = await session.resolveLanRoom(code);
     if (roomInfo.ranked !== true) {
       throw new Error('ranked_room_required');
     }
-
     await connectLanRoom(code);
   } catch (error) {
-    toast(
-      error.message === 'lan_room_not_found'
-        ? 'Комната не найдена или код истёк'
-        : error.message === 'ranked_room_required'
-          ? 'Этот старый код не относится к рейтинговой комнате'
-          : `Ошибка: ${error.message}`
-    );
+    toast(error.message === 'lan_room_not_found' ? 'Комната не найдена или код истёк' : error.message === 'ranked_room_required' ? 'Этот старый код не относится к рейтинговой комнате' : `Ошибка: ${error.message}`);
   }
 };
 const connectLanRoom = async code => {
   toast('Подключаемся к рейтинговой комнате...');
-
   const res = await session.joinLanRoom(code);
-
   if (res.ranked !== true) {
     throw new Error('ranked_room_required');
   }
-
-  state.invite = {
-    id: res.roomId,
-    roomId: res.roomId,
-    roomSecret: res.roomSecret,
-    code: res.code || code,
-    isLan: true,
-    localOnly: true,
-    ranked: true,
-    matchMode: 'ranked',
-    expiresAt: res.expiresAt || Date.now() + 300000
-  };
+  state.invite = { id: res.roomId, roomId: res.roomId, roomSecret: res.roomSecret, code: res.code || code, isLan: true, localOnly: true, ranked: true, matchMode: 'ranked', expiresAt: res.expiresAt || Date.now() + 300000 };
   state.network.active = true;
   state.network.connected = false;
   state.network.status = 'connecting';
@@ -2029,11 +1954,7 @@ const connectLanRoom = async code => {
   state.network.localOnly = true;
   state.network.matchMode = 'ranked';
   state.network.lastEventAt = Date.now();
-
-  addSystemMessage(
-    'Подключение к рейтинговому бою за 100 ♦. Результат будет подтверждён сервером.'
-  );
-
+  addSystemMessage('Подключение к рейтинговому бою за 100 ♦. Результат будет подтверждён сервером.');
   setScreen('invite');
 };
 const render = () => {
@@ -2220,26 +2141,9 @@ const bind = () => {
     }
   };
   session.onConnect = peer => {
-    const ranked = !!(
-      session.room?.ranked ??
-      session.bridge?.ranked
-    );
-    const localOnly = !!(
-      session.room?.localOnly ??
-      session.bridge?.forceLocalOnly
-    );
-
-    state.opponent = {
-      id: peer?.id || 'network-peer',
-      name: peer?.name || 'Соперник',
-      title: localOnly
-        ? ranked
-          ? 'LAN · рейтинг'
-          : 'LAN · гость'
-        : 'Сетевая дуэль',
-      type: 'network'
-    };
-
+    const ranked = !!(session.room?.ranked ?? session.bridge?.ranked);
+    const localOnly = !!(session.room?.localOnly ?? session.bridge?.forceLocalOnly);
+    state.opponent = { id: peer?.id || 'network-peer', name: peer?.name || 'Соперник', title: localOnly ? (ranked ? 'LAN · рейтинг' : 'LAN · гость') : 'Сетевая дуэль', type: 'network' };
     state.network.active = true;
     state.network.connected = true;
     state.network.peerName = state.opponent.name;
@@ -2298,12 +2202,10 @@ sessionReady = waitForHostBridge()
     if (!bridgeReady && window.parent !== window) {
       throw new Error('game_parent_bridge_timeout');
     }
-
     const ready = await session.init();
     if (!ready) {
       throw new Error(session.lastError || 'network_bridge_init_failed');
     }
-
     const params = new URLSearchParams(window.location.search);
     if (params.get('join')) {
       state.network.active = true;
@@ -2312,40 +2214,29 @@ sessionReady = waitForHostBridge()
       state.network.lastEventAt = Date.now();
       render();
     }
-
     const inviteFriendId = params.get('inviteFriend');
     if (inviteFriendId && !isLaunchCancelled()) {
       stripLaunchParams();
-
       try {
         const identity = await waitForFriendIdentity();
         if (!identity?.friendId) {
           throw new Error('friend_identity_not_ready');
         }
-
         const profile = await session.getProfile(inviteFriendId).catch(() => null);
-        await actions.inviteFriend(
-          inviteFriendId,
-          profile?.displayName || 'Друг'
-        );
+        await actions.inviteFriend(inviteFriendId, profile?.displayName || 'Друг');
       } catch (error) {
         console.error('[Auto-Invite Error]', error);
         toast(`Ошибка приглашения: ${error?.message || 'unknown_error'}`);
       }
     }
-
     return true;
   })
   .catch(error => {
-    session.lastError = String(
-      error?.message || 'network_bridge_init_failed'
-    );
-
+    session.lastError = String(error?.message || 'network_bridge_init_failed');
     state.network.connected = false;
     state.network.status = 'error';
     state.network.text = `Сетевой контур недоступен: ${session.lastError}`;
     state.network.lastEventAt = Date.now();
-
     console.error('[War Hearts Network Init]', error);
     render();
     return false;
