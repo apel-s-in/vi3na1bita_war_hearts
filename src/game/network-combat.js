@@ -9,6 +9,17 @@ const RPS_CHOICES = [
   { id: 'paper', icon: '✋', label: 'Бумага' }
 ];
 const getChoiceLabel = id => RPS_CHOICES.find(item => item.id === id)?.label || id;
+const escapeHtml = value =>
+  String(value || '').replace(
+    /[&<>"']/g,
+    char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    })[char]
+  );
 const clearModal = selector => {
   document.querySelectorAll(selector).forEach(el => el.remove());
 };
@@ -519,24 +530,37 @@ export const createNetworkCombat = ({
       saveMatchDraftNow();
     }
   };
-  const sendRematchRequest = ranked => {
+  const sendRematchRequest = () => {
     if (state.opponent?.type !== 'network') return false;
     if (state.network.rematchPending) {
       setNetworkStatus('Предложение реванша уже отправлено. Ждём ответ соперника...', 'waiting');
       toast?.('Уже ждём ответ на реванш');
       return true;
     }
-    const sent = session.sendGame(MessageType.REMATCH_REQUEST, { matchId: state.matchStats.matchId, ranked: !!ranked, at: Date.now() });
+    const sent = session.sendGame(
+      MessageType.REMATCH_REQUEST,
+      {
+        matchId: state.matchStats.matchId,
+        ranked: true,
+        matchMode: 'ranked',
+        at: Date.now()
+      }
+    );
     if (!sent) {
       setNetworkStatus('Не удалось отправить предложение реванша. Проверьте соединение.', 'error');
       toast?.('Реванш не отправлен');
       return false;
     }
     state.network.rematchPending = true;
-    state.network.ranked = !!ranked;
-    state.network.matchMode = ranked ? 'ranked' : 'casual';
-    setNetworkStatus(ranked ? 'Предложение рейтингового реванша отправлено. Ждём ответ соперника...' : 'Предложение гостевого реванша отправлено. Ждём ответ соперника...', 'waiting');
-    addSystemMessage(ranked ? 'Вы предложили сопернику рейтинговый реванш.' : 'Вы предложили сопернику гостевой реванш.');
+    state.network.ranked = true;
+    state.network.matchMode = 'ranked';
+    setNetworkStatus(
+      'Предложение рейтингового реванша отправлено. Ждём ответ соперника...',
+      'waiting'
+    );
+    addSystemMessage(
+      'Вы предложили сопернику рейтинговый реванш.'
+    );
     toast?.('Предложение реванша отправлено');
     scheduleSaveMatchDraft();
     return true;
@@ -552,7 +576,7 @@ export const createNetworkCombat = ({
 
     state.network.ranked = true;
     state.network.matchMode = 'ranked';
-    return sendRematchRequest(true);
+    return sendRematchRequest();
   };
   const receiveRematchRequest = msg => {
     state.network.rematchPending = false;
@@ -579,7 +603,9 @@ export const createNetworkCombat = ({
           🏆 РЕЙТИНГ · 100 ♦
         </div>
         <p class="wh-modal-text">
-          ${state.rematchOffer.from || 'Соперник'}
+          ${escapeHtml(
+            state.rematchOffer.from || 'Соперник'
+          )}
           предлагает новый рейтинговый бой.
           После принятия оба игрока заново
           расставят корабли и внесут ставку 100 ♦.
