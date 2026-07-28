@@ -184,7 +184,7 @@ export const recordIncomingShot = ({ state, shotId }) => {
   };
 };
 
-export const verifyIncomingShotResult = ({ state, shotId }) => {
+export const verifyIncomingShotResult = ({ state, shotId, x, y, result }) => {
   const turn = ensureNetworkTurnState(state);
   const id = String(shotId || '');
 
@@ -204,7 +204,25 @@ export const verifyIncomingShotResult = ({ state, shotId }) => {
       actualShotId: id
     });
   }
+  if (
+    Number(x) !== Number(turn.expectedShotX) ||
+    Number(y) !== Number(turn.expectedShotY)
+  ) {
+    return recordTurnViolation(state, 'shot_result_coordinate_mismatch', {
+      expectedX: turn.expectedShotX,
+      expectedY: turn.expectedShotY,
+      actualX: Number(x),
+      actualY: Number(y),
+      shotId: id
+    });
+  }
 
+  if (!['miss', 'hit', 'sunk'].includes(String(result || ''))) {
+    return recordTurnViolation(state, 'shot_result_value_invalid', {
+      shotId: id,
+      result
+    });
+  }
   if (turn.resolvedShotIds.includes(id)) {
     return recordTurnViolation(state, 'duplicate_shot_result', {
       shotId: id
