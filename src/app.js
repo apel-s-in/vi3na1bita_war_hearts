@@ -706,11 +706,11 @@ const actions = {
     };
     overlay.querySelector('[data-friends-close]')?.addEventListener('click', close);
     try {
-      const module = await import('/Games/common/friends-embed.js?v=9.3.1');
+      const module = await import('/Games/common/friends-embed.js?v=9.3.2');
       overlay._friendsEmbed = await module.mountCanonicalFriends({
         root: overlay.querySelector('.wh-friends-embed-host'),
         identity: state.snapshot?.friend || state.friendIdentity || {},
-        build: '9.3.1',
+        build: '9.3.2',
         onGameInvite: async ({ friendId, gameId }) => {
           close();
           if (!gameId || gameId === GAME_ID) {
